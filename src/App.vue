@@ -46,7 +46,6 @@ const closeSidebar = () => {
         <nav class="sidebar-nav">
           <RouterLink to="/unit" @click="closeSidebar">Unit</RouterLink>
           <RouterLink to="/users" @click="closeSidebar">Users</RouterLink>
-          <RouterLink to="/kendaraan" @click="closeSidebar">Kendaraan</RouterLink>
           <RouterLink to="/jadwal-service" @click="closeSidebar">Jadwal Service</RouterLink>
           <RouterLink to="/keluhan">Keluhan</RouterLink>
           <RouterLink to="/sparepart">Sparepart</RouterLink>

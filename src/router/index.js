@@ -38,7 +38,7 @@ const router = createRouter({
     { path: '/sparepart', name: 'sparepart', component: SparepartView },
     { path: '/ganti-sparepart', name: 'ganti-sparepart', component: GantiSparepartView },
     { path: '/ganti-sparepart/tambah', name: 'ganti-sparepart-tambah', component: GantiSparepartForm },
-    { path: '/ganti-sparepart/edit/:id', name: 'ganti-sparepart-edit', component: GantiSparepartForm },
+    { path: '/ganti-sparepart/edit/:id', name: 'ganti-sparepart-edit', component: GantiSparepartView },
     { path: '/emisi-karbon', name: 'emisi-karbon', component: EmisiKarbonView },
   ],
 })
