@@ -71,6 +71,16 @@ const formatRupiah = (angka) => {
   return 'Rp ' + Number(angka).toLocaleString('id-ID')
 }
 
+const getStatusStyle = (status) => {
+  const styles = {
+    'Open': { backgroundColor: '#e0f0ff', color: '#2b7cd3' },
+    'On Progress': { backgroundColor: '#fff4e0', color: '#d68a00' },
+    'Close': { backgroundColor: '#e3f9e5', color: '#1e9e3a' },
+    'Cancel': { backgroundColor: '#fdecea', color: '#e74c3c' }
+  }
+  return styles[status] || {}
+}
+
 onMounted(() => { ambilData() })
 </script>
 
@@ -97,6 +107,7 @@ onMounted(() => { ambilData() })
         <thead>
           <tr>
             <th>ID</th><th>Nomor Kendaraan</th><th>Sparepart</th><th>Biaya</th><th>Tanggal</th>
+            <th>Status</th>
             <th>Keterangan</th><th>Dicatat Oleh</th>
             <th v-if="canManage">Aksi</th>
           </tr>
@@ -108,6 +119,7 @@ onMounted(() => { ambilData() })
             <td>{{ item.sparepart }}</td>
             <td>{{ formatRupiah(item.biaya) }}</td>
             <td>{{ item.tanggal }}</td>
+            <td><span class="status-badge" :style="getStatusStyle(item.status)">{{ item.status || 'Open' }}</span></td>
             <td>{{ item.keterangan || '-' }}</td>
             <td>{{ item.username }}</td>
             <td v-if="canManage">
@@ -138,4 +150,10 @@ tr:hover td { background-color: #f7fbff; }
 .btn-edit:hover { background-color: #cce4fb; }
 .btn-delete { background-color: #fdecea; color: #e74c3c; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
 .btn-delete:hover { background-color: #fad9d6; }
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
 </style>

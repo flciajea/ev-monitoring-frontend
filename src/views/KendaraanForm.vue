@@ -139,66 +139,103 @@ onMounted(() => {
 
 <style scoped>
 h2 {
-  color: #2b7cd3;
-  font-size: 22px;
-  margin-bottom: 16px;
+  color: #1e2a3a;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 24px;
 }
 
 .form-card {
   background: white;
-  padding: 24px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(58, 141, 222, 0.08);
-  max-width: 480px;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(58, 141, 222, 0.1);
+  max-width: 520px;
+  border: 1px solid #eef4fa;
 }
 
 .form-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 label {
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-weight: 600;
   color: #4a5568;
   font-size: 13px;
+  letter-spacing: 0.01em;
 }
 
-input, select {
+input, select, textarea {
   width: 100%;
-  padding: 9px 12px;
-  border: 1px solid #cfe4fb;
-  border-radius: 8px;
+  padding: 11px 14px;
+  border: 1.5px solid #e3edf7;
+  border-radius: 10px;
   box-sizing: border-box;
   font-size: 14px;
   font-family: inherit;
-  background: white;
+  background: #fbfdff;
+  color: #1e2a3a;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-input:focus, select:focus {
+textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #a0aec0;
+}
+
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: #4a9eeb;
-  box-shadow: 0 0 0 3px rgba(74, 158, 235, 0.15);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(74, 158, 235, 0.12);
+}
+
+input:hover, select:hover, textarea:hover {
+  border-color: #cfe4fb;
+}
+
+.preview-img {
+  margin-top: 12px;
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 10px;
+  border: 1px solid #eef4fa;
+  display: block;
 }
 
 .form-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f4f8;
 }
 
 .btn-primary {
   background-color: #4a9eeb;
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 11px 24px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   font-family: inherit;
+  font-size: 14px;
+  transition: background-color 0.2s, transform 0.1s;
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: #2b7cd3;
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .btn-primary:disabled {
@@ -207,26 +244,29 @@ input:focus, select:focus {
 }
 
 .btn-secondary {
-  background-color: #eef2f6;
+  background-color: #f4f7fa;
   color: #4a5568;
   border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
+  padding: 11px 24px;
+  border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   font-family: inherit;
+  font-size: 14px;
+  transition: background-color 0.2s;
 }
 
 .btn-secondary:hover {
-  background-color: #e0e6ed;
+  background-color: #e6ebf1;
 }
 
 .error-text {
-  color: #e74c3c;
+  color: #c0392b;
   background: #fdecea;
-  padding: 10px 14px;
-  border-radius: 8px;
+  border: 1px solid #f8d7d3;
+  padding: 12px 16px;
+  border-radius: 10px;
   font-size: 14px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 </style>

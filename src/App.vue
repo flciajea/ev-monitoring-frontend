@@ -212,7 +212,7 @@ body {
 
 main {
   flex: 1;
-  padding: 32px;
+  padding: 32px 40px;
   background-color: #f7fafd;
   min-height: 100vh;
   min-width: 0;

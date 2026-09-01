@@ -135,12 +135,14 @@ table { width: 100%; border-collapse: collapse; background: white; border-radius
 th { background-color: #eaf4ff; color: #2b7cd3; padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; }
 td { padding: 14px 16px; border-top: 1px solid #eef4fa; font-size: 14px; color: #384454; }
 tr:hover td { background-color: #f7fbff; }
-.status-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: capitalize; }
-.status-badge.pending { background-color: #fff4e0; color: #d68a00; }
-.status-badge.selesai { background-color: #e3f9e5; color: #1e9e3a; }
-.status-badge.dibatalkan { background-color: #fdecea; color: #e74c3c; }
 .btn-edit { background-color: #e0f0ff; color: #2b7cd3; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; margin-right: 6px; }
 .btn-edit:hover { background-color: #cce4fb; }
 .btn-delete { background-color: #fdecea; color: #e74c3c; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
 .btn-delete:hover { background-color: #fad9d6; }
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
 </style>
