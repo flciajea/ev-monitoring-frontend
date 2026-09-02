@@ -46,11 +46,11 @@ const closeSidebar = () => {
         <nav class="sidebar-nav">
           <RouterLink to="/unit" @click="closeSidebar">Unit</RouterLink>
           <RouterLink to="/users" @click="closeSidebar">Users</RouterLink>
-          <RouterLink to="/jadwal-service" @click="closeSidebar">Ganti Sparepart</RouterLink>
-          <RouterLink to="/keluhan">Keluhan</RouterLink>
-          <RouterLink to="/sparepart">Sparepart</RouterLink>
-          <RouterLink to="/ganti-sparepart">Jadwal Service</RouterLink>
-          <RouterLink to="/emisi-karbon">Emisi Karbon</RouterLink>
+          <RouterLink to="/jadwal-service" @click="closeSidebar">Jadwal Service</RouterLink>
+          <RouterLink to="/keluhan" @click="closeSidebar">Keluhan</RouterLink>
+          <RouterLink to="/sparepart" @click="closeSidebar">Sparepart</RouterLink>
+          <RouterLink to="/ganti-sparepart" @click="closeSidebar">Ganti Sparepart</RouterLink>
+          <RouterLink to="/emisi-karbon" @click="closeSidebar">Emisi Karbon</RouterLink>
         </nav>
 
         <div class="sidebar-footer">

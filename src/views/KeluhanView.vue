@@ -1,4 +1,3 @@
-```vue
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
@@ -27,6 +26,8 @@ const showFoto = ref(false)
 const fotoDipilih = ref('')
 
 const lihatFoto = (foto) => {
+  if (!foto) return
+
   fotoDipilih.value = foto
   showFoto.value = true
 }
@@ -67,7 +68,8 @@ const filteredKeluhan = computed(() => {
   return daftarKeluhan.value.filter(kh =>
     kh.nomorKendaraan?.toLowerCase().includes(q) ||
     kh.pengaduan?.toLowerCase().includes(q) ||
-    kh.username?.toLowerCase().includes(q)
+    kh.username?.toLowerCase().includes(q) ||
+    kh.ditanganiOleh?.toLowerCase().includes(q)
   )
 })
 
@@ -84,10 +86,148 @@ const ambilData = async () => {
     daftarKeluhan.value = response.data
     errorMsg.value = ''
   } catch (error) {
-    errorMsg.value = 'Gagal ambil data: ' + error.message
+    errorMsg.value =
+      'Gagal ambil data: ' +
+      (error.response?.data?.error || error.message)
   } finally {
     loading.value = false
   }
+}
+
+/* =========================
+   TRIGGER TANGGAL
+   ========================= */
+
+const getStatusTanggal = (tanggal, status) => {
+
+  // Kalau sudah Close,
+  // trigger tanggal tidak ditampilkan
+  if (status === 'Close') {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  if (!tanggal) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const target = new Date(tanggal)
+  target.setHours(0, 0, 0, 0)
+
+  const selisihMs = target - today
+
+  const selisihHari = Math.ceil(
+    selisihMs / (1000 * 60 * 60 * 24)
+  )
+
+  /* =========================
+     TERLAMBAT
+     ========================= */
+
+  if (selisihHari < 0) {
+    return {
+      class: 'deadline-danger',
+      text: `Terlambat ${Math.abs(selisihHari)} hari`
+    }
+  }
+
+  /* =========================
+     HARI INI
+     ========================= */
+
+  if (selisihHari === 0) {
+    return {
+      class: 'deadline-danger',
+      text: 'Hari ini'
+    }
+  }
+
+  /* =========================
+     H-1 SAMPAI H-3
+     ========================= */
+
+  if (selisihHari <= 3) {
+    return {
+      class: 'deadline-danger',
+      text: `H-${selisihHari}`
+    }
+  }
+
+  /* =========================
+     H-4 SAMPAI H-5
+     ========================= */
+
+  if (selisihHari <= 5) {
+    return {
+      class: 'deadline-warning',
+      text: `H-${selisihHari}`
+    }
+  }
+
+  /* =========================
+     MASIH JAUH
+     ========================= */
+
+  return {
+    class: '',
+    text: `H-${selisihHari}`
+  }
+}
+
+/* =========================
+   STATUS
+   ========================= */
+
+const getStatusStyle = (status) => {
+  const styles = {
+    Open: {
+      backgroundColor: '#e0f0ff',
+      color: '#2b7cd3'
+    },
+
+    'On Progress': {
+      backgroundColor: '#fff4e0',
+      color: '#d68a00'
+    },
+
+    Close: {
+      backgroundColor: '#e3f9e5',
+      color: '#1e9e3a'
+    },
+
+    Cancel: {
+      backgroundColor: '#fdecea',
+      color: '#e74c3c'
+    },
+
+    pending: {
+      backgroundColor: '#e0f0ff',
+      color: '#2b7cd3'
+    },
+
+    ditangani: {
+      backgroundColor: '#fff4e0',
+      color: '#d68a00'
+    }
+  }
+
+  return styles[status] || {}
+}
+
+/* =========================
+   EDIT
+   ========================= */
+
+const editData = (id) => {
+  router.push(`/keluhan/edit/${id}`)
 }
 
 /* =========================
@@ -138,6 +278,7 @@ onMounted(() => {
          ========================= -->
 
     <div class="header-row">
+
       <h2>Daftar Keluhan</h2>
 
       <button
@@ -147,6 +288,7 @@ onMounted(() => {
       >
         + Lapor Keluhan
       </button>
+
     </div>
 
     <!-- =========================
@@ -203,22 +345,35 @@ onMounted(() => {
       v-else
       class="table-wrapper"
     >
+
       <table>
 
         <thead>
+
           <tr>
+
             <th>ID</th>
+
             <th>Nomor Kendaraan</th>
+
             <th>Pengaduan</th>
+
             <th>Foto</th>
+
             <th>Tanggal</th>
+
             <th>Dilapor Oleh</th>
+
             <th>Status</th>
+
             <th>Ditangani Oleh</th>
+
             <th v-if="canHandle">
               Aksi
             </th>
+
           </tr>
+
         </thead>
 
         <tbody>
@@ -226,26 +381,43 @@ onMounted(() => {
           <tr
             v-for="kh in filteredKeluhan"
             :key="kh.id"
+            :class="{
+              'row-deadline-danger':
+                getStatusTanggal(
+                  kh.tanggal,
+                  kh.status
+                ).class === 'deadline-danger',
+
+              'row-deadline-warning':
+                getStatusTanggal(
+                  kh.tanggal,
+                  kh.status
+                ).class === 'deadline-warning'
+            }"
           >
 
             <!-- ID -->
+
             <td>
               {{ kh.id }}
             </td>
 
             <!-- NOMOR KENDARAAN -->
+
             <td>
               <strong>
-                {{ kh.nomorKendaraan }}
+                {{ kh.nomorKendaraan || '-' }}
               </strong>
             </td>
 
             <!-- PENGADUAN -->
+
             <td class="pengaduan-cell">
-              {{ kh.pengaduan }}
+              {{ kh.pengaduan || '-' }}
             </td>
 
             <!-- FOTO -->
+
             <td>
 
               <div
@@ -277,27 +449,76 @@ onMounted(() => {
             </td>
 
             <!-- TANGGAL -->
+
             <td>
-              {{ kh.tanggal }}
+
+              <div
+                :class="[
+                  'tanggal-service',
+                  getStatusTanggal(
+                    kh.tanggal,
+                    kh.status
+                  ).class
+                ]"
+              >
+                {{ kh.tanggal || '-' }}
+              </div>
+
+              <span
+                v-if="
+                  getStatusTanggal(
+                    kh.tanggal,
+                    kh.status
+                  ).text
+                "
+                :class="[
+                  'deadline-badge',
+                  getStatusTanggal(
+                    kh.tanggal,
+                    kh.status
+                  ).class
+                ]"
+              >
+                {{
+                  getStatusTanggal(
+                    kh.tanggal,
+                    kh.status
+                  ).text
+                }}
+              </span>
+
             </td>
 
-            <!-- USERNAME -->
+            <!-- DILAPOR OLEH -->
+
             <td>
-              {{ kh.username }}
+              {{ kh.username || '-' }}
             </td>
 
             <!-- STATUS -->
+
             <td>
 
               <span
                 class="status-badge"
                 :class="{
-                  'status-open': kh.status === 'Open',
-                  'status-progress': kh.status === 'On Progress',
-                  'status-close': kh.status === 'Close',
-                  'status-cancel': kh.status === 'Cancel',
-                  'status-pending': kh.status === 'pending',
-                  'status-ditangani': kh.status === 'ditangani'
+                  'status-open':
+                    kh.status === 'Open',
+
+                  'status-progress':
+                    kh.status === 'On Progress',
+
+                  'status-close':
+                    kh.status === 'Close',
+
+                  'status-cancel':
+                    kh.status === 'Cancel',
+
+                  'status-pending':
+                    kh.status === 'pending',
+
+                  'status-ditangani':
+                    kh.status === 'ditangani'
                 }"
               >
 
@@ -306,36 +527,41 @@ onMounted(() => {
                   class="status-dot"
                 ></span>
 
-                {{ kh.status }}
+                {{ kh.status || 'Open' }}
 
               </span>
 
             </td>
 
             <!-- DITANGANI OLEH -->
+
             <td>
               {{ kh.ditanganiOleh || '-' }}
             </td>
 
             <!-- AKSI -->
-            <td v-if="canHandle">
+
+            <td
+              v-if="canHandle"
+              class="action-cell"
+            >
 
               <div class="action-buttons">
 
+                <!-- EDIT -->
+
                 <button
-                  @click="
-                    router.push(
-                      `/keluhan/edit/${kh.id}`
-                    )
-                  "
                   class="btn-edit"
+                  @click="editData(kh.id)"
                 >
                   Edit
                 </button>
 
+                <!-- DELETE -->
+
                 <button
-                  @click="mintaHapus(kh.id)"
                   class="btn-delete"
+                  @click="mintaHapus(kh.id)"
                   title="Hapus"
                   aria-label="Hapus"
                 >
@@ -350,6 +576,7 @@ onMounted(() => {
                     stroke-linecap="round"
                     stroke-linejoin="round"
                   >
+
                     <polyline
                       points="3 6 5 6 21 6"
                     ></polyline>
@@ -369,6 +596,7 @@ onMounted(() => {
                     <path
                       d="M9 6V4h6v2"
                     ></path>
+
                   </svg>
 
                 </button>
@@ -382,6 +610,7 @@ onMounted(() => {
         </tbody>
 
       </table>
+
     </div>
 
     <!-- =========================
@@ -448,8 +677,9 @@ onMounted(() => {
 }
 
 h2 {
-  color: #2b7cd3;
-  font-size: 22px;
+  color: #1e2a3a;
+  font-size: 24px;
+  font-weight: 700;
   margin: 0;
 }
 
@@ -460,12 +690,18 @@ h2 {
 .btn-primary {
   background-color: #4a9eeb;
   color: white;
+
   border: none;
+
   padding: 10px 18px;
+
   border-radius: 8px;
+
   cursor: pointer;
+
   font-weight: 600;
   font-family: inherit;
+
   transition: background-color 0.2s;
 }
 
@@ -478,10 +714,16 @@ h2 {
    ========================= */
 
 .error-text {
-  color: #e74c3c;
+  color: #c0392b;
+
   background: #fdecea;
-  padding: 10px 14px;
-  border-radius: 8px;
+
+  border: 1px solid #f8d7d3;
+
+  padding: 12px 16px;
+
+  border-radius: 10px;
+
   font-size: 14px;
 }
 
@@ -496,38 +738,99 @@ h2 {
 
 table {
   width: 100%;
+
   border-collapse: collapse;
+
   background: white;
+
   border-radius: 12px;
+
   overflow: hidden;
+
   box-shadow:
     0 2px 12px rgba(58, 141, 222, 0.08);
 }
 
 th {
   background-color: #eaf4ff;
+
   color: #2b7cd3;
-  padding: 14px 16px;
+
+  padding: 14px 12px;
+
   text-align: left;
-  font-size: 13px;
+
+  font-size: 12px;
+
   font-weight: 700;
+
   text-transform: uppercase;
+
   letter-spacing: 0.03em;
+
   white-space: nowrap;
 }
 
 td {
-  padding: 14px 16px;
+  padding: 13px 12px;
+
   border-top: 1px solid #eef4fa;
-  font-size: 14px;
+
+  font-size: 13px;
+
   color: #384454;
+
   vertical-align: middle;
 }
 
-/* Hover tabel tetap */
+/* =========================
+   HOVER NORMAL
+   ========================= */
 
-tr:hover td {
+tbody tr:hover td {
   background-color: #f7fbff;
+}
+
+/* =========================
+   TRIGGER DEADLINE MERAH
+   ========================= */
+
+/* Terlambat / Hari ini / H-1 / H-2 / H-3 */
+
+/* Deadline merah */
+tbody tr.row-deadline-danger td {
+  background-color: #fff5f4;
+}
+
+tbody tr.row-deadline-danger:hover td {
+  background-color: #fde2df;
+}
+
+/* Deadline orange */
+tbody tr.row-deadline-warning td {
+  background-color: #fffaf0;
+}
+
+tbody tr.row-deadline-warning:hover td {
+  background-color: #fff0d2;
+}
+
+/* Hover normal */
+tbody tr:hover td {
+  background-color: #f7fbff;
+}
+/* =========================
+   TRIGGER DEADLINE ORANGE
+   ========================= */
+
+/* H-4 / H-5 */
+
+tr.row-deadline-warning:hover td {
+  background-color: #fff8e8;
+}
+
+tr.row-deadline-warning:hover .tanggal-service {
+  color: #c77d00;
 }
 
 /* =========================
@@ -536,48 +839,136 @@ tr:hover td {
 
 .pengaduan-cell {
   max-width: 260px;
+
   line-height: 1.5;
+
+  word-break: break-word;
 }
 
 /* =========================
-   FOTO THUMBNAIL
+   TANGGAL
+   ========================= */
+
+.tanggal-service {
+  font-weight: 600;
+
+  color: #384454;
+
+  transition: all 0.2s ease;
+}
+
+/* Merah */
+
+.tanggal-service.deadline-danger {
+  color: #e74c3c;
+
+  font-weight: 700;
+}
+
+/* Orange */
+
+.tanggal-service.deadline-warning {
+  color: #d68a00;
+
+  font-weight: 700;
+}
+
+/* =========================
+   DEADLINE BADGE
+   ========================= */
+
+.deadline-badge {
+  display: inline-block;
+
+  margin-top: 5px;
+
+  padding: 3px 8px;
+
+  border-radius: 10px;
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+/* Merah */
+
+.deadline-badge.deadline-danger {
+  background-color: #fdecea;
+
+  color: #e74c3c;
+}
+
+/* Orange */
+
+.deadline-badge.deadline-warning {
+  background-color: #fff4e0;
+
+  color: #d68a00;
+}
+
+/* =========================
+   FOTO
    ========================= */
 
 .photo-wrapper {
   position: relative;
+
   width: 65px;
   height: 65px;
+
   border-radius: 8px;
+
   overflow: hidden;
+
   border: 1px solid #e3edf7;
+
   background-color: #f7fbff;
+
   cursor: pointer;
 }
 
 .keluhan-photo {
   width: 100%;
   height: 100%;
+
   object-fit: cover;
+
   display: block;
-  transition: transform 0.2s, opacity 0.2s;
+
+  transition:
+    transform 0.2s,
+    opacity 0.2s;
 }
 
 .photo-wrapper:hover .keluhan-photo {
   transform: scale(1.05);
+
   opacity: 0.75;
 }
 
 .photo-overlay {
   position: absolute;
+
   inset: 0;
+
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   background-color: rgba(43, 124, 211, 0.65);
+
   color: white;
+
   font-size: 11px;
+
   font-weight: 600;
+
   opacity: 0;
+
   transition: opacity 0.2s;
 }
 
@@ -587,6 +978,7 @@ tr:hover td {
 
 .no-photo {
   color: #a0aec0;
+
   font-size: 14px;
 }
 
@@ -596,19 +988,38 @@ tr:hover td {
 
 .status-badge {
   display: inline-flex;
+
   align-items: center;
+
   gap: 7px;
+
   padding: 5px 10px;
+
   border-radius: 12px;
+
   font-size: 12px;
+
   font-weight: 600;
+
   white-space: nowrap;
+}
+
+/* Dot */
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  display: inline-block;
 }
 
 /* Open */
 
 .status-open {
   background-color: #e0f0ff;
+
   color: #2b7cd3;
 }
 
@@ -620,6 +1031,7 @@ tr:hover td {
 
 .status-progress {
   background-color: #fff4e0;
+
   color: #d68a00;
 }
 
@@ -631,6 +1043,7 @@ tr:hover td {
 
 .status-close {
   background-color: #e3f9e5;
+
   color: #1e9e3a;
 }
 
@@ -638,6 +1051,7 @@ tr:hover td {
 
 .status-cancel {
   background-color: #fdecea;
+
   color: #e74c3c;
 }
 
@@ -649,6 +1063,7 @@ tr:hover td {
 
 .status-pending {
   background-color: #e0f0ff;
+
   color: #2b7cd3;
 }
 
@@ -660,6 +1075,7 @@ tr:hover td {
 
 .status-ditangani {
   background-color: #fff4e0;
+
   color: #d68a00;
 }
 
@@ -668,24 +1084,38 @@ tr:hover td {
 }
 
 /* =========================
-   ACTION BUTTON
+   ACTION
    ========================= */
+
+.action-cell {
+  white-space: nowrap;
+}
 
 .action-buttons {
   display: flex;
+
   align-items: center;
+
   gap: 6px;
 }
 
 .btn-edit {
   background-color: #e0f0ff;
+
   color: #2b7cd3;
+
   border: none;
-  padding: 6px 12px;
+
+  padding: 6px 11px;
+
   border-radius: 6px;
+
   cursor: pointer;
-  font-size: 13px;
+
+  font-size: 12px;
+
   font-weight: 600;
+
   transition: background-color 0.2s;
 }
 
@@ -696,15 +1126,24 @@ tr:hover td {
 .btn-delete {
   width: 30px;
   height: 30px;
-  display: flex;
+
+  padding: 0;
+
+  display: inline-flex;
+
   align-items: center;
   justify-content: center;
+
   background-color: #fdecea;
+
   color: #e74c3c;
+
   border: none;
+
   border-radius: 6px;
+
   cursor: pointer;
-  padding: 0;
+
   transition:
     background-color 0.2s,
     transform 0.1s;
@@ -728,10 +1167,13 @@ tr:hover td {
 
 .foto-modal {
   position: fixed;
+
   inset: 0;
+
   z-index: 9999;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
@@ -784,16 +1226,20 @@ tr:hover td {
   height: 32px;
 
   display: flex;
+
   align-items: center;
   justify-content: center;
 
   border: none;
+
   border-radius: 50%;
 
   background-color: white;
+
   color: #4a5568;
 
   font-size: 24px;
+
   line-height: 1;
 
   cursor: pointer;
@@ -810,6 +1256,7 @@ tr:hover td {
 
 .foto-close:hover {
   background-color: #fdecea;
+
   color: #e74c3c;
 }
 
@@ -843,4 +1290,3 @@ tr:hover td {
 }
 
 </style>
-```
