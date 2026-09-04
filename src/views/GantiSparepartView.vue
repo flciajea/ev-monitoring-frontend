@@ -1,22 +1,57 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import api from '../api'
-import ConfirmModal from '../components/ConfirmModal.vue'
 import EmptyState from '../components/EmptyState.vue'
 import SearchInput from '../components/SearchInput.vue'
 import { useToast } from '../composables/useToast'
 
-const router = useRouter()
 const { showToast } = useToast()
+
+/* =========================
+   DATA
+   ========================= */
 
 const daftarData = ref([])
 const loading = ref(true)
 const errorMsg = ref('')
 const searchQuery = ref('')
 
-const showConfirm = ref(false)
-const idToDelete = ref(null)
+/* =========================
+   STATUS
+   ========================= */
+
+const daftarStatus = [
+  'Open',
+  'On Progress',
+  'Close',
+  'Cancel'
+]
+
+/* =========================
+   USER
+   ========================= */
+
+const currentUser = computed(() => {
+  const userData = localStorage.getItem('user')
+
+  if (!userData) {
+    return null
+  }
+
+  try {
+    return JSON.parse(userData)
+  } catch {
+    return null
+  }
+})
+
+const role = computed(() => {
+  return currentUser.value?.role?.toLowerCase() || ''
+})
+
+const canManage = computed(() => {
+  return ['admin', 'uid'].includes(role.value)
+})
 
 /* =========================
    MODAL FOTO
@@ -38,34 +73,22 @@ const tutupFoto = () => {
 }
 
 /* =========================
-   USER
-   ========================= */
-
-const currentUser = computed(() => {
-  const userData = localStorage.getItem('user')
-  return userData ? JSON.parse(userData) : null
-})
-
-const canManage = computed(() =>
-  ['admin', 'uid'].includes(currentUser.value?.role)
-)
-  
-/* =========================
    SEARCH
    ========================= */
 
 const filteredData = computed(() => {
-  if (!searchQuery.value) {
+  const query = searchQuery.value.trim().toLowerCase()
+
+  if (!query) {
     return daftarData.value
   }
 
-  const q = searchQuery.value.toLowerCase()
-
   return daftarData.value.filter(item =>
-    item.nomorKendaraan?.toLowerCase().includes(q) ||
-    item.sparepart?.toLowerCase().includes(q) ||
-    item.username?.toLowerCase().includes(q) ||
-    item.keterangan?.toLowerCase().includes(q)
+    item.nomorKendaraan?.toLowerCase().includes(query) ||
+    item.sparepart?.toLowerCase().includes(query) ||
+    item.username?.toLowerCase().includes(query) ||
+    item.keterangan?.toLowerCase().includes(query) ||
+    item.status?.toLowerCase().includes(query)
   )
 })
 
@@ -75,111 +98,77 @@ const filteredData = computed(() => {
 
 const ambilData = async () => {
   loading.value = true
+  errorMsg.value = ''
 
   try {
     const response = await api.get('/ganti-sparepart')
 
-    daftarData.value = response.data
-    errorMsg.value = ''
+    daftarData.value = Array.isArray(response.data)
+      ? response.data
+      : []
+
   } catch (error) {
     errorMsg.value =
       'Gagal ambil data: ' +
-      (error.response?.data?.error || error.message)
+      (
+        error.response?.data?.error ||
+        error.message
+      )
+
   } finally {
     loading.value = false
   }
 }
 
 /* =========================
-   TRIGGER TANGGAL
+   UBAH STATUS
    ========================= */
 
-const getStatusTanggal = (tanggal, status) => {
+const ubahStatus = async (item, statusBaru) => {
+  const statusLama = item.status || 'Open'
 
-  // Kalau sudah Close,
-  // trigger tanggal tidak ditampilkan
-  if (status === 'Close') {
-    return {
-      class: '',
-      text: ''
-    }
+  if (statusBaru === statusLama) {
+    return
   }
 
-  if (!tanggal) {
-    return {
-      class: '',
-      text: ''
-    }
-  }
+  try {
+    await api.put(
+      `/ganti-sparepart/${item.id}`,
+      {
+        nomorKendaraan: item.nomorKendaraan,
+        sparepart: item.sparepart,
+        biaya: item.biaya,
+        tanggal: item.tanggal,
+        photoBase64Json: item.photoBase64Json,
+        status: statusBaru,
+        keterangan: item.keterangan,
+        username: item.username
+      }
+    )
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+    item.status = statusBaru
 
-  const target = new Date(tanggal)
-  target.setHours(0, 0, 0, 0)
+    showToast(
+      `Status berhasil diubah menjadi ${statusBaru}`
+    )
 
-  const selisihMs = target - today
+  } catch (error) {
+    errorMsg.value =
+      'Gagal mengubah status: ' +
+      (
+        error.response?.data?.error ||
+        error.message
+      )
 
-  const selisihHari = Math.ceil(
-    selisihMs / (1000 * 60 * 60 * 24)
-  )
-
-  /* =========================
-     TERLAMBAT
-     ========================= */
-
-  if (selisihHari < 0) {
-    return {
-      class: 'deadline-danger',
-      text: `Terlambat ${Math.abs(selisihHari)} hari`
-    }
-  }
-
-  /* =========================
-     HARI INI
-     ========================= */
-
-  if (selisihHari === 0) {
-    return {
-      class: 'deadline-danger',
-      text: 'Hari ini'
-    }
-  }
-
-  /* =========================
-     H-1 SAMPAI H-3
-     ========================= */
-
-  if (selisihHari <= 3) {
-    return {
-      class: 'deadline-danger',
-      text: `H-${selisihHari}`
-    }
-  }
-
-  /* =========================
-     H-4 SAMPAI H-5
-     ========================= */
-
-  if (selisihHari <= 5) {
-    return {
-      class: 'deadline-warning',
-      text: `H-${selisihHari}`
-    }
-  }
-
-  /* =========================
-     MASIH JAUH
-     ========================= */
-
-  return {
-    class: '',
-    text: `H-${selisihHari}`
+    /*
+     * Kembalikan select ke status sebelumnya
+     */
+    item.status = statusLama
   }
 }
 
 /* =========================
-   STATUS
+   STATUS STYLE
    ========================= */
 
 const getStatusStyle = (status) => {
@@ -205,50 +194,97 @@ const getStatusStyle = (status) => {
     }
   }
 
-  return styles[status] || {}
+  return styles[status] || {
+    backgroundColor: '#f1f5f9',
+    color: '#64748b'
+  }
 }
 
 /* =========================
-   EDIT
+   TRIGGER TANGGAL
    ========================= */
 
-const editData = (id) => {
-  router.push(`/ganti-sparepart/edit/${id}`)
-}
+const getStatusTanggal = (tanggal, status) => {
 
-/* =========================
-   HAPUS
-   ========================= */
+  /*
+   * Kalau sudah Close,
+   * tidak ada trigger deadline.
+   */
+  if (status === 'Close') {
+    return {
+      class: '',
+      text: ''
+    }
+  }
 
-const mintaHapus = (id) => {
-  idToDelete.value = id
-  showConfirm.value = true
-}
+  /*
+   * Kalau tidak ada tanggal
+   */
+  if (!tanggal) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
 
-const batalHapus = () => {
-  showConfirm.value = false
-  idToDelete.value = null
-}
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
-const konfirmasiHapus = async () => {
-  try {
-    await api.delete(
-      `/ganti-sparepart/${idToDelete.value}`
-    )
+  const target = new Date(tanggal)
+  target.setHours(0, 0, 0, 0)
 
-    showToast('Data berhasil dihapus!')
+  const selisihMs = target - today
 
-    await ambilData()
-  } catch (error) {
-    errorMsg.value =
-      'Gagal hapus data: ' +
-      (
-        error.response?.data?.error ||
-        error.message
-      )
-  } finally {
-    showConfirm.value = false
-    idToDelete.value = null
+  const selisihHari = Math.ceil(
+    selisihMs / (1000 * 60 * 60 * 24)
+  )
+
+  /*
+   * TERLAMBAT
+   */
+  if (selisihHari < 0) {
+    return {
+      class: 'deadline-danger',
+      text: `Terlambat ${Math.abs(selisihHari)} hari`
+    }
+  }
+
+  /*
+   * HARI INI
+   */
+  if (selisihHari === 0) {
+    return {
+      class: 'deadline-danger',
+      text: 'Hari ini'
+    }
+  }
+
+  /*
+   * H-1 sampai H-3
+   */
+  if (selisihHari <= 3) {
+    return {
+      class: 'deadline-danger',
+      text: `H-${selisihHari}`
+    }
+  }
+
+  /*
+   * H-4 sampai H-5
+   */
+  if (selisihHari <= 5) {
+    return {
+      class: 'deadline-warning',
+      text: `H-${selisihHari}`
+    }
+  }
+
+  /*
+   * Masih jauh
+   */
+  return {
+    class: '',
+    text: `H-${selisihHari}`
   }
 }
 
@@ -265,7 +301,8 @@ const formatRupiah = (angka) => {
     return '-'
   }
 
-  return 'Rp ' + Number(angka).toLocaleString('id-ID')
+  return 'Rp ' +
+    Number(angka).toLocaleString('id-ID')
 }
 
 /* =========================
@@ -285,8 +322,21 @@ onMounted(() => {
          ========================= -->
 
     <div class="header-row">
-      <h2>Ganti Sparepart Fast Moving</h2>
+
+      <div>
+
+        <h2>
+          Ganti Sparepart Fast Moving
+        </h2>
+
+        <p class="subtitle">
+          Monitoring penggantian sparepart kendaraan
+        </p>
+
+      </div>
+
     </div>
+
 
     <!-- =========================
          SEARCH
@@ -294,8 +344,9 @@ onMounted(() => {
 
     <SearchInput
       v-model="searchQuery"
-      placeholder="Cari nomor kendaraan, sparepart, atau username..."
+      placeholder="Cari nomor kendaraan, sparepart, username, atau status..."
     />
+
 
     <!-- =========================
          LOADING
@@ -304,6 +355,7 @@ onMounted(() => {
     <p v-if="loading">
       Loading...
     </p>
+
 
     <!-- =========================
          ERROR
@@ -315,6 +367,7 @@ onMounted(() => {
     >
       {{ errorMsg }}
     </p>
+
 
     <!-- =========================
          EMPTY
@@ -330,9 +383,10 @@ onMounted(() => {
       :subtext="
         searchQuery
           ? 'Coba kata kunci lain'
-          : ''
+          : 'Belum ada data ganti sparepart'
       "
     />
+
 
     <!-- =========================
          TABLE
@@ -346,22 +400,53 @@ onMounted(() => {
       <table>
 
         <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nomor Kendaraan</th>
-            <th>Sparepart</th>
-            <th>Biaya</th>
-            <th>Rencana Tanggal</th>
-            <th>Foto</th>
-            <th>Status</th>
-            <th>Keterangan</th>
-            <th>Dicatat Oleh</th>
 
-            <th v-if="canManage">
-              Aksi
+          <tr>
+
+            <th>ID</th>
+
+            <th>
+              Nomor
+              <br>
+              Kendaraan
             </th>
+
+            <th>
+              Sparepart
+            </th>
+
+            <th>
+              Biaya
+            </th>
+
+            <th>
+              Rencana
+              <br>
+              Tanggal
+            </th>
+
+            <th>
+              Foto
+            </th>
+
+            <th>
+              Status
+            </th>
+
+            <th>
+              Keterangan
+            </th>
+
+            <th>
+              Dicatat
+              <br>
+              Oleh
+            </th>
+
           </tr>
+
         </thead>
+
 
         <tbody>
 
@@ -384,28 +469,37 @@ onMounted(() => {
           >
 
             <!-- ID -->
+
             <td>
               {{ item.id }}
             </td>
 
+
             <!-- NOMOR KENDARAAN -->
+
             <td>
               <strong>
                 {{ item.nomorKendaraan || '-' }}
               </strong>
             </td>
 
+
             <!-- SPAREPART -->
+
             <td>
               {{ item.sparepart || '-' }}
             </td>
 
+
             <!-- BIAYA -->
+
             <td>
               {{ formatRupiah(item.biaya) }}
             </td>
 
+
             <!-- TANGGAL -->
+
             <td>
 
               <div
@@ -449,13 +543,19 @@ onMounted(() => {
 
             </td>
 
+
             <!-- FOTO -->
+
             <td>
 
               <button
                 v-if="item.photoBase64Json"
                 class="foto-button"
-                @click="bukaFoto(item.photoBase64Json)"
+                @click="
+                  bukaFoto(
+                    item.photoBase64Json
+                  )
+                "
                 title="Lihat foto"
               >
 
@@ -476,90 +576,69 @@ onMounted(() => {
 
             </td>
 
+
             <!-- STATUS -->
-            <td>
+
+            <td class="status-cell">
+
+              <!-- ADMIN / UID -->
+
+              <select
+                v-if="canManage"
+                :value="item.status || 'Open'"
+                class="status-select"
+                :style="
+                  getStatusStyle(
+                    item.status || 'Open'
+                  )
+                "
+                @change="
+                  ubahStatus(
+                    item,
+                    $event.target.value
+                  )
+                "
+              >
+
+                <option
+                  v-for="status in daftarStatus"
+                  :key="status"
+                  :value="status"
+                >
+                  {{ status }}
+                </option>
+
+              </select>
+
+
+              <!-- DRIVER -->
 
               <span
+                v-else
                 class="status-badge"
-                :style="getStatusStyle(item.status)"
+                :style="
+                  getStatusStyle(
+                    item.status || 'Open'
+                  )
+                "
               >
                 {{ item.status || 'Open' }}
               </span>
 
             </td>
 
+
             <!-- KETERANGAN -->
+
             <td class="keterangan-cell">
               {{ item.keterangan || '-' }}
             </td>
 
-            <!-- USERNAME -->
+
+            <!-- DICATAT OLEH -->
+
             <td>
               {{ item.username || '-' }}
-            </td>
-
-            <!-- AKSI -->
-            <td
-              v-if="canManage"
-              class="action-cell"
-            >
-
-              <div class="action-buttons">
-
-                <!-- EDIT -->
-                <button
-                  class="btn-edit"
-                  @click="editData(item.id)"
-                >
-                  Edit
-                </button>
-
-                <!-- HAPUS -->
-                <button
-                  class="btn-delete"
-                  @click="mintaHapus(item.id)"
-                  title="Hapus"
-                  aria-label="Hapus"
-                >
-
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-
-                    <polyline
-                      points="3 6 5 6 21 6"
-                    ></polyline>
-
-                    <path
-                      d="M19 6l-1 14H6L5 6"
-                    ></path>
-
-                    <path
-                      d="M10 11v6"
-                    ></path>
-
-                    <path
-                      d="M14 11v6"
-                    ></path>
-
-                    <path
-                      d="M9 6V4h6v2"
-                    ></path>
-
-                  </svg>
-
-                </button>
-
-              </div>
-
             </td>
 
           </tr>
@@ -570,19 +649,6 @@ onMounted(() => {
 
     </div>
 
-    <!-- =========================
-         CONFIRM DELETE
-         ========================= -->
-
-    <ConfirmModal
-      :show="showConfirm"
-      title="Hapus Data"
-      message="Data yang dihapus tidak bisa dikembalikan. Yakin mau lanjut?"
-      confirm-text="Ya, Hapus"
-      danger
-      @confirm="konfirmasiHapus"
-      @cancel="batalHapus"
-    />
 
     <!-- =========================
          MODAL FOTO
@@ -617,6 +683,7 @@ onMounted(() => {
   </div>
 </template>
 
+
 <style scoped>
 
 /* =========================
@@ -625,13 +692,12 @@ onMounted(() => {
 
 .header-row {
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
 
   margin-bottom: 16px;
-
-  flex-wrap: wrap;
-  gap: 10px;
 }
 
 h2 {
@@ -641,6 +707,15 @@ h2 {
 
   margin: 0;
 }
+
+.subtitle {
+  margin: 4px 0 0;
+
+  color: #718096;
+
+  font-size: 13px;
+}
+
 
 /* =========================
    ERROR
@@ -658,17 +733,30 @@ h2 {
   font-size: 14px;
 }
 
+
 /* =========================
-   TABLE
+   TABLE WRAPPER
    ========================= */
 
 .table-wrapper {
   width: 100%;
-  overflow: hidden;
+
+  overflow-x: auto;
+
+  overflow-y: hidden;
+
+  border-radius: 12px;
 }
+
+
+/* =========================
+   TABLE
+   ========================= */
 
 table {
   width: 100%;
+
+  min-width: 900px;
 
   table-layout: fixed;
 
@@ -684,49 +772,66 @@ table {
     0 2px 12px rgba(58, 141, 222, 0.08);
 }
 
+
+/* =========================
+   BOX SIZING
+   ========================= */
+
+th,
+td {
+  box-sizing: border-box;
+}
+
+
 /* =========================
    LEBAR KOLOM
    ========================= */
 
-th:nth-child(1) {
-  width: 4%;
+th:nth-child(1),
+td:nth-child(1) {
+  width: 5%;
 }
 
-th:nth-child(2) {
-  width: 10%;
+th:nth-child(2),
+td:nth-child(2) {
+  width: 12%;
 }
 
-th:nth-child(3) {
-  width: 11%;
+th:nth-child(3),
+td:nth-child(3) {
+  width: 12%;
 }
 
-th:nth-child(4) {
-  width: 9%;
-}
-
-th:nth-child(5) {
-  width: 13%;
-}
-
-th:nth-child(6) {
+th:nth-child(4),
+td:nth-child(4) {
   width: 8%;
 }
 
-th:nth-child(7) {
-  width: 10%;
-}
-
-th:nth-child(8) {
+th:nth-child(5),
+td:nth-child(5) {
   width: 13%;
 }
 
-th:nth-child(9) {
-  width: 9%;
+th:nth-child(6),
+td:nth-child(6) {
+  width: 8%;
 }
 
-th:nth-child(10) {
-  width: 9%;
+th:nth-child(7),
+td:nth-child(7) {
+  width: 12%;
 }
+
+th:nth-child(8),
+td:nth-child(8) {
+  width: 17%;
+}
+
+th:nth-child(9),
+td:nth-child(9) {
+  width: 13%;
+}
+
 
 /* =========================
    HEADER TABLE
@@ -750,7 +855,10 @@ th {
   letter-spacing: 0.02em;
 
   word-break: break-word;
+
+  line-height: 1.25;
 }
+
 
 /* =========================
    DATA TABLE
@@ -770,47 +878,45 @@ td {
   word-break: break-word;
 
   overflow-wrap: anywhere;
+
+  line-height: 1.4;
 }
 
+
 /* =========================
-   HOVER NORMAL
+   HOVER
    ========================= */
 
 tbody tr:hover td {
   background-color: #f7fbff;
 }
 
+
 /* =========================
-   BARIS DEADLINE MERAH
+   DEADLINE MERAH
    ========================= */
 
 tbody tr.row-deadline-danger td {
   background-color: #fff5f4;
 }
 
-/* =========================
-   HOVER BARIS MERAH
-   ========================= */
-
 tbody tr.row-deadline-danger:hover td {
-  background-color: #fff0ee;
+  background-color: #fde2df;
 }
 
+
 /* =========================
-   BARIS DEADLINE ORANGE
+   DEADLINE ORANGE
    ========================= */
 
 tbody tr.row-deadline-warning td {
   background-color: #fffaf0;
 }
 
-/* =========================
-   HOVER BARIS ORANGE
-   ========================= */
-
 tbody tr.row-deadline-warning:hover td {
-  background-color: #fff8e8;
+  background-color: #fff0d2;
 }
+
 
 /* =========================
    TANGGAL
@@ -828,8 +934,6 @@ tbody tr.row-deadline-warning:hover td {
   font-weight: 600;
 
   color: #384454;
-
-  transition: all 0.2s ease;
 }
 
 .tanggal-service strong {
@@ -838,30 +942,11 @@ tbody tr.row-deadline-warning:hover td {
   white-space: nowrap;
 }
 
-/* =========================
-   TANGGAL MERAH
-   HARI INI / H-1 / H-2 / H-3
-   TERLAMBAT
-   ========================= */
-
 .tanggal-service.deadline-danger {
   color: #e74c3c;
 
   font-weight: 700;
 }
-
-/* =========================
-   HOVER TANGGAL MERAH
-   ========================= */
-
-tr.row-deadline-danger:hover .tanggal-service {
-  color: #d63031;
-}
-
-/* =========================
-   TANGGAL ORANGE
-   H-4 / H-5
-   ========================= */
 
 .tanggal-service.deadline-warning {
   color: #d68a00;
@@ -869,13 +954,6 @@ tr.row-deadline-danger:hover .tanggal-service {
   font-weight: 700;
 }
 
-/* =========================
-   HOVER TANGGAL ORANGE
-   ========================= */
-
-tr.row-deadline-warning:hover .tanggal-service {
-  color: #c77d00;
-}
 
 /* =========================
    DEADLINE LABEL
@@ -897,25 +975,18 @@ tr.row-deadline-warning:hover .tanggal-service {
   white-space: nowrap;
 }
 
-/* =========================
-   LABEL MERAH
-   ========================= */
-
 .deadline-label.deadline-danger {
   background-color: #fdecea;
 
   color: #e74c3c;
 }
 
-/* =========================
-   LABEL ORANGE
-   ========================= */
-
 .deadline-label.deadline-warning {
   background-color: #fff3cd;
 
   color: #d68910;
 }
+
 
 /* =========================
    FOTO
@@ -962,28 +1033,49 @@ tr.row-deadline-warning:hover .tanggal-service {
   color: #a0aec0;
 }
 
+
 /* =========================
    KETERANGAN
    ========================= */
 
 .keterangan-cell {
-  max-width: 200px;
-
   white-space: normal;
 
   word-break: break-word;
 
+  overflow-wrap: anywhere;
+
   line-height: 1.4;
 }
 
+
 /* =========================
-   STATUS
+   STATUS CELL
+   ========================= */
+
+.status-cell {
+  vertical-align: middle;
+
+  overflow: hidden;
+}
+
+
+/* =========================
+   STATUS BADGE
    ========================= */
 
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
 
-  padding: 4px 9px;
+  align-items: center;
+
+  justify-content: center;
+
+  max-width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 5px 9px;
 
   border-radius: 10px;
 
@@ -994,95 +1086,50 @@ tr.row-deadline-warning:hover .tanggal-service {
   white-space: nowrap;
 }
 
-/* =========================
-   AKSI
-   ========================= */
-
-.action-cell {
-  white-space: nowrap;
-}
-
-.action-buttons {
-  display: flex;
-
-  align-items: center;
-
-  gap: 6px;
-
-  white-space: nowrap;
-}
 
 /* =========================
-   EDIT
+   STATUS SELECT
    ========================= */
 
-.btn-edit {
-  background-color: #e0f0ff;
+.status-select {
+  display: block;
 
-  color: #2b7cd3;
+  width: 100%;
+
+  max-width: 115px;
+
+  min-width: 0;
+
+  box-sizing: border-box;
 
   border: none;
 
-  padding: 6px 11px;
+  padding: 6px 24px 6px 9px;
 
-  border-radius: 6px;
+  border-radius: 10px;
 
-  cursor: pointer;
-
-  font-size: 12px;
+  font-size: 11px;
 
   font-weight: 600;
-}
-
-.btn-edit:hover {
-  background-color: #cce4fb;
-}
-
-/* =========================
-   DELETE
-   ========================= */
-
-.btn-delete {
-  width: 31px;
-
-  height: 31px;
-
-  display: flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  background-color: #fdecea;
-
-  color: #e74c3c;
-
-  border: none;
-
-  border-radius: 6px;
 
   cursor: pointer;
 
-  padding: 0;
+  outline: none;
 
-  transition:
-    background-color 0.2s,
-    transform 0.1s;
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  appearance: auto;
 }
 
-.btn-delete:hover {
-  background-color: #fad9d6;
+.status-select:focus {
+  box-shadow:
+    0 0 0 2px rgba(43, 124, 211, 0.2);
 }
 
-.btn-delete:active {
-  transform: scale(0.95);
-}
-
-.btn-delete svg {
-  width: 15px;
-
-  height: 15px;
-}
 
 /* =========================
    MODAL FOTO
@@ -1139,6 +1186,7 @@ tr.row-deadline-warning:hover .tanggal-service {
   border-radius: 8px;
 }
 
+
 /* =========================
    CLOSE FOTO
    ========================= */
@@ -1180,6 +1228,7 @@ tr.row-deadline-warning:hover .tanggal-service {
   color: #e74c3c;
 }
 
+
 /* =========================
    RESPONSIVE
    ========================= */
@@ -1199,22 +1248,18 @@ tr.row-deadline-warning:hover .tanggal-service {
     font-size: 12px;
   }
 
-  .btn-edit {
-    padding: 5px 8px;
-
-    font-size: 11px;
-  }
-
-  .btn-delete {
-    width: 29px;
-
-    height: 29px;
-  }
-
   .foto-thumbnail {
     width: 48px;
 
     height: 48px;
+  }
+
+  .status-select {
+    max-width: 105px;
+
+    font-size: 10px;
+
+    padding: 5px 20px 5px 8px;
   }
 
 }

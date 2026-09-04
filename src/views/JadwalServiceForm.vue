@@ -3,23 +3,36 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import { useToast } from '../composables/useToast'
+
 const { showToast } = useToast()
 
 const router = useRouter()
 const route = useRoute()
 
-const isAdmin = computed(() => currentUser.value?.role === 'admin')
-
 const errorMsg = ref('')
 const loading = ref(false)
-const daftarKendaraan = ref([])
 
 const currentUser = computed(() => {
   const userData = localStorage.getItem('user')
-  return userData ? JSON.parse(userData) : null
+
+  try {
+    return userData ? JSON.parse(userData) : null
+  } catch {
+    return null
+  }
 })
 
-const canManage = computed(() => ['admin', 'uid'].includes(currentUser.value?.role))
+const role = computed(() => {
+  return currentUser.value?.role?.toLowerCase() || ''
+})
+
+const canManage = computed(() => {
+  return ['admin', 'uid'].includes(role.value)
+})
+
+const isEditMode = computed(() => {
+  return !!route.params.id
+})
 
 const form = ref({
   id: null,
@@ -28,122 +41,252 @@ const form = ref({
   km: null,
   picDriver: '',
   tanggalService: '',
-  keterangan: '',
-  status: 'pending'
+  keterangan: ''
 })
 
-const isEditMode = computed(() => !!route.params.id)
-
-const ambilDaftarKendaraan = async () => {
-  try {
-    const response = await api.get('/kendaraan')
-    daftarKendaraan.value = response.data
-  } catch (error) {
-    console.error('Gagal ambil daftar kendaraan', error)
-  }
-}
+// =========================
+// AMBIL DATA JADWAL
+// =========================
 
 const ambilDataJadwal = async () => {
-  if (!isEditMode.value) return
-  try {
-    const response = await api.get(`/jadwal-service/${route.params.id}`)
-    form.value = { ...response.data }
-  } catch (error) {
-    errorMsg.value = 'Gagal ambil data jadwal: ' + error.message
+  if (!isEditMode.value) {
+    return
   }
-}
 
-const submitForm = async () => {
   loading.value = true
   errorMsg.value = ''
-  try {
-    const payload = {
-      ...form.value,
-      username: currentUser.value.username
-    }
 
-    if (isEditMode.value) {
-      await api.put(`/jadwal-service/${form.value.id}`, payload)
-    } else {
-      await api.post('/jadwal-service', payload)
+  try {
+    const response = await api.get(
+      `/jadwal-service/${route.params.id}`
+    )
+
+    const jadwal = response.data
+
+    form.value = {
+      id: jadwal.id,
+      nomorKendaraan: jadwal.nomorKendaraan || '',
+      dealer: jadwal.dealer || '',
+      km: jadwal.km ?? null,
+      picDriver: jadwal.picDriver || '',
+      tanggalService: jadwal.tanggalService || '',
+      keterangan: jadwal.keterangan || ''
     }
-    showToast(isEditMode.value ? 'Data berhasil diupdate!' : 'Data berhasil ditambahkan!')
-    router.push('/jadwal-service')
   } catch (error) {
-    errorMsg.value = 'Gagal simpan data: ' + (error.response?.data?.error || error.message)
+    errorMsg.value =
+      'Gagal mengambil data jadwal service: ' +
+      (
+        error.response?.data?.error ||
+        error.message
+      )
   } finally {
     loading.value = false
   }
 }
 
+// =========================
+// SUBMIT
+// =========================
+
+const submitForm = async () => {
+  if (!canManage.value) {
+    errorMsg.value = 'Anda tidak memiliki akses untuk mengelola jadwal service.'
+    return
+  }
+
+  loading.value = true
+  errorMsg.value = ''
+
+  try {
+    const payload = {
+      nomorKendaraan: form.value.nomorKendaraan,
+      dealer: form.value.dealer || null,
+      km: form.value.km,
+      picDriver: form.value.picDriver || null,
+      tanggalService: form.value.tanggalService,
+      keterangan: form.value.keterangan || null,
+      username: currentUser.value?.username || ''
+    }
+
+    if (isEditMode.value) {
+      await api.put(
+        `/jadwal-service/${form.value.id}`,
+        payload
+      )
+
+      showToast(
+        'Jadwal service berhasil diupdate!'
+      )
+    } else {
+      await api.post(
+        '/jadwal-service',
+        payload
+      )
+
+      showToast(
+        'Jadwal service berhasil ditambahkan!'
+      )
+    }
+
+    router.push('/jadwal-service')
+  } catch (error) {
+    errorMsg.value =
+      'Gagal menyimpan jadwal service: ' +
+      (
+        error.response?.data?.error ||
+        error.message
+      )
+  } finally {
+    loading.value = false
+  }
+}
+
+// =========================
+// BATAL
+// =========================
+
 const batal = () => {
   router.push('/jadwal-service')
 }
 
+// =========================
+// ON MOUNTED
+// =========================
+
 onMounted(() => {
-  ambilDaftarKendaraan()
   ambilDataJadwal()
 })
 </script>
 
 <template>
   <div>
-    <h2>{{ isEditMode ? 'Edit Jadwal Service' : 'Jadwal Service' }}</h2>
+    <h2>
+      {{
+        isEditMode
+          ? 'Edit Jadwal Service'
+          : 'Tambah Jadwal Service'
+      }}
+    </h2>
 
-    <p v-if="errorMsg" class="error-text">{{ errorMsg }}</p>
+    <!-- ERROR -->
+    <p
+      v-if="errorMsg"
+      class="error-text"
+    >
+      {{ errorMsg }}
+    </p>
 
-    <form @submit.prevent="submitForm" class="form-card">
+    <form
+      class="form-card"
+      @submit.prevent="submitForm"
+    >
+
+      <!-- NOMOR KENDARAAN -->
       <div class="form-row">
-        <label>Nomor Kendaraan</label>
-        <select v-model="form.nomorKendaraan" required>
-          <option value="">- Pilih Kendaraan -</option>
-          <option v-for="k in daftarKendaraan" :key="k.id" :value="k.kodeKendaraan">
-            {{ k.kodeKendaraan }} ({{ k.tipeKendaraan }})
-          </option>
-        </select>
+        <label>
+          Nomor Kendaraan
+        </label>
+
+        <input
+          v-model="form.nomorKendaraan"
+          type="text"
+          required
+          placeholder="Contoh: EV-001"
+        />
       </div>
 
+      <!-- DEALER -->
       <div class="form-row">
-        <label>Dealer Terdekat</label>
-        <input v-model="form.dealer" type="text" placeholder="Nama dealer/bengkel" />
+        <label>
+          Dealer / Bengkel
+        </label>
+
+        <input
+          v-model="form.dealer"
+          type="text"
+          placeholder="Nama dealer atau bengkel"
+        />
       </div>
 
+      <!-- KM -->
       <div class="form-row">
-        <label>KM</label>
-        <input v-model.number="form.km" type="number" placeholder="Kilometer kendaraan" />
+        <label>
+          KM
+        </label>
+
+        <input
+          v-model.number="form.km"
+          type="number"
+          min="0"
+          placeholder="Kilometer kendaraan"
+        />
       </div>
 
+      <!-- PIC DRIVER -->
       <div class="form-row">
-        <label>No HP PIC Driver</label>
-        <input v-model="form.picDriver" type="tel" placeholder="081321454544" />
+        <label>
+          PIC Driver
+        </label>
+
+        <input
+          v-model="form.picDriver"
+          type="text"
+          placeholder="Nama atau kontak PIC driver"
+        />
       </div>
 
+      <!-- TANGGAL SERVICE -->
       <div class="form-row">
-        <label>Rencana Tgl Service</label>
-        <input v-model="form.tanggalService" type="date" required />
+        <label>
+          Rencana Tanggal Service
+        </label>
+
+        <input
+          v-model="form.tanggalService"
+          type="date"
+          required
+        />
       </div>
 
+      <!-- KETERANGAN -->
       <div class="form-row">
-        <label>Keterangan</label>
-        <textarea v-model="form.keterangan" rows="3"></textarea>
+        <label>
+          Keterangan
+        </label>
+
+        <textarea
+          v-model="form.keterangan"
+          rows="3"
+          placeholder="Keterangan jadwal service..."
+        ></textarea>
       </div>
 
-      <div class="form-row" v-if="isAdmin && isEditMode">
-        <label>Status</label>
-        <select v-model="form.status">
-          <option value="Open">Open</option>
-          <option value="On Progress">On Progress</option>
-          <option value="Close">Close</option>
-          <option value="Cancel">Cancel</option>
-        </select>
-      </div>
-
+      <!-- BUTTON -->
       <div class="form-actions">
-        <button type="submit" class="btn-primary" :disabled="loading">
-          {{ loading ? 'Menyimpan...' : (isEditMode ? 'Update' : 'Simpan') }}
+        <button
+          type="submit"
+          class="btn-primary"
+          :disabled="loading"
+        >
+          {{
+            loading
+              ? 'Menyimpan...'
+              : isEditMode
+                ? 'Update'
+                : 'Simpan'
+          }}
         </button>
-        <button type="button" @click="batal" class="btn-secondary">Batal</button>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          @click="batal"
+          :disabled="loading"
+        >
+          Batal
+        </button>
       </div>
+
     </form>
   </div>
 </template>
@@ -175,10 +318,10 @@ label {
   font-weight: 600;
   color: #4a5568;
   font-size: 13px;
-  letter-spacing: 0.01em;
 }
 
-input, select, textarea {
+input,
+textarea {
   width: 100%;
   padding: 11px 14px;
   border: 1.5px solid #e3edf7;
@@ -188,7 +331,6 @@ input, select, textarea {
   font-family: inherit;
   background: #fbfdff;
   color: #1e2a3a;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 textarea {
@@ -196,28 +338,22 @@ textarea {
   min-height: 90px;
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: #a0aec0;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+textarea:focus {
   outline: none;
   border-color: #4a9eeb;
   background: white;
   box-shadow: 0 0 0 4px rgba(74, 158, 235, 0.12);
 }
 
-input:hover, select:hover, textarea:hover {
+input:hover,
+textarea:hover {
   border-color: #cfe4fb;
-}
-
-.preview-img {
-  margin-top: 12px;
-  max-width: 100%;
-  max-height: 240px;
-  border-radius: 10px;
-  border: 1px solid #eef4fa;
-  display: block;
 }
 
 .form-actions {
@@ -228,47 +364,43 @@ input:hover, select:hover, textarea:hover {
   border-top: 1px solid #f0f4f8;
 }
 
-.btn-primary {
-  background-color: #4a9eeb;
-  color: white;
-  border: none;
+.btn-primary,
+.btn-secondary {
   padding: 11px 24px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   font-family: inherit;
   font-size: 14px;
-  transition: background-color 0.2s, transform 0.1s;
+  border: none;
+}
+
+.btn-primary {
+  background: #4a9eeb;
+  color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #2b7cd3;
-}
-
-.btn-primary:active:not(:disabled) {
-  transform: scale(0.98);
+  background: #2b7cd3;
 }
 
 .btn-primary:disabled {
-  background-color: #b8d9f7;
+  background: #b8d9f7;
   cursor: not-allowed;
 }
 
 .btn-secondary {
-  background-color: #f4f7fa;
+  background: #f4f7fa;
   color: #4a5568;
-  border: none;
-  padding: 11px 24px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  font-family: inherit;
-  font-size: 14px;
-  transition: background-color 0.2s;
 }
 
-.btn-secondary:hover {
-  background-color: #e6ebf1;
+.btn-secondary:hover:not(:disabled) {
+  background: #e6ebf1;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .error-text {

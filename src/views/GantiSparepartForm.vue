@@ -3,21 +3,45 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import { useToast } from '../composables/useToast'
+
 const { showToast } = useToast()
 
 const router = useRouter()
 const route = useRoute()
 
-const isAdmin = computed(() => currentUser.value?.role === 'admin')
-
-const daftarKendaraan = ref([])
-const daftarSparepart = ref([])
 const errorMsg = ref('')
 const loading = ref(false)
+const daftarSparepart = ref([])
+const previewFoto = ref('')
 
 const currentUser = computed(() => {
   const userData = localStorage.getItem('user')
-  return userData ? JSON.parse(userData) : null
+
+  if (!userData) {
+    return null
+  }
+
+  try {
+    return JSON.parse(userData)
+  } catch {
+    return null
+  }
+})
+
+const role = computed(() => {
+  return currentUser.value?.role?.toLowerCase() || ''
+})
+
+const canManage = computed(() => {
+  return ['admin', 'uid'].includes(role.value)
+})
+
+const isAdmin = computed(() => {
+  return role.value === 'admin'
+})
+
+const isEditMode = computed(() => {
+  return !!route.params.id
 })
 
 const form = ref({
@@ -28,161 +52,396 @@ const form = ref({
   photoBase64Json: '',
   tanggal: '',
   keterangan: '',
-  username: ''
+  username: '',
+  status: 'Open'
 })
 
-const previewFoto = ref('')
-const isEditMode = computed(() => !!route.params.id)
 
-const ambilDaftarKendaraan = async () => {
-  try {
-    const response = await api.get('/kendaraan')
-    daftarKendaraan.value = response.data
-  } catch (error) {
-    console.error('Gagal ambil daftar kendaraan', error)
-  }
-}
+// =========================
+// AMBIL DAFTAR SPAREPART
+// =========================
 
 const ambilDaftarSparepart = async () => {
   try {
     const response = await api.get('/sparepart')
-    daftarSparepart.value = response.data.filter(s => s.fUsed)
+
+    daftarSparepart.value = response.data.filter(
+      sparepart => sparepart.fUsed
+    )
   } catch (error) {
-    console.error('Gagal ambil daftar sparepart', error)
+    console.error(
+      'Gagal ambil daftar sparepart:',
+      error
+    )
   }
 }
 
+
+// =========================
+// AMBIL DATA GANTI SPAREPART
+// =========================
+
 const ambilDataGantiSparepart = async () => {
   if (!isEditMode.value) return
+
   try {
-    const response = await api.get(`/ganti-sparepart/${route.params.id}`)
-    form.value = { ...response.data }
+    const response = await api.get(
+      `/ganti-sparepart/${route.params.id}`
+    )
+
+    form.value = {
+      ...form.value,
+      ...response.data
+    }
+
     if (response.data.photoBase64Json) {
       previewFoto.value = response.data.photoBase64Json
     }
   } catch (error) {
-    errorMsg.value = 'Gagal ambil data: ' + error.message
+    errorMsg.value =
+      'Gagal ambil data: ' +
+      (
+        error.response?.data?.error ||
+        error.message
+      )
   }
 }
 
+
+// =========================
+// FOTO
+// =========================
+
 const handleFileChange = (event) => {
   const file = event.target.files[0]
+
   if (!file) return
 
   const reader = new FileReader()
+
   reader.onload = (e) => {
     form.value.photoBase64Json = e.target.result
     previewFoto.value = e.target.result
   }
+
   reader.readAsDataURL(file)
 }
 
+
+// =========================
+// SUBMIT
+// =========================
+
 const submitForm = async () => {
+  if (!canManage.value) {
+    errorMsg.value = 'Anda tidak memiliki akses untuk mengelola data.'
+    return
+  }
+
   loading.value = true
   errorMsg.value = ''
+
   try {
     const payload = {
-      ...form.value,
-      username: isEditMode.value ? form.value.username : currentUser.value.username,
-      tanggal: form.value.tanggal || new Date().toISOString().split('T')[0]
+      nomorKendaraan: form.value.nomorKendaraan,
+      sparepart: form.value.sparepart,
+      biaya: form.value.biaya,
+      photoBase64Json: form.value.photoBase64Json,
+      tanggal:
+        form.value.tanggal ||
+        new Date().toISOString().split('T')[0],
+      keterangan: form.value.keterangan,
+
+      username:
+        isEditMode.value
+          ? form.value.username
+          : currentUser.value?.username,
+
+      status:
+        isEditMode.value
+          ? form.value.status
+          : 'Open'
     }
 
     if (isEditMode.value) {
-      await api.put(`/ganti-sparepart/${form.value.id}`, payload)
+      await api.put(
+        `/ganti-sparepart/${form.value.id}`,
+        payload
+      )
+
+      showToast(
+        'Data ganti sparepart berhasil diupdate!'
+      )
     } else {
-      await api.post('/ganti-sparepart', payload)
+      await api.post(
+        '/ganti-sparepart',
+        payload
+      )
+
+      showToast(
+        'Data ganti sparepart berhasil ditambahkan!'
+      )
     }
 
-    showToast(isEditMode.value ? 'Data berhasil diupdate!' : 'Data berhasil ditambahkan!')
-
     router.push('/ganti-sparepart')
+
   } catch (error) {
-    errorMsg.value = 'Gagal simpan data: ' + (error.response?.data?.error || error.message)
+    errorMsg.value =
+      'Gagal simpan data: ' +
+      (
+        error.response?.data?.error ||
+        error.message
+      )
   } finally {
     loading.value = false
   }
 }
 
+
+// =========================
+// BATAL
+// =========================
+
 const batal = () => {
   router.push('/ganti-sparepart')
 }
 
+
+// =========================
+// ON MOUNTED
+// =========================
+
 onMounted(() => {
-  ambilDaftarKendaraan()
   ambilDaftarSparepart()
   ambilDataGantiSparepart()
 })
 </script>
 
+
 <template>
   <div>
-    <h2>{{ isEditMode ? 'Edit Sparepart' : 'Ganti Sparepart Fast Moving' }}</h2>
 
-    <p v-if="errorMsg" class="error-text">{{ errorMsg }}</p>
+    <h2>
+      {{
+        isEditMode
+          ? 'Edit Ganti Sparepart'
+          : 'Ganti Sparepart Fast Moving'
+      }}
+    </h2>
 
-    <form @submit.prevent="submitForm" class="form-card">
+
+    <!-- ERROR -->
+
+    <p
+      v-if="errorMsg"
+      class="error-text"
+    >
+      {{ errorMsg }}
+    </p>
+
+
+    <form
+      @submit.prevent="submitForm"
+      class="form-card"
+    >
+
+      <!-- NOMOR KENDARAAN -->
+
       <div class="form-row">
-        <label>Nomor Kendaraan</label>
-        <select v-model="form.nomorKendaraan" required>
-          <option value="">- Pilih Kendaraan -</option>
-          <option v-for="k in daftarKendaraan" :key="k.id" :value="k.kodeKendaraan">
-            {{ k.kodeKendaraan }} ({{ k.tipeKendaraan }})
-          </option>
-        </select>
+
+        <label>
+          Nomor Kendaraan
+        </label>
+
+        <input
+          v-model="form.nomorKendaraan"
+          type="text"
+          required
+          placeholder="Contoh: EV-001"
+        />
+
       </div>
 
+
+      <!-- SPAREPART -->
+
       <div class="form-row">
-        <label>Sparepart</label>
-        <select v-model="form.sparepart" required>
-          <option value="">- Pilih Sparepart -</option>
-          <option v-for="s in daftarSparepart" :key="s.id" :value="s.namaSparepart">
+
+        <label>
+          Sparepart
+        </label>
+
+        <select
+          v-model="form.sparepart"
+          required
+        >
+
+          <option value="">
+            - Pilih Sparepart -
+          </option>
+
+          <option
+            v-for="s in daftarSparepart"
+            :key="s.id"
+            :value="s.namaSparepart"
+          >
             {{ s.namaSparepart }}
           </option>
+
         </select>
+
       </div>
+
+
+      <!-- BIAYA -->
 
       <div class="form-row">
-        <label>Biaya (Rp)</label>
-        <input v-model.number="form.biaya" type="number" placeholder="150000" />
+
+        <label>
+          Biaya (Rp)
+        </label>
+
+        <input
+          v-model.number="form.biaya"
+          type="number"
+          min="0"
+          placeholder="150000"
+        />
+
       </div>
+
+
+      <!-- TANGGAL -->
 
       <div class="form-row">
-        <label>Tanggal</label>
-        <input v-model="form.tanggal" type="date" required />
+
+        <label>
+          Tanggal
+        </label>
+
+        <input
+          v-model="form.tanggal"
+          type="date"
+          required
+        />
+
       </div>
+
+
+      <!-- KETERANGAN -->
 
       <div class="form-row">
-        <label>Keterangan</label>
-        <textarea v-model="form.keterangan" rows="3"></textarea>
+
+        <label>
+          Keterangan
+        </label>
+
+        <textarea
+          v-model="form.keterangan"
+          rows="3"
+          placeholder="Keterangan penggantian sparepart..."
+        ></textarea>
+
       </div>
+
+
+      <!-- FOTO -->
 
       <div class="form-row">
-        <label>Foto Bukti (opsional)</label>
-        <input type="file" accept="image/*" @change="handleFileChange" />
-        <img v-if="previewFoto" :src="previewFoto" class="preview-img" />
+
+        <label>
+          Foto Bukti (opsional)
+        </label>
+
+        <input
+          type="file"
+          accept="image/*"
+          @change="handleFileChange"
+        />
+
+        <img
+          v-if="previewFoto"
+          :src="previewFoto"
+          class="preview-img"
+        />
+
       </div>
 
-      <div class="form-row" v-if="isAdmin && isEditMode">
-        <label>Status</label>
-        <select v-model="form.status">
-          <option value="Open">Open</option>
-          <option value="On Progress">On Progress</option>
-          <option value="Close">Close</option>
-          <option value="Cancel">Cancel</option>
+
+      <!-- STATUS -->
+
+      <div
+        v-if="isAdmin && isEditMode"
+        class="form-row"
+      >
+
+        <label>
+          Status
+        </label>
+
+        <select
+          v-model="form.status"
+        >
+
+          <option value="Open">
+            Open
+          </option>
+
+          <option value="On Progress">
+            On Progress
+          </option>
+
+          <option value="Close">
+            Close
+          </option>
+
+          <option value="Cancel">
+            Cancel
+          </option>
+
         </select>
+
       </div>
+
+
+      <!-- BUTTON -->
 
       <div class="form-actions">
-        <button type="submit" class="btn-primary" :disabled="loading">
-          {{ loading ? 'Menyimpan...' : (isEditMode ? 'Update' : 'Simpan') }}
+
+        <button
+          type="submit"
+          class="btn-primary"
+          :disabled="loading"
+        >
+          {{
+            loading
+              ? 'Menyimpan...'
+              : (
+                  isEditMode
+                    ? 'Update'
+                    : 'Simpan'
+                )
+          }}
         </button>
-        <button type="button" @click="batal" class="btn-secondary">Batal</button>
+
+        <button
+          type="button"
+          @click="batal"
+          class="btn-secondary"
+        >
+          Batal
+        </button>
+
       </div>
+
     </form>
+
   </div>
 </template>
 
- <style scoped>
+
+<style scoped>
+
 h2 {
   color: #1e2a3a;
   font-size: 24px;
@@ -212,7 +471,9 @@ label {
   letter-spacing: 0.01em;
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   width: 100%;
   padding: 11px 14px;
   border: 1.5px solid #e3edf7;
@@ -222,7 +483,10 @@ input, select, textarea {
   font-family: inherit;
   background: #fbfdff;
   color: #1e2a3a;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
 }
 
 textarea {
@@ -230,18 +494,24 @@ textarea {
   min-height: 90px;
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: #a0aec0;
 }
 
-input:focus, select:focus, textarea:focus {
+input:focus,
+select:focus,
+textarea:focus {
   outline: none;
   border-color: #4a9eeb;
   background: white;
-  box-shadow: 0 0 0 4px rgba(74, 158, 235, 0.12);
+  box-shadow:
+    0 0 0 4px rgba(74, 158, 235, 0.12);
 }
 
-input:hover, select:hover, textarea:hover {
+input:hover,
+select:hover,
+textarea:hover {
   border-color: #cfe4fb;
 }
 
@@ -272,7 +542,9 @@ input:hover, select:hover, textarea:hover {
   font-weight: 600;
   font-family: inherit;
   font-size: 14px;
-  transition: background-color 0.2s, transform 0.1s;
+  transition:
+    background-color 0.2s,
+    transform 0.1s;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -298,7 +570,8 @@ input:hover, select:hover, textarea:hover {
   font-weight: 600;
   font-family: inherit;
   font-size: 14px;
-  transition: background-color 0.2s;
+  transition:
+    background-color 0.2s;
 }
 
 .btn-secondary:hover {
@@ -314,4 +587,5 @@ input:hover, select:hover, textarea:hover {
   font-size: 14px;
   margin-bottom: 20px;
 }
+
 </style>

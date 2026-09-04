@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
-import ConfirmModal from '../components/ConfirmModal.vue'
+
 import EmptyState from '../components/EmptyState.vue'
 import SearchInput from '../components/SearchInput.vue'
 import { useToast } from '../composables/useToast'
@@ -15,178 +15,61 @@ const loading = ref(true)
 const errorMsg = ref('')
 const searchQuery = ref('')
 
-const showConfirm = ref(false)
-const idToDelete = ref(null)
-
-/* =========================
-   MODAL FOTO
-   ========================= */
-
 const showFoto = ref(false)
 const fotoDipilih = ref('')
 
-const lihatFoto = (foto) => {
-  if (!foto) return
+const updatingId = ref(null)
 
-  fotoDipilih.value = foto
-  showFoto.value = true
-}
 
-const tutupFoto = () => {
-  showFoto.value = false
-  fotoDipilih.value = ''
-}
-
-/* =========================
-   USER
-   ========================= */
+// =========================
+// USER
+// =========================
 
 const currentUser = computed(() => {
   const userData = localStorage.getItem('user')
-  return userData ? JSON.parse(userData) : null
+
+  if (!userData) {
+    return null
+  }
+
+  try {
+    return JSON.parse(userData)
+  } catch {
+    return null
+  }
+})
+
+const role = computed(() => {
+  return currentUser.value?.role?.toLowerCase() || ''
 })
 
 const isDriver = computed(() => {
-  return currentUser.value?.role === 'driver'
+  return role.value === 'driver'
 })
 
-const canHandle = computed(() => {
-  return ['admin', 'uid'].includes(currentUser.value?.role)
+const canManageStatus = computed(() => {
+  return ['admin', 'uid'].includes(role.value)
 })
 
-/* =========================
-   SEARCH
-   ========================= */
 
-const filteredKeluhan = computed(() => {
-  if (!searchQuery.value) {
-    return daftarKeluhan.value
-  }
+// =========================
+// STATUS
+// =========================
 
-  const q = searchQuery.value.toLowerCase()
+const daftarStatus = [
+  'Open',
+  'On Progress',
+  'Close',
+  'Cancel'
+]
 
-  return daftarKeluhan.value.filter(kh =>
-    kh.nomorKendaraan?.toLowerCase().includes(q) ||
-    kh.pengaduan?.toLowerCase().includes(q) ||
-    kh.username?.toLowerCase().includes(q) ||
-    kh.ditanganiOleh?.toLowerCase().includes(q)
-  )
-})
-
-/* =========================
-   AMBIL DATA
-   ========================= */
-
-const ambilData = async () => {
-  loading.value = true
-
-  try {
-    const response = await api.get('/keluhan')
-
-    daftarKeluhan.value = response.data
-    errorMsg.value = ''
-  } catch (error) {
-    errorMsg.value =
-      'Gagal ambil data: ' +
-      (error.response?.data?.error || error.message)
-  } finally {
-    loading.value = false
-  }
+const getActualStatus = (status) => {
+  return status || 'Open'
 }
-
-/* =========================
-   TRIGGER TANGGAL
-   ========================= */
-
-const getStatusTanggal = (tanggal, status) => {
-
-  // Kalau sudah Close,
-  // trigger tanggal tidak ditampilkan
-  if (status === 'Close') {
-    return {
-      class: '',
-      text: ''
-    }
-  }
-
-  if (!tanggal) {
-    return {
-      class: '',
-      text: ''
-    }
-  }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const target = new Date(tanggal)
-  target.setHours(0, 0, 0, 0)
-
-  const selisihMs = target - today
-
-  const selisihHari = Math.ceil(
-    selisihMs / (1000 * 60 * 60 * 24)
-  )
-
-  /* =========================
-     TERLAMBAT
-     ========================= */
-
-  if (selisihHari < 0) {
-    return {
-      class: 'deadline-danger',
-      text: `Terlambat ${Math.abs(selisihHari)} hari`
-    }
-  }
-
-  /* =========================
-     HARI INI
-     ========================= */
-
-  if (selisihHari === 0) {
-    return {
-      class: 'deadline-danger',
-      text: 'Hari ini'
-    }
-  }
-
-  /* =========================
-     H-1 SAMPAI H-3
-     ========================= */
-
-  if (selisihHari <= 3) {
-    return {
-      class: 'deadline-danger',
-      text: `H-${selisihHari}`
-    }
-  }
-
-  /* =========================
-     H-4 SAMPAI H-5
-     ========================= */
-
-  if (selisihHari <= 5) {
-    return {
-      class: 'deadline-warning',
-      text: `H-${selisihHari}`
-    }
-  }
-
-  /* =========================
-     MASIH JAUH
-     ========================= */
-
-  return {
-    class: '',
-    text: `H-${selisihHari}`
-  }
-}
-
-/* =========================
-   STATUS
-   ========================= */
 
 const getStatusStyle = (status) => {
+  const actualStatus = getActualStatus(status)
+
   const styles = {
     Open: {
       backgroundColor: '#e0f0ff',
@@ -206,84 +89,308 @@ const getStatusStyle = (status) => {
     Cancel: {
       backgroundColor: '#fdecea',
       color: '#e74c3c'
-    },
-
-    pending: {
-      backgroundColor: '#e0f0ff',
-      color: '#2b7cd3'
-    },
-
-    ditangani: {
-      backgroundColor: '#fff4e0',
-      color: '#d68a00'
     }
   }
 
-  return styles[status] || {}
-}
-
-/* =========================
-   EDIT
-   ========================= */
-
-const editData = (id) => {
-  router.push(`/keluhan/edit/${id}`)
-}
-
-/* =========================
-   HAPUS
-   ========================= */
-
-const mintaHapus = (id) => {
-  idToDelete.value = id
-  showConfirm.value = true
-}
-
-const batalHapus = () => {
-  showConfirm.value = false
-  idToDelete.value = null
-}
-
-const konfirmasiHapus = async () => {
-  try {
-    await api.delete(`/keluhan/${idToDelete.value}`)
-
-    showToast('Keluhan berhasil dihapus!')
-
-    await ambilData()
-  } catch (error) {
-    errorMsg.value =
-      'Gagal hapus data: ' +
-      (error.response?.data?.error || error.message)
-  } finally {
-    showConfirm.value = false
-    idToDelete.value = null
+  return styles[actualStatus] || {
+    backgroundColor: '#f1f3f5',
+    color: '#6c757d'
   }
 }
 
-/* =========================
-   ON MOUNTED
-   ========================= */
+
+// =========================
+// SEARCH
+// =========================
+
+const filteredKeluhan = computed(() => {
+  const q = searchQuery.value
+    .trim()
+    .toLowerCase()
+
+  if (!q) {
+    return daftarKeluhan.value
+  }
+
+  return daftarKeluhan.value.filter((keluhan) =>
+    keluhan.nomorKendaraan
+      ?.toLowerCase()
+      .includes(q) ||
+
+    keluhan.pengaduan
+      ?.toLowerCase()
+      .includes(q) ||
+
+    keluhan.username
+      ?.toLowerCase()
+      .includes(q) ||
+
+    keluhan.status
+      ?.toLowerCase()
+      .includes(q)
+  )
+})
+
+
+// =========================
+// FORMAT TANGGAL
+// =========================
+
+const formatTanggal = (tanggal) => {
+  if (!tanggal) {
+    return '-'
+  }
+
+  const date = new Date(tanggal)
+
+  if (Number.isNaN(date.getTime())) {
+    return tanggal
+  }
+
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+
+// =========================
+// INDIKATOR DEADLINE
+// =========================
+
+const getDeadlineInfo = (tanggal, status) => {
+
+  const actualStatus = getActualStatus(status)
+
+  // Kalau sudah selesai / dibatalkan,
+  // tidak perlu indikator deadline
+  if (
+    actualStatus === 'Close' ||
+    actualStatus === 'Cancel'
+  ) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  if (!tanggal) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const tanggalKeluhan = new Date(tanggal)
+  tanggalKeluhan.setHours(0, 0, 0, 0)
+
+  if (Number.isNaN(tanggalKeluhan.getTime())) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  const selisihMs = today - tanggalKeluhan
+
+  const selisihHari = Math.floor(
+    selisihMs / (1000 * 60 * 60 * 24)
+  )
+
+  // Hari yang sama
+  if (selisihHari <= 0) {
+    return {
+      class: '',
+      text: 'Hari ini'
+    }
+  }
+
+  // 1 - 3 hari
+  if (selisihHari <= 3) {
+    return {
+      class: '',
+      text: `${selisihHari} hari`
+    }
+  }
+
+  // 4 - 5 hari
+  if (selisihHari <= 5) {
+    return {
+      class: 'deadline-warning',
+      text: `${selisihHari} hari`
+    }
+  }
+
+  // Lebih dari 5 hari
+  return {
+    class: 'deadline-danger',
+    text: `Terlambat ${selisihHari - 5} hari`
+  }
+}
+
+
+// =========================
+// AMBIL DATA
+// =========================
+
+const ambilData = async () => {
+  loading.value = true
+  errorMsg.value = ''
+
+  try {
+    const response = await api.get('/keluhan')
+
+    daftarKeluhan.value = Array.isArray(response.data)
+      ? response.data
+      : []
+
+  } catch (error) {
+    console.error('Error ambil keluhan:', error)
+
+    errorMsg.value =
+      'Gagal mengambil data keluhan: ' +
+      (
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message
+      )
+
+  } finally {
+    loading.value = false
+  }
+}
+
+
+// =========================
+// TAMBAH KELUHAN
+// =========================
+
+const tambahKeluhan = () => {
+  router.push('/keluhan/tambah')
+}
+
+
+// =========================
+// UPDATE STATUS
+// =========================
+
+const updateStatus = async (keluhan, statusBaru) => {
+
+  if (!canManageStatus.value) {
+    return
+  }
+
+  const statusLama = getActualStatus(keluhan.status)
+
+  if (statusBaru === statusLama) {
+    return
+  }
+
+  updatingId.value = keluhan.id
+  errorMsg.value = ''
+
+  try {
+
+    await api.put(
+      `/keluhan/${keluhan.id}`,
+      {
+        nomorKendaraan: keluhan.nomorKendaraan,
+        pengaduan: keluhan.pengaduan,
+        photoBase64: keluhan.photoBase64,
+        tanggal: keluhan.tanggal,
+        username: keluhan.username,
+        status: statusBaru
+      }
+    )
+
+    keluhan.status = statusBaru
+
+    showToast(
+      'Status keluhan berhasil diperbarui!'
+    )
+
+  } catch (error) {
+
+    console.error(
+      'Error update status:',
+      error
+    )
+
+    errorMsg.value =
+      'Gagal memperbarui status keluhan: ' +
+      (
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message
+      )
+
+  } finally {
+    updatingId.value = null
+  }
+}
+
+
+// =========================
+// FOTO
+// =========================
+
+const lihatFoto = (foto) => {
+
+  if (!foto) {
+    return
+  }
+
+  fotoDipilih.value = foto
+  showFoto.value = true
+}
+
+const tutupFoto = () => {
+  showFoto.value = false
+  fotoDipilih.value = ''
+}
+
+
+// =========================
+// INIT
+// =========================
 
 onMounted(() => {
   ambilData()
 })
 </script>
 
+
 <template>
-  <div>
+
+  <div class="keluhan-page">
 
     <!-- =========================
          HEADER
-         ========================= -->
+    ========================= -->
 
     <div class="header-row">
 
-      <h2>Daftar Keluhan</h2>
+      <div>
+
+        <h2>
+          Daftar Keluhan
+        </h2>
+
+        <p class="subtitle">
+          Data keluhan kendaraan
+        </p>
+
+      </div>
+
+      <!-- KHUSUS DRIVER -->
 
       <button
         v-if="isDriver"
-        @click="router.push('/keluhan/tambah')"
+        @click="tambahKeluhan"
         class="btn-primary"
       >
         + Lapor Keluhan
@@ -291,26 +398,32 @@ onMounted(() => {
 
     </div>
 
+
     <!-- =========================
          SEARCH
-         ========================= -->
+    ========================= -->
 
     <SearchInput
       v-model="searchQuery"
-      placeholder="Cari nomor kendaraan, pengaduan, atau username..."
+      placeholder="Cari nomor kendaraan, keluhan, username, status..."
     />
+
 
     <!-- =========================
          LOADING
-         ========================= -->
+    ========================= -->
 
-    <p v-if="loading">
-      Loading...
+    <p
+      v-if="loading"
+      class="loading-text"
+    >
+      Loading data keluhan...
     </p>
+
 
     <!-- =========================
          ERROR
-         ========================= -->
+    ========================= -->
 
     <p
       v-else-if="errorMsg"
@@ -319,27 +432,31 @@ onMounted(() => {
       {{ errorMsg }}
     </p>
 
+
     <!-- =========================
          EMPTY
-         ========================= -->
+    ========================= -->
 
     <EmptyState
       v-else-if="filteredKeluhan.length === 0"
       :message="
         searchQuery
           ? 'Tidak ada hasil ditemukan'
-          : 'Belum ada keluhan'
+          : 'Belum ada data keluhan'
       "
       :subtext="
         searchQuery
-          ? 'Coba kata kunci lain'
-          : 'Belum ada laporan keluhan masuk'
+          ? 'Coba gunakan kata kunci lain'
+          : isDriver
+            ? 'Klik tombol Lapor Keluhan untuk membuat laporan'
+            : 'Belum ada keluhan yang tersedia'
       "
     />
 
+
     <!-- =========================
          TABLE
-         ========================= -->
+    ========================= -->
 
     <div
       v-else
@@ -352,90 +469,115 @@ onMounted(() => {
 
           <tr>
 
-            <th>ID</th>
+            <th class="col-id">
+              ID
+            </th>
 
-            <th>Nomor Kendaraan</th>
+            <th class="col-kendaraan">
+              Nomor Kendaraan
+            </th>
 
-            <th>Pengaduan</th>
+            <th class="col-pengaduan">
+              Pengaduan
+            </th>
 
-            <th>Foto</th>
+            <th class="col-foto">
+              Foto
+            </th>
 
-            <th>Tanggal</th>
+            <th class="col-tanggal">
+              Tanggal
+            </th>
 
-            <th>Dilapor Oleh</th>
+            <th class="col-username">
+              Username
+            </th>
 
-            <th>Status</th>
-
-            <th>Ditangani Oleh</th>
-
-            <th v-if="canHandle">
-              Aksi
+            <th class="col-status">
+              Status
             </th>
 
           </tr>
 
         </thead>
 
+
         <tbody>
 
           <tr
-            v-for="kh in filteredKeluhan"
-            :key="kh.id"
+            v-for="keluhan in filteredKeluhan"
+            :key="keluhan.id"
             :class="{
               'row-deadline-danger':
-                getStatusTanggal(
-                  kh.tanggal,
-                  kh.status
+                getDeadlineInfo(
+                  keluhan.tanggal,
+                  keluhan.status
                 ).class === 'deadline-danger',
 
               'row-deadline-warning':
-                getStatusTanggal(
-                  kh.tanggal,
-                  kh.status
+                getDeadlineInfo(
+                  keluhan.tanggal,
+                  keluhan.status
                 ).class === 'deadline-warning'
             }"
           >
 
-            <!-- ID -->
+            <!-- =========================
+                 ID
+            ========================= -->
 
-            <td>
-              {{ kh.id }}
+            <td class="col-id">
+
+              {{ keluhan.id }}
+
             </td>
 
-            <!-- NOMOR KENDARAAN -->
 
-            <td>
+            <!-- =========================
+                 NOMOR KENDARAAN
+            ========================= -->
+
+            <td class="col-kendaraan">
+
               <strong>
-                {{ kh.nomorKendaraan || '-' }}
+                {{ keluhan.nomorKendaraan || '-' }}
               </strong>
+
             </td>
 
-            <!-- PENGADUAN -->
+
+            <!-- =========================
+                 PENGADUAN
+            ========================= -->
 
             <td class="pengaduan-cell">
-              {{ kh.pengaduan || '-' }}
+
+              {{ keluhan.pengaduan || '-' }}
+
             </td>
 
-            <!-- FOTO -->
 
-            <td>
+            <!-- =========================
+                 FOTO
+            ========================= -->
+
+            <td class="col-foto">
 
               <div
-                v-if="kh.photoBase64"
+                v-if="keluhan.photoBase64"
                 class="photo-wrapper"
-                @click="lihatFoto(kh.photoBase64)"
-                title="Klik untuk melihat foto"
               >
 
                 <img
-                  :src="kh.photoBase64"
-                  alt="Foto kerusakan"
+                  :src="keluhan.photoBase64"
+                  alt="Foto keluhan"
                   class="keluhan-photo"
+                  @click="
+                    lihatFoto(
+                      keluhan.photoBase64
+                    )
+                  "
                 />
-
-                <div class="photo-overlay">
-                  Lihat
-                </div>
 
               </div>
 
@@ -443,165 +585,135 @@ onMounted(() => {
                 v-else
                 class="no-photo"
               >
-                -
+                Tidak ada
               </span>
 
             </td>
 
-            <!-- TANGGAL -->
 
-            <td>
+            <!-- =========================
+                 TANGGAL
+            ========================= -->
+
+            <td class="tanggal-cell">
 
               <div
                 :class="[
-                  'tanggal-service',
-                  getStatusTanggal(
-                    kh.tanggal,
-                    kh.status
+                  'tanggal-wrapper',
+                  getDeadlineInfo(
+                    keluhan.tanggal,
+                    keluhan.status
                   ).class
                 ]"
               >
-                {{ kh.tanggal || '-' }}
-              </div>
 
-              <span
-                v-if="
-                  getStatusTanggal(
-                    kh.tanggal,
-                    kh.status
-                  ).text
-                "
-                :class="[
-                  'deadline-badge',
-                  getStatusTanggal(
-                    kh.tanggal,
-                    kh.status
-                  ).class
-                ]"
-              >
-                {{
-                  getStatusTanggal(
-                    kh.tanggal,
-                    kh.status
-                  ).text
-                }}
-              </span>
-
-            </td>
-
-            <!-- DILAPOR OLEH -->
-
-            <td>
-              {{ kh.username || '-' }}
-            </td>
-
-            <!-- STATUS -->
-
-            <td>
-
-              <span
-                class="status-badge"
-                :class="{
-                  'status-open':
-                    kh.status === 'Open',
-
-                  'status-progress':
-                    kh.status === 'On Progress',
-
-                  'status-close':
-                    kh.status === 'Close',
-
-                  'status-cancel':
-                    kh.status === 'Cancel',
-
-                  'status-pending':
-                    kh.status === 'pending',
-
-                  'status-ditangani':
-                    kh.status === 'ditangani'
-                }"
-              >
+                <strong>
+                  {{ formatTanggal(keluhan.tanggal) }}
+                </strong>
 
                 <span
-                  v-if="kh.status !== 'Close'"
-                  class="status-dot"
-                ></span>
-
-                {{ kh.status || 'Open' }}
-
-              </span>
-
-            </td>
-
-            <!-- DITANGANI OLEH -->
-
-            <td>
-              {{ kh.ditanganiOleh || '-' }}
-            </td>
-
-            <!-- AKSI -->
-
-            <td
-              v-if="canHandle"
-              class="action-cell"
-            >
-
-              <div class="action-buttons">
-
-                <!-- EDIT -->
-
-                <button
-                  class="btn-edit"
-                  @click="editData(kh.id)"
+                  v-if="
+                    getDeadlineInfo(
+                      keluhan.tanggal,
+                      keluhan.status
+                    ).text
+                  "
+                  class="deadline-label"
+                  :class="
+                    getDeadlineInfo(
+                      keluhan.tanggal,
+                      keluhan.status
+                    ).class
+                  "
                 >
-                  Edit
-                </button>
-
-                <!-- DELETE -->
-
-                <button
-                  class="btn-delete"
-                  @click="mintaHapus(kh.id)"
-                  title="Hapus"
-                  aria-label="Hapus"
-                >
-
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-
-                    <polyline
-                      points="3 6 5 6 21 6"
-                    ></polyline>
-
-                    <path
-                      d="M19 6l-1 14H6L5 6"
-                    ></path>
-
-                    <path
-                      d="M10 11v6"
-                    ></path>
-
-                    <path
-                      d="M14 11v6"
-                    ></path>
-
-                    <path
-                      d="M9 6V4h6v2"
-                    ></path>
-
-                  </svg>
-
-                </button>
+                  {{
+                    getDeadlineInfo(
+                      keluhan.tanggal,
+                      keluhan.status
+                    ).text
+                  }}
+                </span>
 
               </div>
+
+            </td>
+
+
+            <!-- =========================
+                 USERNAME
+            ========================= -->
+
+            <td class="col-username">
+
+              {{ keluhan.username || '-' }}
+
+            </td>
+
+
+            <!-- =========================
+                 STATUS
+            ========================= -->
+
+            <td class="status-cell">
+
+              <!-- ADMIN / UID -->
+
+              <select
+                v-if="canManageStatus"
+                class="status-select"
+                :value="
+                  getActualStatus(
+                    keluhan.status
+                  )
+                "
+                :disabled="
+                  updatingId === keluhan.id
+                "
+                @change="
+                  updateStatus(
+                    keluhan,
+                    $event.target.value
+                  )
+                "
+                :style="
+                  getStatusStyle(
+                    keluhan.status
+                  )
+                "
+              >
+
+                <option
+                  v-for="status in daftarStatus"
+                  :key="status"
+                  :value="status"
+                >
+                  {{ status }}
+                </option>
+
+              </select>
+
+
+              <!-- DRIVER -->
+
+              <span
+                v-else
+                class="status-badge"
+                :style="
+                  getStatusStyle(
+                    keluhan.status
+                  )
+                "
+              >
+
+                <span class="status-dot"></span>
+
+                {{
+                  getActualStatus(
+                    keluhan.status
+                  )
+                }}
+
+              </span>
 
             </td>
 
@@ -613,23 +725,10 @@ onMounted(() => {
 
     </div>
 
-    <!-- =========================
-         CONFIRM DELETE
-         ========================= -->
-
-    <ConfirmModal
-      :show="showConfirm"
-      title="Hapus Keluhan"
-      message="Data yang dihapus tidak bisa dikembalikan. Yakin mau lanjut?"
-      confirm-text="Ya, Hapus"
-      danger
-      @confirm="konfirmasiHapus"
-      @cancel="batalHapus"
-    />
 
     <!-- =========================
-         MODAL FOTO
-         ========================= -->
+         PHOTO MODAL
+    ========================= -->
 
     <div
       v-if="showFoto"
@@ -643,14 +742,13 @@ onMounted(() => {
           class="foto-close"
           @click="tutupFoto"
           title="Tutup"
-          aria-label="Tutup foto"
         >
           ×
         </button>
 
         <img
           :src="fotoDipilih"
-          alt="Foto kerusakan"
+          alt="Foto keluhan"
           class="foto-large"
         />
 
@@ -659,145 +757,219 @@ onMounted(() => {
     </div>
 
   </div>
+
 </template>
+
 
 <style scoped>
 
 /* =========================
+   PAGE
+========================= */
+
+.keluhan-page {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+
+/* =========================
    HEADER
-   ========================= */
+========================= */
 
 .header-row {
   display: flex;
+
   justify-content: space-between;
+
   align-items: center;
-  margin-bottom: 16px;
+
+  gap: 15px;
+
+  margin-bottom: 20px;
+
   flex-wrap: wrap;
-  gap: 10px;
 }
 
 h2 {
-  color: #1e2a3a;
-  font-size: 24px;
-  font-weight: 700;
   margin: 0;
+
+  font-size: 24px;
+
+  color: #1f2937;
 }
 
-/* =========================
-   BUTTON PRIMARY
-   ========================= */
+.subtitle {
+  margin: 5px 0 0;
 
-.btn-primary {
-  background-color: #4a9eeb;
-  color: white;
-
-  border: none;
-
-  padding: 10px 18px;
-
-  border-radius: 8px;
-
-  cursor: pointer;
-
-  font-weight: 600;
-  font-family: inherit;
-
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover {
-  background-color: #2b7cd3;
-}
-
-/* =========================
-   ERROR
-   ========================= */
-
-.error-text {
-  color: #c0392b;
-
-  background: #fdecea;
-
-  border: 1px solid #f8d7d3;
-
-  padding: 12px 16px;
-
-  border-radius: 10px;
+  color: #6b7280;
 
   font-size: 14px;
 }
 
+
 /* =========================
-   TABLE
-   ========================= */
+   LOADING
+========================= */
+
+.loading-text {
+  text-align: center;
+
+  color: #6b7280;
+
+  padding: 30px;
+}
+
+
+/* =========================
+   ERROR
+========================= */
+
+.error-text {
+  color: #dc2626;
+
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  padding: 12px 15px;
+
+  border-radius: 8px;
+
+  font-size: 14px;
+}
+
+
+/* =========================
+   TABLE WRAPPER
+========================= */
 
 .table-wrapper {
   width: 100%;
-  overflow-x: auto;
+
+  max-width: 100%;
+
+  overflow: hidden;
+
+  margin-top: 15px;
 }
+
+
+/* =========================
+   TABLE
+========================= */
 
 table {
   width: 100%;
+
+  max-width: 100%;
+
+  table-layout: fixed;
 
   border-collapse: collapse;
 
   background: white;
 
-  border-radius: 12px;
+  border-radius: 10px;
 
   overflow: hidden;
-
-  box-shadow:
-    0 2px 12px rgba(58, 141, 222, 0.08);
 }
 
+
+/* =========================
+   COLUMN WIDTH
+========================= */
+
+.col-id {
+  width: 5%;
+}
+
+.col-kendaraan {
+  width: 14%;
+}
+
+.col-pengaduan {
+  width: 31%;
+}
+
+.col-foto {
+  width: 9%;
+}
+
+.col-tanggal {
+  width: 16%;
+}
+
+.col-username {
+  width: 11%;
+}
+
+.col-status {
+  width: 14%;
+}
+
+
+/* =========================
+   HEADER TABLE
+========================= */
+
 th {
-  background-color: #eaf4ff;
+  padding: 12px 10px;
+
+  background: #eaf4ff;
 
   color: #2b7cd3;
 
-  padding: 14px 12px;
+  border-bottom: 1px solid #dbeafe;
 
   text-align: left;
 
-  font-size: 12px;
+  font-size: 11px;
 
   font-weight: 700;
 
   text-transform: uppercase;
 
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 
-  white-space: nowrap;
+  word-break: break-word;
 }
 
-td {
-  padding: 13px 12px;
 
-  border-top: 1px solid #eef4fa;
+/* =========================
+   DATA TABLE
+========================= */
+
+td {
+  padding: 12px 10px;
+
+  border-bottom: 1px solid #e5e7eb;
+
+  text-align: left;
+
+  vertical-align: middle;
 
   font-size: 13px;
 
-  color: #384454;
+  color: #4b5563;
 
-  vertical-align: middle;
+  word-break: break-word;
+
+  overflow-wrap: anywhere;
+
+  min-width: 0;
 }
-
-/* =========================
-   HOVER NORMAL
-   ========================= */
 
 tbody tr:hover td {
-  background-color: #f7fbff;
+  background: #f9fbfd;
 }
 
+
 /* =========================
-   TRIGGER DEADLINE MERAH
-   ========================= */
+   DEADLINE DANGER
+========================= */
 
-/* Terlambat / Hari ini / H-1 / H-2 / H-3 */
-
-/* Deadline merah */
 tbody tr.row-deadline-danger td {
   background-color: #fff5f4;
 }
@@ -806,7 +978,11 @@ tbody tr.row-deadline-danger:hover td {
   background-color: #fde2df;
 }
 
-/* Deadline orange */
+
+/* =========================
+   DEADLINE WARNING
+========================= */
+
 tbody tr.row-deadline-warning td {
   background-color: #fffaf0;
 }
@@ -815,355 +991,281 @@ tbody tr.row-deadline-warning:hover td {
   background-color: #fff0d2;
 }
 
-/* Hover normal */
-tbody tr:hover td {
-  background-color: #f7fbff;
-}
-/* =========================
-   TRIGGER DEADLINE ORANGE
-   ========================= */
-
-/* H-4 / H-5 */
-
-tr.row-deadline-warning:hover td {
-  background-color: #fff8e8;
-}
-
-tr.row-deadline-warning:hover .tanggal-service {
-  color: #c77d00;
-}
 
 /* =========================
    PENGADUAN
-   ========================= */
+========================= */
 
 .pengaduan-cell {
-  max-width: 260px;
+  line-height: 1.45;
 
-  line-height: 1.5;
-
-  word-break: break-word;
+  white-space: normal;
 }
+
 
 /* =========================
    TANGGAL
-   ========================= */
+========================= */
 
-.tanggal-service {
-  font-weight: 600;
-
-  color: #384454;
-
-  transition: all 0.2s ease;
+.tanggal-cell {
+  vertical-align: middle;
 }
 
-/* Merah */
+.tanggal-wrapper {
+  display: flex;
 
-.tanggal-service.deadline-danger {
-  color: #e74c3c;
+  flex-direction: column;
 
-  font-weight: 700;
+  align-items: flex-start;
+
+  gap: 5px;
+
+  min-width: 0;
 }
 
-/* Orange */
-
-.tanggal-service.deadline-warning {
-  color: #d68a00;
-
-  font-weight: 700;
-}
-
-/* =========================
-   DEADLINE BADGE
-   ========================= */
-
-.deadline-badge {
-  display: inline-block;
-
-  margin-top: 5px;
-
-  padding: 3px 8px;
-
-  border-radius: 10px;
-
-  font-size: 11px;
-
-  font-weight: 700;
+.tanggal-wrapper strong {
+  font-size: 13px;
 
   white-space: nowrap;
 }
 
-/* Merah */
-
-.deadline-badge.deadline-danger {
-  background-color: #fdecea;
-
-  color: #e74c3c;
-}
-
-/* Orange */
-
-.deadline-badge.deadline-warning {
-  background-color: #fff4e0;
-
-  color: #d68a00;
-}
 
 /* =========================
-   FOTO
-   ========================= */
+   DEADLINE LABEL
+========================= */
 
-.photo-wrapper {
-  position: relative;
+.deadline-label {
+  display: inline-block;
 
-  width: 65px;
-  height: 65px;
+  max-width: 100%;
+
+  padding: 3px 7px;
 
   border-radius: 8px;
 
-  overflow: hidden;
+  font-size: 10px;
 
-  border: 1px solid #e3edf7;
+  font-weight: 700;
 
-  background-color: #f7fbff;
-
-  cursor: pointer;
+  white-space: nowrap;
 }
 
-.keluhan-photo {
-  width: 100%;
-  height: 100%;
 
-  object-fit: cover;
+/* NORMAL */
 
-  display: block;
-
-  transition:
-    transform 0.2s,
-    opacity 0.2s;
+.tanggal-wrapper:not(.deadline-warning):not(.deadline-danger) {
+  color: #384454;
 }
 
-.photo-wrapper:hover .keluhan-photo {
-  transform: scale(1.05);
 
-  opacity: 0.75;
+/* WARNING */
+
+.tanggal-wrapper.deadline-warning {
+  color: #d68a00;
 }
 
-.photo-overlay {
-  position: absolute;
+.deadline-label.deadline-warning {
+  background-color: #fff3cd;
 
-  inset: 0;
+  color: #d68910;
+}
 
+
+/* DANGER */
+
+.tanggal-wrapper.deadline-danger {
+  color: #e74c3c;
+}
+
+.deadline-label.deadline-danger {
+  background-color: #fdecea;
+
+  color: #e74c3c;
+}
+
+
+/* =========================
+   FOTO
+========================= */
+
+.photo-wrapper {
   display: flex;
 
   align-items: center;
+
+  justify-content: flex-start;
+}
+
+.keluhan-photo {
+  width: 48px;
+
+  height: 48px;
+
+  object-fit: cover;
+
+  border-radius: 7px;
+
+  border: 1px solid #e5e7eb;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+
+.keluhan-photo:hover {
+  transform: scale(1.05);
+
+  box-shadow:
+    0 4px 10px rgba(43, 124, 211, 0.18);
+}
+
+.no-photo {
+  color: #9ca3af;
+
+  font-size: 11px;
+}
+
+
+/* =========================
+   STATUS CELL
+========================= */
+
+.status-cell {
+  padding-left: 8px;
+
+  padding-right: 8px;
+
+  overflow: hidden;
+}
+
+
+/* =========================
+   STATUS BADGE
+========================= */
+
+.status-badge {
+  display: flex;
+
+  align-items: center;
+
   justify-content: center;
 
-  background-color: rgba(43, 124, 211, 0.65);
+  gap: 6px;
 
-  color: white;
+  width: 100%;
+
+  max-width: 100%;
+
+  box-sizing: border-box;
+
+  padding: 6px 8px;
+
+  border-radius: 18px;
 
   font-size: 11px;
 
   font-weight: 600;
 
-  opacity: 0;
-
-  transition: opacity 0.2s;
-}
-
-.photo-wrapper:hover .photo-overlay {
-  opacity: 1;
-}
-
-.no-photo {
-  color: #a0aec0;
-
-  font-size: 14px;
-}
-
-/* =========================
-   STATUS
-   ========================= */
-
-.status-badge {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 7px;
-
-  padding: 5px 10px;
-
-  border-radius: 12px;
-
-  font-size: 12px;
-
-  font-weight: 600;
-
   white-space: nowrap;
 }
 
-/* Dot */
-
 .status-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+
+  height: 6px;
+
+  flex-shrink: 0;
 
   border-radius: 50%;
 
-  display: inline-block;
+  background: currentColor;
 }
 
-/* Open */
-
-.status-open {
-  background-color: #e0f0ff;
-
-  color: #2b7cd3;
-}
-
-.status-open .status-dot {
-  background-color: #2b7cd3;
-}
-
-/* On Progress */
-
-.status-progress {
-  background-color: #fff4e0;
-
-  color: #d68a00;
-}
-
-.status-progress .status-dot {
-  background-color: #d68a00;
-}
-
-/* Close */
-
-.status-close {
-  background-color: #e3f9e5;
-
-  color: #1e9e3a;
-}
-
-/* Cancel */
-
-.status-cancel {
-  background-color: #fdecea;
-
-  color: #e74c3c;
-}
-
-.status-cancel .status-dot {
-  background-color: #e74c3c;
-}
-
-/* Pending */
-
-.status-pending {
-  background-color: #e0f0ff;
-
-  color: #2b7cd3;
-}
-
-.status-pending .status-dot {
-  background-color: #2b7cd3;
-}
-
-/* Ditangani */
-
-.status-ditangani {
-  background-color: #fff4e0;
-
-  color: #d68a00;
-}
-
-.status-ditangani .status-dot {
-  background-color: #d68a00;
-}
 
 /* =========================
-   ACTION
-   ========================= */
+   STATUS SELECT
+========================= */
 
-.action-cell {
-  white-space: nowrap;
-}
+.status-select {
+  display: block;
 
-.action-buttons {
-  display: flex;
+  width: 100%;
 
-  align-items: center;
+  max-width: 100%;
 
-  gap: 6px;
-}
+  box-sizing: border-box;
 
-.btn-edit {
-  background-color: #e0f0ff;
+  padding: 6px 24px 6px 9px;
 
-  color: #2b7cd3;
+  border: 1px solid currentColor;
 
-  border: none;
+  border-radius: 18px;
 
-  padding: 6px 11px;
-
-  border-radius: 6px;
-
-  cursor: pointer;
-
-  font-size: 12px;
+  font-size: 11px;
 
   font-weight: 600;
 
-  transition: background-color 0.2s;
+  cursor: pointer;
+
+  outline: none;
+
+  appearance: auto;
 }
 
-.btn-edit:hover {
-  background-color: #cce4fb;
+.status-select:focus {
+  box-shadow:
+    0 0 0 2px rgba(43, 124, 211, 0.15);
 }
 
-.btn-delete {
-  width: 30px;
-  height: 30px;
+.status-select:disabled {
+  opacity: 0.6;
 
-  padding: 0;
+  cursor: not-allowed;
+}
 
-  display: inline-flex;
 
-  align-items: center;
-  justify-content: center;
+/* =========================
+   BUTTON
+========================= */
 
-  background-color: #fdecea;
+.btn-primary {
+  background: #2563eb;
 
-  color: #e74c3c;
+  color: white;
+
+  padding: 9px 14px;
 
   border: none;
 
-  border-radius: 6px;
+  border-radius: 7px;
 
   cursor: pointer;
 
+  font-size: 13px;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+
   transition:
-    background-color 0.2s,
+    background 0.2s,
     transform 0.1s;
 }
 
-.btn-delete:hover {
-  background-color: #fad9d6;
+.btn-primary:hover {
+  background: #1d4ed8;
 }
 
-.btn-delete:active {
-  transform: scale(0.95);
+.btn-primary:active {
+  transform: scale(0.98);
 }
 
-.btn-delete svg {
-  display: block;
-}
 
 /* =========================
-   MODAL FOTO
-   ========================= */
+   PHOTO MODAL
+========================= */
 
 .foto-modal {
   position: fixed;
@@ -1172,121 +1274,222 @@ tr.row-deadline-warning:hover .tanggal-service {
 
   z-index: 9999;
 
+  background: rgba(0, 0, 0, 0.75);
+
   display: flex;
 
   align-items: center;
+
   justify-content: center;
 
-  padding: 30px;
+  padding: 20px;
 
-  background-color: rgba(0, 0, 0, 0.75);
+  box-sizing: border-box;
 }
 
 .foto-modal-content {
   position: relative;
 
   max-width: 90vw;
+
   max-height: 90vh;
-
-  padding: 10px;
-
-  background-color: white;
-
-  border-radius: 12px;
-
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .foto-large {
   display: block;
 
-  max-width: 85vw;
+  max-width: 90vw;
+
   max-height: 85vh;
 
   width: auto;
+
   height: auto;
 
   object-fit: contain;
 
   border-radius: 8px;
-}
 
-/* =========================
-   CLOSE MODAL
-   ========================= */
+  background: white;
+}
 
 .foto-close {
   position: absolute;
 
-  top: -14px;
-  right: -14px;
+  top: -40px;
 
-  width: 32px;
-  height: 32px;
-
-  display: flex;
-
-  align-items: center;
-  justify-content: center;
+  right: 0;
 
   border: none;
 
-  border-radius: 50%;
+  background: transparent;
 
-  background-color: white;
+  color: white;
 
-  color: #4a5568;
-
-  font-size: 24px;
-
-  line-height: 1;
+  font-size: 32px;
 
   cursor: pointer;
 
-  box-shadow:
-    0 2px 10px rgba(0, 0, 0, 0.2);
-
-  z-index: 2;
-
-  transition:
-    background-color 0.2s,
-    color 0.2s;
+  line-height: 1;
 }
 
-.foto-close:hover {
-  background-color: #fdecea;
-
-  color: #e74c3c;
-}
 
 /* =========================
-   RESPONSIVE
-   ========================= */
+   TABLET
+========================= */
 
 @media (max-width: 1100px) {
 
   th,
   td {
-    padding: 11px 12px;
+    padding: 9px 7px;
   }
 
   th {
-    font-size: 12px;
+    font-size: 10px;
   }
 
   td {
-    font-size: 13px;
+    font-size: 12px;
   }
 
-  .pengaduan-cell {
-    max-width: 200px;
+  .keluhan-photo {
+    width: 42px;
+
+    height: 42px;
   }
 
-  .photo-wrapper {
-    width: 55px;
-    height: 55px;
+  .status-select,
+  .status-badge {
+    font-size: 10px;
   }
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  .header-row {
+    align-items: flex-start;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+
+  .btn-primary {
+    width: 100%;
+  }
+
+  th,
+  td {
+    padding: 8px 5px;
+  }
+
+  th {
+    font-size: 9px;
+  }
+
+  td {
+    font-size: 11px;
+  }
+
+  .status-select {
+    padding: 5px 3px;
+
+    font-size: 9px;
+  }
+
+  .status-badge {
+    padding: 5px 3px;
+
+    font-size: 9px;
+  }
+
+  .status-dot {
+    display: none;
+  }
+
+  .keluhan-photo {
+    width: 38px;
+
+    height: 38px;
+  }
+
+  .deadline-label {
+    font-size: 9px;
+
+    padding: 2px 5px;
+  }
+
+}
+
+
+/* =========================
+   VERY SMALL
+========================= */
+
+@media (max-width: 500px) {
+
+  th,
+  td {
+    padding: 7px 4px;
+  }
+
+  .col-id {
+    width: 5%;
+  }
+
+  .col-kendaraan {
+    width: 15%;
+  }
+
+  .col-pengaduan {
+    width: 28%;
+  }
+
+  .col-foto {
+    width: 8%;
+  }
+
+  .col-tanggal {
+    width: 17%;
+  }
+
+  .col-username {
+    width: 12%;
+  }
+
+  .col-status {
+    width: 15%;
+  }
+
+  .keluhan-photo {
+    width: 32px;
+
+    height: 32px;
+  }
+
+  .status-select {
+    padding: 4px 2px;
+
+    font-size: 8px;
+  }
+
+  .status-badge {
+    padding: 4px 2px;
+
+    font-size: 8px;
+  }
+
 }
 
 </style>

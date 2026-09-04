@@ -3,12 +3,13 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import { useToast } from '../composables/useToast'
+
 const { showToast } = useToast()
 
 const router = useRouter()
 const route = useRoute()
 
-const daftarUnit = ref([])
+const loading = ref(false)
 const errorMsg = ref('')
 
 const form = ref({
@@ -16,57 +17,92 @@ const form = ref({
   username: '',
   password: '',
   namaLengkap: '',
-  role: 3, // default driver
-  unit: null
+  email: '',
+  noHp: '',
+  unit: '',
+  uid: '',
+  up3: '',
+  noKendaraan: '',
+  active: true
 })
 
-// cek dari URL: kalau ada :id, berarti mode edit
 const isEditMode = computed(() => !!route.params.id)
-
-const ambilDaftarUnit = async () => {
-  try {
-    const response = await api.get('/unit')
-    daftarUnit.value = response.data
-  } catch (error) {
-    console.error('Gagal ambil daftar unit', error)
-  }
-}
 
 const ambilDataUser = async () => {
   if (!isEditMode.value) return
+
+  loading.value = true
+
   try {
     const response = await api.get(`/users/${route.params.id}`)
     const user = response.data
+
     form.value = {
       id: user.id,
-      username: user.username,
+      username: user.username || '',
       password: '',
-      namaLengkap: user.namaLengkap,
-      role: user.role ? user.role.id : null,
-      unit: user.unit ? user.unit.id : null
+      namaLengkap: user.namaLengkap || '',
+      email: user.email || '',
+      noHp: user.noHp || '',
+      unit: user.unit || '',
+      uid: user.uid || '',
+      up3: user.up3 || '',
+      noKendaraan: user.noKendaraan || '',
+      active: user.active ?? true
     }
   } catch (error) {
-    errorMsg.value = 'Gagal ambil data user: ' + error.message
+    errorMsg.value =
+      'Gagal ambil data user: ' +
+      (error.response?.data?.error || error.message)
+  } finally {
+    loading.value = false
   }
 }
 
 const submitForm = async () => {
+  loading.value = true
+  errorMsg.value = ''
+
   try {
     const payload = {
-      ...form.value,
-      role: form.value.role ? { id: form.value.role } : null,
-      unit: form.value.unit ? { id: form.value.unit } : null
+      username: form.value.username,
+      namaLengkap: form.value.namaLengkap,
+      email: form.value.email || null,
+      noHp: form.value.noHp || null,
+      unit: form.value.unit || null,
+      uid: form.value.uid || null,
+      up3: form.value.up3 || null,
+      noKendaraan: form.value.noKendaraan || null,
+      active: form.value.active
+    }
+
+    if (form.value.password.trim()) {
+      payload.password = form.value.password
     }
 
     if (isEditMode.value) {
       await api.put(`/users/${form.value.id}`, payload)
+      showToast('User berhasil diupdate!')
     } else {
+      if (!form.value.password.trim()) {
+        errorMsg.value = 'Password wajib diisi untuk user baru.'
+        loading.value = false
+        return
+      }
+
+      payload.password = form.value.password
+
       await api.post('/users', payload)
+      showToast('User berhasil ditambahkan!')
     }
-    
+
     router.push('/users')
   } catch (error) {
-    errorMsg.value = 'Gagal simpan data: ' + (error.response?.data?.error || error.message)
+    errorMsg.value =
+      'Gagal simpan data: ' +
+      (error.response?.data?.error || error.message)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -75,7 +111,6 @@ const batal = () => {
 }
 
 onMounted(() => {
-  ambilDaftarUnit()
   ambilDataUser()
 })
 </script>
@@ -84,44 +119,138 @@ onMounted(() => {
   <div>
     <h2>{{ isEditMode ? 'Edit User' : 'Tambah User' }}</h2>
 
-    <p v-if="errorMsg" class="error-text">{{ errorMsg }}</p>
+    <p v-if="errorMsg" class="error-text">
+      {{ errorMsg }}
+    </p>
 
-    <form @submit.prevent="submitForm" class="form-card">
+    <form
+      @submit.prevent="submitForm"
+      class="form-card"
+    >
+
       <div class="form-row">
         <label>Username</label>
-        <input v-model="form.username" type="text" required />
+        <input
+          v-model="form.username"
+          type="text"
+          required
+        />
       </div>
+
       <div class="form-row">
-        <label>Password {{ isEditMode ? '(kosongkan jika tidak ganti)' : '' }}</label>
-        <input v-model="form.password" type="password" :required="!isEditMode" />
+        <label>
+          Password
+          {{ isEditMode ? '(kosongkan jika tidak ganti)' : '' }}
+        </label>
+
+        <input
+          v-model="form.password"
+          type="password"
+          :required="!isEditMode"
+        />
       </div>
+
       <div class="form-row">
         <label>Nama Lengkap</label>
-        <input v-model="form.namaLengkap" type="text" required />
+
+        <input
+          v-model="form.namaLengkap"
+          type="text"
+          required
+        />
       </div>
+
       <div class="form-row">
-        <label>Role</label>
-          <select v-model="form.role">
-            <option :value="null">- Pilih Role -</option>
-            <option :value="1">Admin</option>
-            <option :value="2">UID</option>
-            <option :value="3">Driver</option>
-          </select>
+        <label>Email</label>
+
+        <input
+          v-model="form.email"
+          type="email"
+        />
       </div>
-      <div class="form-row" v-if="form.role !== 1">
+
+      <div class="form-row">
+        <label>No. HP</label>
+
+        <input
+          v-model="form.noHp"
+          type="text"
+        />
+      </div>
+
+      <div class="form-row">
         <label>Unit</label>
-        <select v-model="form.unit">
-          <option :value="null">- Pilih Unit -</option>
-          <option v-for="unit in daftarUnit" :key="unit.id" :value="unit.id">
-            {{ unit.namaUnit }}
-          </option>
-        </select>
+
+        <input
+          v-model="form.unit"
+          type="text"
+          placeholder="Contoh: UP3 Mataram"
+        />
+      </div>
+
+      <div class="form-row">
+        <label>UID</label>
+
+        <input
+          v-model="form.uid"
+          type="text"
+          placeholder="Contoh: UIW NTB"
+        />
+      </div>
+
+      <div class="form-row">
+        <label>UP3</label>
+
+        <input
+          v-model="form.up3"
+          type="text"
+          placeholder="Contoh: UP3 Mataram"
+        />
+      </div>
+
+      <div class="form-row">
+        <label>No. Kendaraan</label>
+
+        <input
+          v-model="form.noKendaraan"
+          type="text"
+          placeholder="Contoh: DK 9090 SE"
+        />
+      </div>
+
+      <div class="form-row checkbox-row">
+        <label class="checkbox-label">
+          <input
+            v-model="form.active"
+            type="checkbox"
+          />
+          User Aktif
+        </label>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn-primary">{{ isEditMode ? 'Update' : 'Simpan' }}</button>
-        <button type="button" @click="batal" class="btn-secondary">Batal</button>
+        <button
+          type="submit"
+          class="btn-primary"
+          :disabled="loading"
+        >
+          {{
+            loading
+              ? 'Menyimpan...'
+              : (isEditMode ? 'Update' : 'Simpan')
+          }}
+        </button>
+
+        <button
+          type="button"
+          @click="batal"
+          class="btn-secondary"
+          :disabled="loading"
+        >
+          Batal
+        </button>
       </div>
+
     </form>
   </div>
 </template>
@@ -153,10 +282,9 @@ label {
   font-weight: 600;
   color: #4a5568;
   font-size: 13px;
-  letter-spacing: 0.01em;
 }
 
-input, select, textarea {
+input {
   width: 100%;
   padding: 11px 14px;
   border: 1.5px solid #e3edf7;
@@ -166,36 +294,28 @@ input, select, textarea {
   font-family: inherit;
   background: #fbfdff;
   color: #1e2a3a;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-textarea {
-  resize: vertical;
-  min-height: 90px;
-}
-
-input::placeholder, textarea::placeholder {
-  color: #a0aec0;
-}
-
-input:focus, select:focus, textarea:focus {
+input:focus {
   outline: none;
   border-color: #4a9eeb;
   background: white;
   box-shadow: 0 0 0 4px rgba(74, 158, 235, 0.12);
 }
 
-input:hover, select:hover, textarea:hover {
-  border-color: #cfe4fb;
+.checkbox-row {
+  margin-top: 4px;
 }
 
-.preview-img {
-  margin-top: 12px;
-  max-width: 100%;
-  max-height: 240px;
-  border-radius: 10px;
-  border: 1px solid #eef4fa;
-  display: block;
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  width: auto;
 }
 
 .form-actions {
@@ -206,46 +326,38 @@ input:hover, select:hover, textarea:hover {
   border-top: 1px solid #f0f4f8;
 }
 
-.btn-primary {
-  background-color: #4a9eeb;
-  color: white;
-  border: none;
+.btn-primary,
+.btn-secondary {
   padding: 11px 24px;
   border-radius: 10px;
   cursor: pointer;
   font-weight: 600;
   font-family: inherit;
   font-size: 14px;
-  transition: background-color 0.2s, transform 0.1s;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #4a9eeb;
+  color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: #2b7cd3;
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.btn-primary:disabled {
-  background-color: #b8d9f7;
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
 .btn-secondary {
   background-color: #f4f7fa;
   color: #4a5568;
-  border: none;
-  padding: 11px 24px;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 600;
-  font-family: inherit;
-  font-size: 14px;
-  transition: background-color 0.2s;
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
   background-color: #e6ebf1;
 }
 
