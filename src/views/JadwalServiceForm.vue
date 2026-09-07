@@ -30,6 +30,10 @@ const canManage = computed(() => {
   return ['admin', 'uid'].includes(role.value)
 })
 
+const isAdmin = computed(() => {
+  return role.value === 'admin'
+})
+
 const isEditMode = computed(() => {
   return !!route.params.id
 })
@@ -41,7 +45,9 @@ const form = ref({
   km: null,
   picDriver: '',
   tanggalService: '',
-  keterangan: ''
+  keterangan: '',
+  status: 'Open',
+  tindakLanjut: ''
 })
 
 // =========================
@@ -70,7 +76,9 @@ const ambilDataJadwal = async () => {
       km: jadwal.km ?? null,
       picDriver: jadwal.picDriver || '',
       tanggalService: jadwal.tanggalService || '',
-      keterangan: jadwal.keterangan || ''
+      keterangan: jadwal.keterangan || '',
+      status: jadwal.status || 'Open',
+      tindakLanjut: jadwal.tindakLanjut || ''
     }
   } catch (error) {
     errorMsg.value =
@@ -90,7 +98,8 @@ const ambilDataJadwal = async () => {
 
 const submitForm = async () => {
   if (!canManage.value) {
-    errorMsg.value = 'Anda tidak memiliki akses untuk mengelola jadwal service.'
+    errorMsg.value =
+      'Anda tidak memiliki akses untuk mengelola jadwal service.'
     return
   }
 
@@ -98,44 +107,63 @@ const submitForm = async () => {
   errorMsg.value = ''
 
   try {
-    const payload = {
-      nomorKendaraan: form.value.nomorKendaraan,
-      dealer: form.value.dealer || null,
-      km: form.value.km,
-      picDriver: form.value.picDriver || null,
-      tanggalService: form.value.tanggalService,
-      keterangan: form.value.keterangan || null,
-      username: currentUser.value?.username || ''
-    }
 
-    if (isEditMode.value) {
+    /*
+     * =========================
+     * UID
+     * =========================
+     *
+     * UID hanya mengirim status.
+     */
+    if (role.value === 'uid') {
+
       await api.put(
         `/jadwal-service/${form.value.id}`,
-        payload
+        {
+          status: form.value.status
+        }
+      )
+
+      showToast(
+        'Status jadwal service berhasil diupdate!'
+      )
+    }
+
+    /*
+     * =========================
+     * ADMIN
+     * =========================
+     *
+     * Admin boleh mengubah:
+     * - status
+     * - tindak lanjut
+     */
+    if (role.value === 'admin') {
+
+      await api.put(
+        `/jadwal-service/${form.value.id}`,
+        {
+          status: form.value.status,
+          tindakLanjut: form.value.tindakLanjut
+        }
       )
 
       showToast(
         'Jadwal service berhasil diupdate!'
       )
-    } else {
-      await api.post(
-        '/jadwal-service',
-        payload
-      )
-
-      showToast(
-        'Jadwal service berhasil ditambahkan!'
-      )
     }
 
     router.push('/jadwal-service')
+
   } catch (error) {
+
     errorMsg.value =
       'Gagal menyimpan jadwal service: ' +
       (
         error.response?.data?.error ||
         error.message
       )
+
   } finally {
     loading.value = false
   }
@@ -161,11 +189,7 @@ onMounted(() => {
 <template>
   <div>
     <h2>
-      {{
-        isEditMode
-          ? 'Edit Jadwal Service'
-          : 'Tambah Jadwal Service'
-      }}
+      Detail Jadwal Service
     </h2>
 
     <!-- ERROR -->
@@ -190,8 +214,7 @@ onMounted(() => {
         <input
           v-model="form.nomorKendaraan"
           type="text"
-          required
-          placeholder="Contoh: EV-001"
+          readonly
         />
       </div>
 
@@ -204,7 +227,7 @@ onMounted(() => {
         <input
           v-model="form.dealer"
           type="text"
-          placeholder="Nama dealer atau bengkel"
+          readonly
         />
       </div>
 
@@ -215,10 +238,9 @@ onMounted(() => {
         </label>
 
         <input
-          v-model.number="form.km"
+          v-model="form.km"
           type="number"
-          min="0"
-          placeholder="Kilometer kendaraan"
+          readonly
         />
       </div>
 
@@ -231,7 +253,7 @@ onMounted(() => {
         <input
           v-model="form.picDriver"
           type="text"
-          placeholder="Nama atau kontak PIC driver"
+          readonly
         />
       </div>
 
@@ -244,7 +266,7 @@ onMounted(() => {
         <input
           v-model="form.tanggalService"
           type="date"
-          required
+          readonly
         />
       </div>
 
@@ -257,13 +279,75 @@ onMounted(() => {
         <textarea
           v-model="form.keterangan"
           rows="3"
-          placeholder="Keterangan jadwal service..."
+          readonly
         ></textarea>
+      </div>
+
+      <!-- STATUS -->
+      <div class="form-row">
+        <label>
+          Status
+        </label>
+
+        <!-- ADMIN / UID -->
+        <select
+          v-if="canManage"
+          v-model="form.status"
+        >
+          <option value="Open">
+            Open
+          </option>
+
+          <option value="On Progress">
+            On Progress
+          </option>
+
+          <option value="Close">
+            Close
+          </option>
+
+          <option value="Cancel">
+            Cancel
+          </option>
+        </select>
+
+        <!-- ROLE LAIN -->
+        <input
+          v-else
+          v-model="form.status"
+          type="text"
+          readonly
+        />
+      </div>
+
+      <!-- TINDAK LANJUT -->
+      <div class="form-row">
+        <label>
+          Tindak Lanjut
+        </label>
+
+        <!-- ADMIN -->
+        <textarea
+          v-if="isAdmin"
+          v-model="form.tindakLanjut"
+          rows="5"
+          placeholder="Tuliskan tindak lanjut jadwal service..."
+        ></textarea>
+
+        <!-- UID / ROLE LAIN -->
+        <div
+          v-else
+          class="readonly-text"
+        >
+          {{ form.tindakLanjut || 'Belum ada tindak lanjut.' }}
+        </div>
       </div>
 
       <!-- BUTTON -->
       <div class="form-actions">
+
         <button
+          v-if="canManage"
           type="submit"
           class="btn-primary"
           :disabled="loading"
@@ -271,9 +355,7 @@ onMounted(() => {
           {{
             loading
               ? 'Menyimpan...'
-              : isEditMode
-                ? 'Update'
-                : 'Simpan'
+              : 'Simpan'
           }}
         </button>
 
@@ -283,8 +365,9 @@ onMounted(() => {
           @click="batal"
           :disabled="loading"
         >
-          Batal
+          Kembali
         </button>
+
       </div>
 
     </form>
@@ -321,7 +404,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   width: 100%;
   padding: 11px 14px;
   border: 1.5px solid #e3edf7;
@@ -331,6 +415,13 @@ textarea {
   font-family: inherit;
   background: #fbfdff;
   color: #1e2a3a;
+}
+
+input[readonly],
+textarea[readonly] {
+  background: #f7f9fc;
+  color: #5f6b7a;
+  cursor: default;
 }
 
 textarea {
@@ -344,7 +435,8 @@ textarea::placeholder {
 }
 
 input:focus,
-textarea:focus {
+textarea:focus,
+select:focus {
   outline: none;
   border-color: #4a9eeb;
   background: white;
@@ -352,8 +444,24 @@ textarea:focus {
 }
 
 input:hover,
-textarea:hover {
+textarea:hover,
+select:hover {
   border-color: #cfe4fb;
+}
+
+.readonly-text {
+  width: 100%;
+  min-height: 90px;
+  padding: 11px 14px;
+  border: 1.5px solid #e3edf7;
+  border-radius: 10px;
+  box-sizing: border-box;
+  font-size: 14px;
+  line-height: 1.6;
+  background: #f7f9fc;
+  color: #5f6b7a;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .form-actions {

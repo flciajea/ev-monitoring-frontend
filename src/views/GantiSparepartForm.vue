@@ -4,18 +4,30 @@ import { useRouter, useRoute } from 'vue-router'
 import api from '../api'
 import { useToast } from '../composables/useToast'
 
-const { showToast } = useToast()
-
 const router = useRouter()
 const route = useRoute()
+const { showToast } = useToast()
 
+
+/* =========================
+   STATE
+========================= */
+
+const loading = ref(true)
+const saving = ref(false)
 const errorMsg = ref('')
-const loading = ref(false)
-const daftarSparepart = ref([])
+
 const previewFoto = ref('')
 
+
+/* =========================
+   USER
+========================= */
+
 const currentUser = computed(() => {
-  const userData = localStorage.getItem('user')
+
+  const userData =
+    localStorage.getItem('user')
 
   if (!userData) {
     return null
@@ -26,224 +38,468 @@ const currentUser = computed(() => {
   } catch {
     return null
   }
+
 })
+
 
 const role = computed(() => {
-  return currentUser.value?.role?.toLowerCase() || ''
+
+  return (
+    currentUser.value?.role
+      ?.toLowerCase() || ''
+  )
+
 })
 
-const canManage = computed(() => {
-  return ['admin', 'uid'].includes(role.value)
-})
 
 const isAdmin = computed(() => {
+
   return role.value === 'admin'
+
 })
 
-const isEditMode = computed(() => {
-  return !!route.params.id
+
+const canManageStatus = computed(() => {
+
+  return (
+    role.value === 'admin' ||
+    role.value === 'uid'
+  )
+
 })
+
+
+/* =========================
+   FORM / DATA
+========================= */
 
 const form = ref({
+
   id: null,
+
   nomorKendaraan: '',
+
   sparepart: '',
+
   biaya: null,
+
   photoBase64Json: '',
+
   tanggal: '',
+
   keterangan: '',
+
   username: '',
-  status: 'Open'
+
+  status: 'Open',
+
+  tindakLanjut: ''
+
 })
 
 
-// =========================
-// AMBIL DAFTAR SPAREPART
-// =========================
+/* =========================
+   STATUS
+========================= */
 
-const ambilDaftarSparepart = async () => {
-  try {
-    const response = await api.get('/sparepart')
+const daftarStatus = [
 
-    daftarSparepart.value = response.data.filter(
-      sparepart => sparepart.fUsed
-    )
-  } catch (error) {
-    console.error(
-      'Gagal ambil daftar sparepart:',
-      error
-    )
+  'Open',
+
+  'On Progress',
+
+  'Close',
+
+  'Cancel'
+
+]
+
+
+const getActualStatus = (status) => {
+
+  if (!status) {
+    return 'Open'
   }
+
+  return daftarStatus.includes(status)
+    ? status
+    : 'Open'
+
 }
 
 
-// =========================
-// AMBIL DATA GANTI SPAREPART
-// =========================
+/* =========================
+   STATUS STYLE
+========================= */
 
-const ambilDataGantiSparepart = async () => {
-  if (!isEditMode.value) return
+const getStatusStyle = (status) => {
 
-  try {
-    const response = await api.get(
-      `/ganti-sparepart/${route.params.id}`
-    )
+  const actualStatus =
+    getActualStatus(status)
 
-    form.value = {
-      ...form.value,
-      ...response.data
+  const styles = {
+
+    Open: {
+      backgroundColor: '#e0f0ff',
+      color: '#2b7cd3',
+      borderColor: '#93c5fd'
+    },
+
+    'On Progress': {
+      backgroundColor: '#fff4e0',
+      color: '#d68a00',
+      borderColor: '#facc15'
+    },
+
+    Close: {
+      backgroundColor: '#e3f9e5',
+      color: '#1e9e3a',
+      borderColor: '#22c55e'
+    },
+
+    Cancel: {
+      backgroundColor: '#fdecea',
+      color: '#e74c3c',
+      borderColor: '#f87171'
     }
 
-    if (response.data.photoBase64Json) {
-      previewFoto.value = response.data.photoBase64Json
+  }
+
+  return (
+    styles[actualStatus] || {
+      backgroundColor: '#f1f5f9',
+      color: '#64748b',
+      borderColor: '#cbd5e1'
     }
-  } catch (error) {
+  )
+
+}
+
+
+/* =========================
+   FORMAT TANGGAL
+========================= */
+
+const formatTanggal = (tanggal) => {
+
+  if (!tanggal) {
+    return '-'
+  }
+
+  const date =
+    new Date(tanggal)
+
+  if (Number.isNaN(date.getTime())) {
+    return tanggal
+  }
+
+  return date.toLocaleDateString(
+    'id-ID',
+    {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }
+  )
+
+}
+
+
+/* =========================
+   AMBIL DATA
+========================= */
+
+const ambilData = async () => {
+
+  const id = route.params.id
+
+  if (!id) {
+
     errorMsg.value =
-      'Gagal ambil data: ' +
-      (
-        error.response?.data?.error ||
-        error.message
-      )
-  }
-}
+      'ID ganti sparepart tidak ditemukan'
 
+    loading.value = false
 
-// =========================
-// FOTO
-// =========================
-
-const handleFileChange = (event) => {
-  const file = event.target.files[0]
-
-  if (!file) return
-
-  const reader = new FileReader()
-
-  reader.onload = (e) => {
-    form.value.photoBase64Json = e.target.result
-    previewFoto.value = e.target.result
-  }
-
-  reader.readAsDataURL(file)
-}
-
-
-// =========================
-// SUBMIT
-// =========================
-
-const submitForm = async () => {
-  if (!canManage.value) {
-    errorMsg.value = 'Anda tidak memiliki akses untuk mengelola data.'
     return
   }
 
+
   loading.value = true
+
   errorMsg.value = ''
 
+
   try {
-    const payload = {
-      nomorKendaraan: form.value.nomorKendaraan,
-      sparepart: form.value.sparepart,
-      biaya: form.value.biaya,
-      photoBase64Json: form.value.photoBase64Json,
+
+    const response =
+      await api.get(
+        `/ganti-sparepart/${id}`
+      )
+
+
+    form.value = {
+
+      id:
+        response.data.id ?? null,
+
+      nomorKendaraan:
+        response.data.nomorKendaraan || '',
+
+      sparepart:
+        response.data.sparepart || '',
+
+      biaya:
+        response.data.biaya ?? null,
+
+      photoBase64Json:
+        response.data.photoBase64Json || '',
+
       tanggal:
-        form.value.tanggal ||
-        new Date().toISOString().split('T')[0],
-      keterangan: form.value.keterangan,
+        response.data.tanggal || '',
+
+      keterangan:
+        response.data.keterangan || '',
 
       username:
-        isEditMode.value
-          ? form.value.username
-          : currentUser.value?.username,
+        response.data.username || '',
 
       status:
-        isEditMode.value
-          ? form.value.status
-          : 'Open'
+        getActualStatus(
+          response.data.status
+        ),
+
+      tindakLanjut:
+        response.data.tindakLanjut || ''
+
     }
 
-    if (isEditMode.value) {
-      await api.put(
-        `/ganti-sparepart/${form.value.id}`,
-        payload
-      )
 
-      showToast(
-        'Data ganti sparepart berhasil diupdate!'
-      )
-    } else {
-      await api.post(
-        '/ganti-sparepart',
-        payload
-      )
+    if (
+      response.data.photoBase64Json
+    ) {
 
-      showToast(
-        'Data ganti sparepart berhasil ditambahkan!'
-      )
+      previewFoto.value =
+        response.data.photoBase64Json
+
     }
-
-    router.push('/ganti-sparepart')
 
   } catch (error) {
+
+    console.error(
+      'Gagal mengambil detail ganti sparepart:',
+      error
+    )
+
     errorMsg.value =
-      'Gagal simpan data: ' +
+      'Gagal mengambil data: ' +
       (
         error.response?.data?.error ||
+        error.response?.data?.message ||
         error.message
       )
+
   } finally {
+
     loading.value = false
+
   }
+
 }
 
 
-// =========================
-// BATAL
-// =========================
+/* =========================
+   SIMPAN PERUBAHAN
+========================= */
+
+const simpanPerubahan = async () => {
+
+  if (!canManageStatus.value) {
+
+    errorMsg.value =
+      'Anda tidak memiliki akses untuk mengubah data.'
+
+    return
+
+  }
+
+
+  saving.value = true
+
+  errorMsg.value = ''
+
+
+  try {
+
+    /*
+     * HANYA STATUS
+     * yang boleh diubah oleh Admin / UID
+     */
+
+    const payload = {
+
+      status:
+        getActualStatus(
+          form.value.status
+        )
+
+    }
+
+
+    /*
+     * TINDAK LANJUT
+     * HANYA ADMIN
+     */
+
+    if (isAdmin.value) {
+
+      payload.tindakLanjut =
+        form.value.tindakLanjut || ''
+
+    }
+
+
+    await api.put(
+
+      `/ganti-sparepart/${form.value.id}`,
+
+      payload
+
+    )
+
+
+    showToast(
+      'Data ganti sparepart berhasil diperbarui!'
+    )
+
+
+    router.push(
+      '/ganti-sparepart'
+    )
+
+  } catch (error) {
+
+    console.error(
+      'Gagal memperbarui ganti sparepart:',
+      error
+    )
+
+    errorMsg.value =
+      'Gagal menyimpan perubahan: ' +
+      (
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message
+      )
+
+  } finally {
+
+    saving.value = false
+
+  }
+
+}
+
+
+/* =========================
+   BATAL / KEMBALI
+========================= */
 
 const batal = () => {
-  router.push('/ganti-sparepart')
+
+  router.push(
+    '/ganti-sparepart'
+  )
+
 }
 
 
-// =========================
-// ON MOUNTED
-// =========================
+/* =========================
+   ON MOUNTED
+========================= */
 
 onMounted(() => {
-  ambilDaftarSparepart()
-  ambilDataGantiSparepart()
+
+  ambilData()
+
 })
+
 </script>
 
 
 <template>
-  <div>
 
-    <h2>
-      {{
-        isEditMode
-          ? 'Edit Ganti Sparepart'
-          : 'Ganti Sparepart Fast Moving'
-      }}
-    </h2>
+  <div class="detail-page">
+
+    <!-- =========================
+         HEADER
+    ========================= -->
+
+    <div class="page-header">
+
+      <div>
+
+        <h2>
+          Detail Ganti Sparepart
+        </h2>
+
+        <p>
+          Informasi penggantian sparepart kendaraan
+        </p>
+
+      </div>
+
+    </div>
 
 
-    <!-- ERROR -->
+    <!-- =========================
+         LOADING
+    ========================= -->
 
-    <p
-      v-if="errorMsg"
-      class="error-text"
+    <div
+      v-if="loading"
+      class="loading-box"
     >
+
+      <div class="spinner"></div>
+
+      <p>
+        Memuat data...
+      </p>
+
+    </div>
+
+
+    <!-- =========================
+         ERROR
+    ========================= -->
+
+    <div
+      v-else-if="errorMsg"
+      class="error-box"
+    >
+
       {{ errorMsg }}
-    </p>
+
+    </div>
 
 
-    <form
-      @submit.prevent="submitForm"
-      class="form-card"
+    <!-- =========================
+         DETAIL
+    ========================= -->
+
+    <div
+      v-else
+      class="detail-card"
     >
+
+      <!-- =========================
+           INFORMASI KENDARAAN
+      ========================= -->
+
+      <div class="section-title">
+        Informasi Kendaraan
+      </div>
+
 
       <!-- NOMOR KENDARAAN -->
 
@@ -254,10 +510,11 @@ onMounted(() => {
         </label>
 
         <input
-          v-model="form.nomorKendaraan"
+          :value="
+            form.nomorKendaraan || '-'
+          "
           type="text"
-          required
-          placeholder="Contoh: EV-001"
+          readonly
         />
 
       </div>
@@ -271,24 +528,13 @@ onMounted(() => {
           Sparepart
         </label>
 
-        <select
-          v-model="form.sparepart"
-          required
-        >
-
-          <option value="">
-            - Pilih Sparepart -
-          </option>
-
-          <option
-            v-for="s in daftarSparepart"
-            :key="s.id"
-            :value="s.namaSparepart"
-          >
-            {{ s.namaSparepart }}
-          </option>
-
-        </select>
+        <input
+          :value="
+            form.sparepart || '-'
+          "
+          type="text"
+          readonly
+        />
 
       </div>
 
@@ -298,14 +544,18 @@ onMounted(() => {
       <div class="form-row">
 
         <label>
-          Biaya (Rp)
+          Biaya
         </label>
 
         <input
-          v-model.number="form.biaya"
-          type="number"
-          min="0"
-          placeholder="150000"
+          :value="
+            form.biaya !== null &&
+            form.biaya !== undefined
+              ? `Rp ${form.biaya}`
+              : '-'
+          "
+          type="text"
+          readonly
         />
 
       </div>
@@ -320,235 +570,568 @@ onMounted(() => {
         </label>
 
         <input
-          v-model="form.tanggal"
-          type="date"
-          required
+          :value="
+            formatTanggal(form.tanggal)
+          "
+          type="text"
+          readonly
         />
 
       </div>
 
 
-      <!-- KETERANGAN -->
+      <!-- USERNAME -->
 
       <div class="form-row">
 
         <label>
-          Keterangan
+          Pengaju
+        </label>
+
+        <input
+          :value="
+            form.username || '-'
+          "
+          type="text"
+          readonly
+        />
+
+      </div>
+
+
+      <!-- =========================
+           KETERANGAN
+      ========================= -->
+
+      <div class="section-title section-spacing">
+        Keterangan
+      </div>
+
+
+      <div class="form-row">
+
+        <label>
+          Keterangan Penggantian
         </label>
 
         <textarea
-          v-model="form.keterangan"
-          rows="3"
-          placeholder="Keterangan penggantian sparepart..."
+          :value="
+            form.keterangan || '-'
+          "
+          rows="4"
+          readonly
         ></textarea>
 
       </div>
 
 
-      <!-- FOTO -->
+      <!-- =========================
+           FOTO
+      ========================= -->
 
       <div class="form-row">
 
         <label>
-          Foto Bukti (opsional)
+          Foto Bukti
         </label>
 
-        <input
-          type="file"
-          accept="image/*"
-          @change="handleFileChange"
-        />
 
-        <img
+        <div
           v-if="previewFoto"
-          :src="previewFoto"
-          class="preview-img"
-        />
+          class="photo-container"
+        >
+
+          <img
+            :src="previewFoto"
+            alt="Foto bukti penggantian sparepart"
+            class="preview-img"
+          />
+
+        </div>
+
+
+        <div
+          v-else
+          class="no-photo"
+        >
+
+          Tidak ada foto
+
+        </div>
 
       </div>
 
 
-      <!-- STATUS -->
+      <!-- =========================
+           STATUS
+      ========================= -->
 
-      <div
-        v-if="isAdmin && isEditMode"
-        class="form-row"
-      >
+      <div class="section-title section-spacing">
+        Proses
+      </div>
+
+
+      <div class="form-row">
 
         <label>
           Status
         </label>
 
+
+        <!-- ADMIN / UID -->
+
         <select
+          v-if="canManageStatus"
           v-model="form.status"
+          class="status-select"
+          :style="
+            getStatusStyle(
+              form.status
+            )
+          "
+          :disabled="saving"
         >
 
-          <option value="Open">
-            Open
-          </option>
+          <option
+            v-for="
+              status in daftarStatus
+            "
+            :key="status"
+            :value="status"
+          >
 
-          <option value="On Progress">
-            On Progress
-          </option>
+            {{ status }}
 
-          <option value="Close">
-            Close
-          </option>
-
-          <option value="Cancel">
-            Cancel
           </option>
 
         </select>
 
+
+        <!-- DRIVER -->
+
+        <div
+          v-else
+          class="status-badge"
+          :style="
+            getStatusStyle(
+              form.status
+            )
+          "
+        >
+
+          {{ getActualStatus(form.status) }}
+
+        </div>
+
       </div>
 
 
-      <!-- BUTTON -->
+      <!-- =========================
+           TINDAK LANJUT
+      ========================= -->
+
+      <div class="form-row">
+
+        <label>
+          Tindak Lanjut
+        </label>
+
+
+        <!-- ADMIN -->
+
+        <textarea
+          v-if="isAdmin"
+          v-model="form.tindakLanjut"
+          rows="5"
+          placeholder="Tulis tindak lanjut penggantian sparepart..."
+          :disabled="saving"
+        ></textarea>
+
+
+        <!-- UID / DRIVER -->
+
+        <div
+          v-else
+          class="readonly-followup"
+        >
+
+          {{
+            form.tindakLanjut ||
+            'Belum ada tindak lanjut'
+          }}
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           ACTION
+      ========================= -->
 
       <div class="form-actions">
 
         <button
-          type="submit"
+          v-if="canManageStatus"
+          type="button"
           class="btn-primary"
-          :disabled="loading"
+          :disabled="saving"
+          @click="simpanPerubahan"
         >
+
           {{
-            loading
+            saving
               ? 'Menyimpan...'
-              : (
-                  isEditMode
-                    ? 'Update'
-                    : 'Simpan'
-                )
+              : 'Simpan Perubahan'
           }}
+
         </button>
+
 
         <button
           type="button"
-          @click="batal"
           class="btn-secondary"
+          @click="batal"
         >
-          Batal
+
+          Kembali
+
         </button>
 
       </div>
 
-    </form>
+    </div>
 
   </div>
+
 </template>
 
 
 <style scoped>
 
-h2 {
+/* =========================
+   PAGE
+========================= */
+
+.detail-page {
+  width: 100%;
+  max-width: 100%;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.page-header {
+  margin-bottom: 22px;
+}
+
+.page-header h2 {
+  margin: 0;
   color: #1e2a3a;
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 24px;
 }
 
-.form-card {
-  background: white;
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(58, 141, 222, 0.1);
-  max-width: 520px;
-  border: 1px solid #eef4fa;
+.page-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
 }
+
+
+/* =========================
+   CARD
+========================= */
+
+.detail-card {
+  width: 100%;
+  max-width: 720px;
+
+  background: white;
+
+  padding: 28px;
+
+  border-radius: 16px;
+
+  border: 1px solid #eef4fa;
+
+  box-shadow:
+    0 4px 20px
+    rgba(58, 141, 222, 0.08);
+
+  box-sizing: border-box;
+}
+
+
+/* =========================
+   SECTION
+========================= */
+
+.section-title {
+  margin-bottom: 18px;
+
+  color: #2563eb;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  padding-bottom: 9px;
+
+  border-bottom: 1px solid #e5eef8;
+}
+
+.section-spacing {
+  margin-top: 28px;
+}
+
+
+/* =========================
+   FORM ROW
+========================= */
 
 .form-row {
   margin-bottom: 20px;
 }
 
-label {
+.form-row label {
   display: block;
+
   margin-bottom: 8px;
-  font-weight: 600;
+
   color: #4a5568;
+
   font-size: 13px;
-  letter-spacing: 0.01em;
+
+  font-weight: 600;
 }
 
+
+/* =========================
+   INPUT
+========================= */
+
 input,
-select,
-textarea {
+textarea,
+select {
   width: 100%;
+
   padding: 11px 14px;
+
   border: 1.5px solid #e3edf7;
+
   border-radius: 10px;
+
   box-sizing: border-box;
-  font-size: 14px;
+
   font-family: inherit;
-  background: #fbfdff;
+
+  font-size: 14px;
+
   color: #1e2a3a;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s,
-    background 0.2s;
+
+  background: #fbfdff;
 }
+
+
+/* =========================
+   READONLY
+========================= */
+
+input[readonly],
+textarea[readonly] {
+  background: #f7f9fc;
+
+  color: #475569;
+
+  cursor: default;
+}
+
+
+/* =========================
+   TEXTAREA
+========================= */
 
 textarea {
   resize: vertical;
+
   min-height: 90px;
+
+  line-height: 1.5;
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: #a0aec0;
+
+/* =========================
+   FOLLOW UP READONLY
+========================= */
+
+.readonly-followup {
+  min-height: 90px;
+
+  padding: 13px 14px;
+
+  box-sizing: border-box;
+
+  border: 1.5px solid #e3edf7;
+
+  border-radius: 10px;
+
+  background: #f7f9fc;
+
+  color: #475569;
+
+  font-size: 14px;
+
+  line-height: 1.5;
+
+  white-space: pre-wrap;
+
+  overflow-wrap: anywhere;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+
+/* =========================
+   STATUS
+========================= */
+
+.status-select {
+  font-weight: 600;
+
+  cursor: pointer;
+
+  border: 1.5px solid;
+
   outline: none;
-  border-color: #4a9eeb;
-  background: white;
-  box-shadow:
-    0 0 0 4px rgba(74, 158, 235, 0.12);
 }
 
-input:hover,
-select:hover,
-textarea:hover {
-  border-color: #cfe4fb;
+.status-select:focus {
+  box-shadow:
+    0 0 0 3px
+    rgba(37, 99, 235, 0.1);
+}
+
+.status-select:disabled {
+  opacity: 0.6;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================
+   STATUS BADGE
+========================= */
+
+.status-badge {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  min-width: 110px;
+
+  padding: 9px 16px;
+
+  border-radius: 20px;
+
+  border: 1.5px solid;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  box-sizing: border-box;
+}
+
+
+/* =========================
+   PHOTO
+========================= */
+
+.photo-container {
+  width: 100%;
 }
 
 .preview-img {
-  margin-top: 12px;
-  max-width: 100%;
-  max-height: 240px;
-  border-radius: 10px;
-  border: 1px solid #eef4fa;
   display: block;
+
+  max-width: 100%;
+
+  max-height: 300px;
+
+  object-fit: contain;
+
+  border-radius: 10px;
+
+  border: 1px solid #e3edf7;
+
+  background: #f8fafc;
 }
+
+.no-photo {
+  padding: 15px;
+
+  border-radius: 10px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e5e7eb;
+
+  color: #9ca3af;
+
+  font-size: 13px;
+
+  font-style: italic;
+}
+
+
+/* =========================
+   ACTION
+========================= */
 
 .form-actions {
   display: flex;
+
   gap: 12px;
-  margin-top: 28px;
+
+  margin-top: 30px;
+
   padding-top: 20px;
-  border-top: 1px solid #f0f4f8;
+
+  border-top: 1px solid #eef2f7;
 }
 
+
+/* =========================
+   PRIMARY
+========================= */
+
 .btn-primary {
-  background-color: #4a9eeb;
+  background: #4a9eeb;
+
   color: white;
+
   border: none;
-  padding: 11px 24px;
-  border-radius: 10px;
+
+  padding: 11px 22px;
+
+  border-radius: 9px;
+
   cursor: pointer;
-  font-weight: 600;
+
   font-family: inherit;
+
   font-size: 14px;
+
+  font-weight: 600;
+
   transition:
-    background-color 0.2s,
+    background 0.2s,
     transform 0.1s;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #2b7cd3;
+  background: #2b7cd3;
 }
 
 .btn-primary:active:not(:disabled) {
@@ -556,36 +1139,152 @@ textarea:hover {
 }
 
 .btn-primary:disabled {
-  background-color: #b8d9f7;
+  background: #b8d9f7;
+
   cursor: not-allowed;
 }
 
+
+/* =========================
+   SECONDARY
+========================= */
+
 .btn-secondary {
-  background-color: #f4f7fa;
+  background: #f4f7fa;
+
   color: #4a5568;
+
   border: none;
-  padding: 11px 24px;
-  border-radius: 10px;
+
+  padding: 11px 22px;
+
+  border-radius: 9px;
+
   cursor: pointer;
-  font-weight: 600;
+
   font-family: inherit;
+
   font-size: 14px;
+
+  font-weight: 600;
+
   transition:
-    background-color 0.2s;
+    background 0.2s;
 }
 
 .btn-secondary:hover {
-  background-color: #e6ebf1;
+  background: #e6ebf1;
 }
 
-.error-text {
-  color: #c0392b;
-  background: #fdecea;
-  border: 1px solid #f8d7d3;
-  padding: 12px 16px;
+
+/* =========================
+   ERROR
+========================= */
+
+.error-box {
+  max-width: 720px;
+
+  padding: 14px 16px;
+
   border-radius: 10px;
+
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+
+  color: #b91c1c;
+
   font-size: 14px;
-  margin-bottom: 20px;
+}
+
+
+/* =========================
+   LOADING
+========================= */
+
+.loading-box {
+  min-height: 250px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #64748b;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+
+  margin-bottom: 12px;
+
+  border: 3px solid #e2e8f0;
+
+  border-top-color: #2563eb;
+
+  border-radius: 50%;
+
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+
+  to {
+    transform: rotate(360deg);
+  }
+
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  .page-header h2 {
+    font-size: 21px;
+  }
+
+  .page-header p {
+    font-size: 12px;
+  }
+
+  .detail-card {
+    padding: 20px;
+
+    border-radius: 12px;
+  }
+
+  .section-title {
+    font-size: 14px;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 13px;
+
+    padding: 10px 12px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+  }
+
+  .preview-img {
+    max-height: 240px;
+  }
+
 }
 
 </style>

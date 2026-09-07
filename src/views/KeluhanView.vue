@@ -58,6 +58,10 @@ const isDriver = computed(() => {
   return role.value === 'driver'
 })
 
+const isAdmin = computed(() => {
+  return role.value === 'admin'
+})
+
 const canManageStatus = computed(() => {
   return ['admin', 'uid'].includes(role.value)
 })
@@ -147,6 +151,9 @@ const filteredKeluhan = computed(() => {
     const status =
       keluhan.status?.toLowerCase() || ''
 
+    const tindakLanjut =
+      keluhan.tindakLanjut?.toLowerCase() || ''
+
     return (
       nomorKendaraan.includes(q) ||
       pengaduan.includes(q) ||
@@ -155,7 +162,8 @@ const filteredKeluhan = computed(() => {
       uid.includes(q) ||
       up3.includes(q) ||
       unit.includes(q) ||
-      status.includes(q)
+      status.includes(q) ||
+      tindakLanjut.includes(q)
     )
   })
 })
@@ -507,6 +515,26 @@ const tambahKeluhan = () => {
 }
 
 /* =========================
+   DETAIL / TINDAK LANJUT
+========================= */
+
+/*
+ * Tombol Detail hanya digunakan
+ * untuk membuka halaman detail.
+ *
+ * Admin menggunakan halaman ini
+ * untuk mengisi / mengedit tindak lanjut.
+ */
+const lihatDetail = (id) => {
+
+  router.push(
+    `/keluhan/edit/${id}`
+  )
+
+}
+
+
+/* =========================
    UPDATE STATUS
 ========================= */
 
@@ -738,6 +766,8 @@ onMounted(() => {
 
           <col class="col-status">
 
+          <col class="col-tindak-lanjut">
+
         </colgroup>
 
 
@@ -771,6 +801,10 @@ onMounted(() => {
 
             <th>
               Status
+            </th>
+
+            <th>
+              Tindak Lanjut
             </th>
 
           </tr>
@@ -1096,6 +1130,107 @@ onMounted(() => {
 
             </td>
 
+
+            <!-- =========================
+                 TINDAK LANJUT
+            ========================= -->
+
+            <td class="tindak-lanjut-cell">
+
+              <!--
+                BELUM ADA TINDAK LANJUT
+              -->
+
+              <template
+                v-if="
+                  !keluhan.tindakLanjut ||
+                  !keluhan.tindakLanjut.trim()
+                "
+              >
+
+                <!--
+                  ADMIN:
+                  tombol Detail untuk
+                  mengisi tindak lanjut
+                -->
+
+                <button
+                  v-if="isAdmin"
+                  type="button"
+                  class="btn-detail"
+                  @click="
+                    lihatDetail(
+                      keluhan.id
+                    )
+                  "
+                >
+
+                  Detail
+
+                </button>
+
+
+                <!--
+                  UID / DRIVER:
+                  hanya melihat status
+                  tindak lanjut
+                -->
+
+                <span
+                  v-else
+                  class="no-tindak-lanjut"
+                >
+
+                  Belum ada
+
+                </span>
+
+              </template>
+
+
+              <!--
+                SUDAH ADA TINDAK LANJUT
+              -->
+
+              <template v-else>
+
+                <div class="tindak-lanjut-wrapper">
+
+                  <span class="tindak-lanjut-text">
+
+                    {{ keluhan.tindakLanjut }}
+
+                  </span>
+
+
+                  <!--
+                    PENSIL HANYA ADMIN
+                  -->
+
+                  <button
+                    v-if="isAdmin"
+                    type="button"
+                    class="btn-edit-tindak"
+                    title="Edit tindak lanjut"
+                    @click="
+                      lihatDetail(
+                        keluhan.id
+                      )
+                    "
+                  >
+
+                    <span class="edit-icon">
+                      ✎
+                    </span>
+
+                  </button>
+
+                </div>
+
+              </template>
+
+            </td>
+
           </tr>
 
         </tbody>
@@ -1238,15 +1373,15 @@ table {
 ========================= */
 
 .col-id {
-  width: 5%;
+  width: 4%;
 }
 
 .col-kendaraan {
-  width: 13%;
+  width: 12%;
 }
 
 .col-pengaduan {
-  width: 27%;
+  width: 22%;
 }
 
 .col-foto {
@@ -1254,14 +1389,18 @@ table {
 }
 
 .col-tanggal {
-  width: 14%;
+  width: 12%;
 }
 
 .col-pengaju {
-  width: 19%;
+  width: 17%;
 }
 
 .col-status {
+  width: 11%;
+}
+
+.col-tindak-lanjut {
   width: 14%;
 }
 
@@ -1565,6 +1704,123 @@ tbody tr.row-deadline-warning:hover td {
 
 
 /* =========================
+   TINDAK LANJUT
+========================= */
+
+.tindak-lanjut-cell {
+  vertical-align: middle;
+}
+
+.tindak-lanjut-wrapper {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.tindak-lanjut-text {
+  flex: 1;
+  min-width: 0;
+  color: #475569;
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.no-tindak-lanjut {
+  color: #9ca3af;
+  font-size: 11px;
+  font-style: italic;
+}
+
+
+/* =========================
+   DETAIL BUTTON
+========================= */
+
+.btn-detail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 7px 12px;
+
+  border: none;
+  border-radius: 7px;
+
+  background: #eaf3ff;
+  color: #2563eb;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s,
+    transform 0.1s;
+}
+
+.btn-detail:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.btn-detail:active {
+  transform: scale(0.97);
+}
+
+
+/* =========================
+   EDIT ICON
+========================= */
+
+.btn-edit-tindak {
+  flex-shrink: 0;
+
+  width: 28px;
+  height: 28px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.1s;
+}
+
+.btn-edit-tindak:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+
+.btn-edit-tindak:active {
+  transform: scale(0.94);
+}
+
+.edit-icon {
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+
+/* =========================
    BUTTON
 ========================= */
 
@@ -1676,6 +1932,21 @@ tbody tr.row-deadline-warning:hover td {
   .pengaju-unit {
     font-size: 9px;
   }
+
+  .tindak-lanjut-text {
+    font-size: 10px;
+  }
+
+  .btn-detail {
+    font-size: 10px;
+    padding: 6px 9px;
+  }
+
+  .btn-edit-tindak {
+    width: 26px;
+    height: 26px;
+  }
+
 }
 
 
@@ -1747,6 +2018,29 @@ tbody tr.row-deadline-warning:hover td {
   .pengaju-unit {
     font-size: 8px;
   }
+
+  .tindak-lanjut-text {
+    font-size: 9px;
+  }
+
+  .no-tindak-lanjut {
+    font-size: 9px;
+  }
+
+  .btn-detail {
+    font-size: 9px;
+    padding: 5px 8px;
+  }
+
+  .btn-edit-tindak {
+    width: 24px;
+    height: 24px;
+  }
+
+  .edit-icon {
+    font-size: 14px;
+  }
+
 }
 
 
@@ -1784,6 +2078,28 @@ tbody tr.row-deadline-warning:hover td {
   .pengaju-wilayah,
   .pengaju-unit {
     font-size: 7px;
+  }
+
+  .tindak-lanjut-text {
+    font-size: 8px;
+  }
+
+  .no-tindak-lanjut {
+    font-size: 8px;
+  }
+
+  .btn-detail {
+    font-size: 8px;
+    padding: 4px 6px;
+  }
+
+  .btn-edit-tindak {
+    width: 22px;
+    height: 22px;
+  }
+
+  .edit-icon {
+    font-size: 13px;
   }
 
 }
