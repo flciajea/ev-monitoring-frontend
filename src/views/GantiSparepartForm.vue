@@ -25,9 +25,7 @@ const previewFoto = ref('')
 ========================= */
 
 const currentUser = computed(() => {
-
-  const userData =
-    localStorage.getItem('user')
+  const userData = localStorage.getItem('user')
 
   if (!userData) {
     return null
@@ -38,34 +36,31 @@ const currentUser = computed(() => {
   } catch {
     return null
   }
-
 })
 
 
-const role = computed(() => {
+/* =========================
+   ROLE
+========================= */
 
+const role = computed(() => {
   return (
     currentUser.value?.role
       ?.toLowerCase() || ''
   )
-
 })
 
 
 const isAdmin = computed(() => {
-
   return role.value === 'admin'
-
 })
 
 
 const canManageStatus = computed(() => {
-
   return (
     role.value === 'admin' ||
     role.value === 'uid'
   )
-
 })
 
 
@@ -74,27 +69,17 @@ const canManageStatus = computed(() => {
 ========================= */
 
 const form = ref({
-
   id: null,
-
   nomorKendaraan: '',
-
   sparepart: '',
-
   biaya: null,
-
   photoBase64Json: '',
-
   tanggal: '',
-
+  tanggalTindakLanjut: '',
   keterangan: '',
-
   username: '',
-
   status: 'Open',
-
   tindakLanjut: ''
-
 })
 
 
@@ -103,20 +88,14 @@ const form = ref({
 ========================= */
 
 const daftarStatus = [
-
   'Open',
-
   'On Progress',
-
   'Close',
-
   'Cancel'
-
 ]
 
 
 const getActualStatus = (status) => {
-
   if (!status) {
     return 'Open'
   }
@@ -124,7 +103,6 @@ const getActualStatus = (status) => {
   return daftarStatus.includes(status)
     ? status
     : 'Open'
-
 }
 
 
@@ -133,9 +111,7 @@ const getActualStatus = (status) => {
 ========================= */
 
 const getStatusStyle = (status) => {
-
-  const actualStatus =
-    getActualStatus(status)
+  const actualStatus = getActualStatus(status)
 
   const styles = {
 
@@ -172,7 +148,6 @@ const getStatusStyle = (status) => {
       borderColor: '#cbd5e1'
     }
   )
-
 }
 
 
@@ -181,13 +156,11 @@ const getStatusStyle = (status) => {
 ========================= */
 
 const formatTanggal = (tanggal) => {
-
   if (!tanggal) {
     return '-'
   }
 
-  const date =
-    new Date(tanggal)
+  const date = new Date(tanggal)
 
   if (Number.isNaN(date.getTime())) {
     return tanggal
@@ -201,7 +174,6 @@ const formatTanggal = (tanggal) => {
       year: 'numeric'
     }
   )
-
 }
 
 
@@ -210,11 +182,9 @@ const formatTanggal = (tanggal) => {
 ========================= */
 
 const ambilData = async () => {
-
   const id = route.params.id
 
   if (!id) {
-
     errorMsg.value =
       'ID ganti sparepart tidak ditemukan'
 
@@ -223,19 +193,14 @@ const ambilData = async () => {
     return
   }
 
-
   loading.value = true
-
   errorMsg.value = ''
-
 
   try {
 
-    const response =
-      await api.get(
-        `/ganti-sparepart/${id}`
-      )
-
+    const response = await api.get(
+      `/ganti-sparepart/${id}`
+    )
 
     form.value = {
 
@@ -257,6 +222,9 @@ const ambilData = async () => {
       tanggal:
         response.data.tanggal || '',
 
+      tanggalTindakLanjut:
+        response.data.tanggalTindakLanjut || '',
+
       keterangan:
         response.data.keterangan || '',
 
@@ -277,10 +245,8 @@ const ambilData = async () => {
     if (
       response.data.photoBase64Json
     ) {
-
       previewFoto.value =
         response.data.photoBase64Json
-
     }
 
   } catch (error) {
@@ -303,7 +269,6 @@ const ambilData = async () => {
     loading.value = false
 
   }
-
 }
 
 
@@ -319,20 +284,16 @@ const simpanPerubahan = async () => {
       'Anda tidak memiliki akses untuk mengubah data.'
 
     return
-
   }
 
-
   saving.value = true
-
   errorMsg.value = ''
-
 
   try {
 
     /*
-     * HANYA STATUS
-     * yang boleh diubah oleh Admin / UID
+     * STATUS
+     * dapat diubah oleh Admin / UID
      */
 
     const payload = {
@@ -347,7 +308,8 @@ const simpanPerubahan = async () => {
 
     /*
      * TINDAK LANJUT
-     * HANYA ADMIN
+     * dan TANGGAL TINDAK LANJUT
+     * hanya dapat diubah oleh ADMIN
      */
 
     if (isAdmin.value) {
@@ -355,15 +317,15 @@ const simpanPerubahan = async () => {
       payload.tindakLanjut =
         form.value.tindakLanjut || ''
 
+      payload.tanggalTindakLanjut =
+        form.value.tanggalTindakLanjut || null
+
     }
 
 
     await api.put(
-
       `/ganti-sparepart/${form.value.id}`,
-
       payload
-
     )
 
 
@@ -405,11 +367,9 @@ const simpanPerubahan = async () => {
 ========================= */
 
 const batal = () => {
-
   router.push(
     '/ganti-sparepart'
   )
-
 }
 
 
@@ -418,9 +378,7 @@ const batal = () => {
 ========================= */
 
 onMounted(() => {
-
   ambilData()
-
 })
 
 </script>
@@ -561,12 +519,12 @@ onMounted(() => {
       </div>
 
 
-      <!-- TANGGAL -->
+      <!-- RENCANA TANGGAL -->
 
       <div class="form-row">
 
         <label>
-          Tanggal
+          Rencana Tanggal
         </label>
 
         <input
@@ -580,7 +538,7 @@ onMounted(() => {
       </div>
 
 
-      <!-- USERNAME -->
+      <!-- PENGAJU -->
 
       <div class="form-row">
 
@@ -635,7 +593,6 @@ onMounted(() => {
           Foto Bukti
         </label>
 
-
         <div
           v-if="previewFoto"
           class="photo-container"
@@ -648,7 +605,6 @@ onMounted(() => {
           />
 
         </div>
-
 
         <div
           v-else
@@ -663,13 +619,15 @@ onMounted(() => {
 
 
       <!-- =========================
-           STATUS
+           PROSES
       ========================= -->
 
       <div class="section-title section-spacing">
         Proses
       </div>
 
+
+      <!-- STATUS -->
 
       <div class="form-row">
 
@@ -693,9 +651,7 @@ onMounted(() => {
         >
 
           <option
-            v-for="
-              status in daftarStatus
-            "
+            v-for="status in daftarStatus"
             :key="status"
             :value="status"
           >
@@ -758,6 +714,47 @@ onMounted(() => {
           {{
             form.tindakLanjut ||
             'Belum ada tindak lanjut'
+          }}
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           TANGGAL TINDAK LANJUT
+      ========================= -->
+
+      <div class="form-row">
+
+        <label>
+          Tanggal Tindak Lanjut
+        </label>
+
+
+        <!-- ADMIN -->
+
+        <input
+          v-if="isAdmin"
+          v-model="form.tanggalTindakLanjut"
+          type="date"
+          :disabled="saving"
+        />
+
+
+        <!-- UID / DRIVER -->
+
+        <div
+          v-else
+          class="tanggal-tindak-lanjut-readonly"
+        >
+
+          {{
+            form.tanggalTindakLanjut
+              ? formatTanggal(
+                  form.tanggalTindakLanjut
+                )
+              : 'Belum ada tanggal tindak lanjut'
           }}
 
         </div>
@@ -988,6 +985,29 @@ textarea {
   white-space: pre-wrap;
 
   overflow-wrap: anywhere;
+}
+
+
+/* =========================
+   TANGGAL TINDAK LANJUT
+========================= */
+
+.tanggal-tindak-lanjut-readonly {
+  width: 100%;
+
+  padding: 11px 14px;
+
+  box-sizing: border-box;
+
+  border: 1.5px solid #e3edf7;
+
+  border-radius: 10px;
+
+  background: #f7f9fc;
+
+  color: #475569;
+
+  font-size: 14px;
 }
 
 
@@ -1279,6 +1299,11 @@ textarea {
   .btn-primary,
   .btn-secondary {
     width: 100%;
+  }
+
+  .tanggal-tindak-lanjut-readonly {
+    font-size: 13px;
+    padding: 10px 12px;
   }
 
   .preview-img {

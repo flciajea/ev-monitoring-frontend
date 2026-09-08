@@ -1,640 +1,338 @@
-<template>
-  <div class="page-container">
-
-    <!-- HEADER -->
-    <div class="page-header">
-      <div>
-        <h1>Jadwal Service</h1>
-        <p>Daftar jadwal service kendaraan</p>
-      </div>
-    </div>
-
-
-    <!-- SEARCH -->
-    <div class="toolbar">
-      <SearchInput
-        v-model="searchQuery"
-        placeholder="Cari kendaraan, nama driver, UID, dealer..."
-      />
-    </div>
-
-
-    <!-- LOADING -->
-    <div
-      v-if="loading"
-      class="state-box"
-    >
-      <div class="spinner"></div>
-
-      <p>
-        Memuat data jadwal service...
-      </p>
-    </div>
-
-
-    <!-- ERROR -->
-    <div
-      v-else-if="errorMsg"
-      class="error-box"
-    >
-      {{ errorMsg }}
-    </div>
-
-
-    <!-- EMPTY -->
-    <EmptyState
-      v-else-if="filteredJadwal.length === 0"
-      title="Tidak ada jadwal service"
-      description="Belum ada data jadwal service yang tersedia."
-    />
-
-
-    <!-- TABLE -->
-    <div
-      v-else
-      class="table-card"
-    >
-
-      <div class="table-wrapper">
-
-        <table>
-
-          <thead>
-
-            <tr>
-
-              <th class="col-id">
-                ID
-              </th>
-
-              <th class="col-kendaraan">
-                No. Kendaraan
-              </th>
-
-              <th class="col-nama">
-                Nama Driver
-              </th>
-
-              <th class="col-daerah">
-                UID / Daerah
-              </th>
-
-              <th class="col-dealer">
-                Dealer
-              </th>
-
-              <th class="col-km">
-                KM
-              </th>
-
-              <th class="col-tanggal">
-                Tanggal Service
-              </th>
-
-              <th class="col-keterangan">
-                Keterangan
-              </th>
-
-              <th class="col-status">
-                Status
-              </th>
-
-              <th class="col-tindak-lanjut">
-                Tindak Lanjut
-              </th>
-
-            </tr>
-
-          </thead>
-
-
-          <tbody>
-
-            <tr
-              v-for="jadwal in filteredJadwal"
-              :key="jadwal.id"
-            >
-
-              <!-- ID -->
-              <td>
-                {{ jadwal.id ?? '-' }}
-              </td>
-
-
-              <!-- NO KENDARAAN -->
-              <td class="strong">
-                {{ jadwal.nomorKendaraan || '-' }}
-              </td>
-
-
-              <!-- NAMA DRIVER -->
-              <td>
-                {{ jadwal.namaLengkap || jadwal.username || '-' }}
-              </td>
-
-
-              <!-- UID / DAERAH -->
-              <td>
-
-                <div class="daerah-info">
-
-                  <span class="uid">
-                    {{ jadwal.uid || '-' }}
-                  </span>
-
-                  <span
-                    v-if="jadwal.up3"
-                    class="up3"
-                  >
-                    {{ jadwal.up3 }}
-                  </span>
-
-                </div>
-
-              </td>
-
-
-              <!-- DEALER -->
-              <td>
-                {{ jadwal.dealer || '-' }}
-              </td>
-
-
-              <!-- KM -->
-              <td>
-                {{ jadwal.km ?? '-' }}
-              </td>
-
-
-              <!-- TANGGAL SERVICE -->
-              <td>
-
-                <span class="date-text">
-                  {{ formatTanggal(jadwal.tanggalService) }}
-                </span>
-
-              </td>
-
-
-              <!-- KETERANGAN -->
-              <td class="description">
-                {{ jadwal.keterangan || '-' }}
-              </td>
-
-
-              <!-- STATUS -->
-              <td class="status-cell">
-
-                <!-- ADMIN / UID -->
-                <select
-                  v-if="canEditStatus"
-                  :value="normalizeStatus(jadwal.status)"
-                  class="status-select"
-                  :class="getStatusClass(jadwal.status)"
-                  :disabled="updatingId === jadwal.id"
-                  @click.stop
-                  @change="ubahStatus(jadwal, $event)"
-                >
-
-                  <option value="Open">
-                    Open
-                  </option>
-
-                  <option value="On Progress">
-                    On Progress
-                  </option>
-
-                  <option value="Close">
-                    Close
-                  </option>
-
-                  <option value="Cancel">
-                    Cancel
-                  </option>
-
-                </select>
-
-
-                <!-- ROLE LAIN -->
-                <span
-                  v-else
-                  class="status-badge"
-                  :class="getStatusClass(jadwal.status)"
-                >
-                  {{ normalizeStatus(jadwal.status) }}
-                </span>
-
-
-                <!-- UPDATING -->
-                <span
-                  v-if="updatingId === jadwal.id"
-                  class="updating-text"
-                >
-                  Menyimpan...
-                </span>
-
-              </td>
-
-
-              <!-- TINDAK LANJUT -->
-              <td class="tindak-lanjut-cell">
-
-                <!-- BELUM ADA TINDAK LANJUT -->
-                <div
-                  v-if="!jadwal.tindakLanjut"
-                  class="detail-wrapper"
-                >
-
-                  <button
-                    type="button"
-                    class="btn-detail"
-                    @click="lihatDetail(jadwal.id)"
-                  >
-                    Detail
-                  </button>
-
-                </div>
-
-
-                <!-- SUDAH ADA TINDAK LANJUT -->
-                <div
-                  v-else
-                  class="tindak-lanjut-wrapper"
-                >
-
-                  <span class="tindak-lanjut-text">
-                    {{ jadwal.tindakLanjut }}
-                  </span>
-
-
-                  <!-- EDIT HANYA ADMIN -->
-                  <button
-                    v-if="isAdmin"
-                    type="button"
-                    class="btn-edit"
-                    title="Edit tindak lanjut"
-                    @click="lihatDetail(jadwal.id)"
-                  >
-                    ✎
-                  </button>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
-  </div>
-</template>
-
-
 <script setup>
-
-import {
-  ref,
-  onMounted,
-  computed
-} from 'vue'
-
-import {
-  useRouter
-} from 'vue-router'
-
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../api'
 
 import EmptyState from '../components/EmptyState.vue'
-
 import SearchInput from '../components/SearchInput.vue'
-
-
-/* =========================
-   ROUTER
-   ========================= */
 
 const router = useRouter()
 
-
 /* =========================
    DATA
-   ========================= */
+========================= */
 
 const daftarJadwal = ref([])
-
 const loading = ref(true)
-
 const errorMsg = ref('')
-
 const searchQuery = ref('')
-
-const updatingId = ref(null)
-
-
-/* =========================
-   USER
-   ========================= */
-
-const user = ref(null)
-
-try {
-
-  const storedUser =
-    localStorage.getItem('user')
-
-  if (storedUser) {
-
-    user.value =
-      JSON.parse(storedUser)
-
-  }
-
-} catch (error) {
-
-  user.value = null
-
-}
-
-
-/* =========================
-   ROLE
-   ========================= */
-
-const role = computed(() => {
-
-  return (
-    user.value?.role
-      ?.toLowerCase() || ''
-  )
-
-})
-
-
-/* =========================
-   ADMIN
-   ========================= */
-
-const isAdmin = computed(() => {
-
-  return role.value === 'admin'
-
-})
-
-
-/* =========================
-   CAN EDIT STATUS
-   ========================= */
-
-const canEditStatus =
-  computed(() => {
-
-    return (
-      role.value === 'admin' ||
-      role.value === 'uid'
-    )
-
-  })
-
-
-/* =========================
-   SEARCH
-   ========================= */
-
-const filteredJadwal =
-  computed(() => {
-
-    const query =
-      searchQuery.value
-        .trim()
-        .toLowerCase()
-
-    if (!query) {
-
-      return daftarJadwal.value
-
-    }
-
-    return daftarJadwal.value.filter(
-      (jadwal) => {
-
-        return (
-
-          String(jadwal.id ?? '')
-            .toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.nomorKendaraan
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.namaLengkap
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.username
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.uid
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.up3
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.unit
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.dealer
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          String(jadwal.km ?? '')
-            .toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.tanggalService
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.keterangan
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.status
-            ?.toLowerCase()
-            .includes(query)
-
-          ||
-
-          jadwal.tindakLanjut
-            ?.toLowerCase()
-            .includes(query)
-
-        )
-
-      }
-    )
-
-  })
-
-
-/* =========================
-   FORMAT TANGGAL
-   ========================= */
-
-const formatTanggal = (tanggal) => {
-
-  if (!tanggal) {
-
-    return '-'
-
-  }
-
-  const date =
-    new Date(tanggal)
-
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
-
-    return tanggal
-
-  }
-
-  return date.toLocaleDateString(
-    'id-ID',
-    {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }
-  )
-
-}
-
-
-/* =========================
-   NORMALIZE STATUS
-   ========================= */
-
-const normalizeStatus = (status) => {
-
-  if (!status) {
-
-    return 'Open'
-
-  }
-
-  const statusValid = [
-
-    'Open',
-
-    'On Progress',
-
-    'Close',
-
-    'Cancel'
-
-  ]
-
-  return statusValid.includes(status)
-    ? status
-    : 'Open'
-
-}
-
-
-/* =========================
-   STATUS CLASS
-   ========================= */
-
-const getStatusClass = (status) => {
-
-  const value =
-    normalizeStatus(status)
-
-  if (value === 'Open') {
-
-    return 'status-pending'
-
-  }
-
-  if (value === 'On Progress') {
-
-    return 'status-progress'
-
-  }
-
-  if (value === 'Close') {
-
-    return 'status-success'
-
-  }
-
-  if (value === 'Cancel') {
-
-    return 'status-cancel'
-
-  }
-
-  return 'status-default'
-
-}
-
 
 /* =========================
    UPDATE STATUS
-   ========================= */
+========================= */
 
-const ubahStatus = async (
+const updatingId = ref(null)
+
+/* =========================
+   USER
+========================= */
+
+const currentUser = computed(() => {
+  const userData = localStorage.getItem('user')
+
+  if (!userData) {
+    return null
+  }
+
+  try {
+    return JSON.parse(userData)
+  } catch {
+    return null
+  }
+})
+
+const role = computed(() => {
+  return currentUser.value?.role?.toLowerCase() || ''
+})
+
+const isAdmin = computed(() => {
+  return role.value === 'admin'
+})
+
+const canManageStatus = computed(() => {
+  return ['admin', 'uid'].includes(role.value)
+})
+
+/* =========================
+   STATUS
+========================= */
+
+const daftarStatus = [
+  'Open',
+  'On Progress',
+  'Close',
+  'Cancel'
+]
+
+const getActualStatus = (status) => {
+  return status || 'Open'
+}
+
+const getStatusStyle = (status) => {
+  const actualStatus = getActualStatus(status)
+
+  const styles = {
+    Open: {
+      backgroundColor: '#e0f0ff',
+      color: '#2b7cd3'
+    },
+
+    'On Progress': {
+      backgroundColor: '#fff4e0',
+      color: '#d68a00'
+    },
+
+    Close: {
+      backgroundColor: '#e3f9e5',
+      color: '#1e9e3a'
+    },
+
+    Cancel: {
+      backgroundColor: '#fdecea',
+      color: '#e74c3c'
+    }
+  }
+
+  return styles[actualStatus] || {
+    backgroundColor: '#f1f5f9',
+    color: '#64748b'
+  }
+}
+
+/* =========================
+   SEARCH
+========================= */
+
+const filteredJadwal = computed(() => {
+  const q = searchQuery.value
+    .trim()
+    .toLowerCase()
+
+  if (!q) {
+    return daftarJadwal.value
+  }
+
+  return daftarJadwal.value.filter((jadwal) => {
+
+    const id =
+      String(jadwal.id ?? '').toLowerCase()
+
+    const nomorKendaraan =
+      jadwal.nomorKendaraan?.toLowerCase() || ''
+
+    const namaLengkap =
+      jadwal.namaLengkap?.toLowerCase() || ''
+
+    const username =
+      jadwal.username?.toLowerCase() || ''
+
+    const uid =
+      jadwal.uid?.toLowerCase() || ''
+
+    const up3 =
+      jadwal.up3?.toLowerCase() || ''
+
+    const unit =
+      jadwal.unit?.toLowerCase() || ''
+
+    const dealer =
+      jadwal.dealer?.toLowerCase() || ''
+
+    const km =
+      String(jadwal.km ?? '').toLowerCase()
+
+    const tanggalService =
+      jadwal.tanggalService?.toLowerCase() || ''
+
+    const tanggalTindakLanjut =
+      jadwal.tanggalTindakLanjut
+        ?.toString()
+        .toLowerCase() || ''
+
+    const keterangan =
+      jadwal.keterangan?.toLowerCase() || ''
+
+    const status =
+      jadwal.status?.toLowerCase() || ''
+
+    const tindakLanjut =
+      jadwal.tindakLanjut?.toLowerCase() || ''
+
+    return (
+      id.includes(q) ||
+      nomorKendaraan.includes(q) ||
+      namaLengkap.includes(q) ||
+      username.includes(q) ||
+      uid.includes(q) ||
+      up3.includes(q) ||
+      unit.includes(q) ||
+      dealer.includes(q) ||
+      km.includes(q) ||
+      tanggalService.includes(q) ||
+      tanggalTindakLanjut.includes(q) ||
+      keterangan.includes(q) ||
+      status.includes(q) ||
+      tindakLanjut.includes(q)
+    )
+  })
+})
+
+/* =========================
+   FORMAT TANGGAL
+========================= */
+
+const formatTanggal = (tanggal) => {
+  if (!tanggal) {
+    return '-'
+  }
+
+  const date = new Date(tanggal)
+
+  if (Number.isNaN(date.getTime())) {
+    return tanggal
+  }
+
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
+
+/* =========================
+   INDIKATOR DEADLINE
+========================= */
+
+const getDeadlineInfo = (tanggal, status) => {
+
+  const actualStatus =
+    getActualStatus(status)
+
+  /*
+   * Kalau sudah selesai atau dibatalkan,
+   * tidak perlu indikator deadline.
+   */
+  if (
+    actualStatus === 'Close' ||
+    actualStatus === 'Cancel'
+  ) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  if (!tanggal) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  const today = new Date()
+
+  today.setHours(
+    0,
+    0,
+    0,
+    0
+  )
+
+  const tanggalService =
+    new Date(tanggal)
+
+  tanggalService.setHours(
+    0,
+    0,
+    0,
+    0
+  )
+
+  if (
+    Number.isNaN(
+      tanggalService.getTime()
+    )
+  ) {
+    return {
+      class: '',
+      text: ''
+    }
+  }
+
+  const selisihMs =
+    today.getTime() -
+    tanggalService.getTime()
+
+  const selisihHari =
+    Math.floor(
+      selisihMs /
+      (1000 * 60 * 60 * 24)
+    )
+
+  /* =========================
+     HARI INI / BELUM LEWAT
+  ========================= */
+
+  if (selisihHari <= 0) {
+    return {
+      class: '',
+      text: 'Hari ini'
+    }
+  }
+
+  /* =========================
+     1 - 3 HARI
+  ========================= */
+
+  if (selisihHari <= 3) {
+    return {
+      class: '',
+      text: `${selisihHari} hari`
+    }
+  }
+
+  /* =========================
+     4 - 5 HARI
+  ========================= */
+
+  if (selisihHari <= 5) {
+    return {
+      class: 'deadline-warning',
+      text: `${selisihHari} hari`
+    }
+  }
+
+  /* =========================
+     LEBIH DARI 5 HARI
+  ========================= */
+
+  return {
+    class: 'deadline-danger',
+    text: `Terlambat ${selisihHari - 5} hari`
+  }
+}
+
+/* =========================
+   UPDATE STATUS
+========================= */
+
+const updateStatus = async (
   jadwal,
-  event
+  statusBaru
 ) => {
 
-  const statusBaru =
-    event.target.value
-
-  if (!statusBaru) {
-
+  if (!canManageStatus.value) {
     return
-
   }
 
   const statusLama =
-    jadwal.status
+    getActualStatus(
+      jadwal.status
+    )
+
+  if (statusBaru === statusLama) {
+    return
+  }
 
   updatingId.value =
     jadwal.id
@@ -651,25 +349,22 @@ const ubahStatus = async (
         }
       )
 
-    if (response.data?.status) {
-
-      jadwal.status =
-        response.data.status
-
-    } else {
-
-      jadwal.status =
-        statusBaru
-
-    }
+    jadwal.status =
+      response.data?.status ||
+      statusBaru
 
   } catch (error) {
+
+    console.error(
+      'Error update status jadwal:',
+      error
+    )
 
     jadwal.status =
       statusLama
 
     errorMsg.value =
-      'Gagal mengubah status: ' +
+      'Gagal memperbarui status jadwal service: ' +
       (
         error.response?.data?.error ||
         error.response?.data?.message ||
@@ -678,35 +373,28 @@ const ubahStatus = async (
 
   } finally {
 
-    updatingId.value =
-      null
-
+    updatingId.value = null
   }
-
 }
 
-
 /* =========================
-   DETAIL / EDIT
-   ========================= */
+   DETAIL / TINDAK LANJUT
+========================= */
 
 const lihatDetail = (id) => {
 
   router.push(
     `/jadwal-service/edit/${id}`
   )
-
 }
 
-
 /* =========================
-   GET DATA
-   ========================= */
+   AMBIL DATA
+========================= */
 
 const ambilData = async () => {
 
   loading.value = true
-
   errorMsg.value = ''
 
   try {
@@ -716,31 +404,25 @@ const ambilData = async () => {
         '/jadwal-service'
       )
 
+    console.log(
+      'DATA JADWAL SERVICE:',
+      response.data
+    )
+
     daftarJadwal.value =
       Array.isArray(response.data)
-
-        ? response.data.map(
-            (item) => ({
-
-              ...item,
-
-              status:
-                normalizeStatus(
-                  item.status
-                ),
-
-              tindakLanjut:
-                item.tindakLanjut || ''
-
-            })
-          )
-
+        ? response.data
         : []
 
   } catch (error) {
 
+    console.error(
+      'Error ambil jadwal service:',
+      error
+    )
+
     errorMsg.value =
-      'Gagal mengambil data: ' +
+      'Gagal mengambil data jadwal service: ' +
       (
         error.response?.data?.error ||
         error.response?.data?.message ||
@@ -750,273 +432,1044 @@ const ambilData = async () => {
   } finally {
 
     loading.value = false
-
   }
-
 }
 
-
 /* =========================
-   ON MOUNTED
-   ========================= */
+   INIT
+========================= */
 
 onMounted(() => {
-
   ambilData()
-
 })
-
 </script>
+
+
+<template>
+
+  <div class="jadwal-page">
+
+    <!-- =========================
+         HEADER
+    ========================= -->
+
+    <div class="header-row">
+
+      <div>
+
+        <h2>
+          Jadwal Service
+        </h2>
+
+        <p class="subtitle">
+          Daftar jadwal service kendaraan
+        </p>
+
+      </div>
+
+    </div>
+
+
+    <!-- =========================
+         SEARCH
+    ========================= -->
+
+    <SearchInput
+      v-model="searchQuery"
+      placeholder="Cari kendaraan, nama driver, UID, dealer..."
+    />
+
+
+    <!-- =========================
+         LOADING
+    ========================= -->
+
+    <p
+      v-if="loading"
+      class="loading-text"
+    >
+      Loading data jadwal service...
+    </p>
+
+
+    <!-- =========================
+         ERROR
+    ========================= -->
+
+    <p
+      v-else-if="errorMsg"
+      class="error-text"
+    >
+      {{ errorMsg }}
+    </p>
+
+
+    <!-- =========================
+         EMPTY
+    ========================= -->
+
+    <EmptyState
+      v-else-if="
+        filteredJadwal.length === 0
+      "
+      :message="
+        searchQuery
+          ? 'Tidak ada hasil ditemukan'
+          : 'Belum ada data jadwal service'
+      "
+      :subtext="
+        searchQuery
+          ? 'Coba gunakan kata kunci lain'
+          : 'Belum ada jadwal service yang tersedia'
+      "
+    />
+
+
+    <!-- =========================
+         TABLE
+    ========================= -->
+
+    <div
+      v-else
+      class="table-wrapper"
+    >
+
+      <table>
+
+        <colgroup>
+
+          <col class="col-id">
+
+          <col class="col-kendaraan">
+
+          <col class="col-nama">
+
+          <col class="col-daerah">
+
+          <col class="col-dealer">
+
+          <col class="col-km">
+
+          <col class="col-tanggal">
+
+          <col class="col-tanggal-tindak-lanjut">
+
+          <col class="col-keterangan">
+
+          <col class="col-status">
+
+          <col class="col-tindak-lanjut">
+
+        </colgroup>
+
+
+        <thead>
+
+          <tr>
+
+            <th>
+              ID
+            </th>
+
+            <th>
+              No. Kendaraan
+            </th>
+
+            <th>
+              Nama Driver
+            </th>
+
+            <th>
+              UID / Daerah
+            </th>
+
+            <th>
+              Dealer
+            </th>
+
+            <th>
+              KM
+            </th>
+
+            <th>
+              Tanggal Service
+            </th>
+
+            <th class="tanggal-tindak-lanjut">
+              Tanggal<br>
+              Tindak Lanjut
+            </th>
+
+            <th>
+              Keterangan
+            </th>
+
+            <th>
+              Status
+            </th>
+
+            <th>
+              Tindak Lanjut
+            </th>
+
+          </tr>
+
+        </thead>
+
+
+        <tbody>
+
+          <tr
+            v-for="jadwal in filteredJadwal"
+            :key="jadwal.id"
+
+            :class="{
+
+              'row-deadline-danger':
+                getDeadlineInfo(
+                  jadwal.tanggalService,
+                  jadwal.status
+                ).class ===
+                'deadline-danger',
+
+              'row-deadline-warning':
+                getDeadlineInfo(
+                  jadwal.tanggalService,
+                  jadwal.status
+                ).class ===
+                'deadline-warning'
+
+            }"
+          >
+
+            <!-- =========================
+                 ID
+            ========================= -->
+
+            <td>
+              {{ jadwal.id ?? '-' }}
+            </td>
+
+
+            <!-- =========================
+                 NOMOR KENDARAAN
+            ========================= -->
+
+            <td>
+
+              <strong>
+                {{
+                  jadwal.nomorKendaraan ||
+                  '-'
+                }}
+              </strong>
+
+            </td>
+
+
+            <!-- =========================
+                 NAMA DRIVER
+            ========================= -->
+
+            <td>
+
+              {{
+                jadwal.namaLengkap ||
+                jadwal.username ||
+                '-'
+              }}
+
+            </td>
+
+
+            <!-- =========================
+                 UID / DAERAH
+            ========================= -->
+
+            <td>
+
+              <div class="daerah-info">
+
+                <span class="uid">
+                  {{ jadwal.uid || '-' }}
+                </span>
+
+                <span
+                  v-if="jadwal.up3"
+                  class="up3"
+                >
+                  {{ jadwal.up3 }}
+                </span>
+
+              </div>
+
+            </td>
+
+
+            <!-- =========================
+                 DEALER
+            ========================= -->
+
+            <td>
+              {{ jadwal.dealer || '-' }}
+            </td>
+
+
+            <!-- =========================
+                 KM
+            ========================= -->
+
+            <td>
+              {{ jadwal.km ?? '-' }}
+            </td>
+
+
+            <!-- =========================
+                 TANGGAL SERVICE
+            ========================= -->
+
+            <td class="tanggal-cell">
+
+              <div
+                :class="[
+
+                  'tanggal-wrapper',
+
+                  getDeadlineInfo(
+                    jadwal.tanggalService,
+                    jadwal.status
+                  ).class
+
+                ]"
+              >
+
+                <strong>
+
+                  {{
+                    formatTanggal(
+                      jadwal.tanggalService
+                    )
+                  }}
+
+                </strong>
+
+
+                <span
+                  v-if="
+                    getDeadlineInfo(
+                      jadwal.tanggalService,
+                      jadwal.status
+                    ).text
+                  "
+
+                  class="deadline-label"
+
+                  :class="
+                    getDeadlineInfo(
+                      jadwal.tanggalService,
+                      jadwal.status
+                    ).class
+                  "
+                >
+
+                  {{
+                    getDeadlineInfo(
+                      jadwal.tanggalService,
+                      jadwal.status
+                    ).text
+                  }}
+
+                </span>
+
+              </div>
+
+            </td>
+
+
+            <!-- =========================
+                 TANGGAL TINDAK LANJUT
+            ========================= -->
+
+            <td class="tanggal-tindak-lanjut-cell">
+
+              <span
+                v-if="jadwal.tanggalTindakLanjut"
+                class="tanggal-tindak-lanjut-value"
+              >
+
+                {{
+                  formatTanggal(
+                    jadwal.tanggalTindakLanjut
+                  )
+                }}
+
+              </span>
+
+              <span
+                v-else
+                class="no-tanggal-tindak-lanjut"
+              >
+
+                Belum ada
+
+              </span>
+
+            </td>
+
+
+            <!-- =========================
+                 KETERANGAN
+            ========================= -->
+
+            <td class="keterangan-cell">
+
+              {{
+                jadwal.keterangan ||
+                '-'
+              }}
+
+            </td>
+
+
+            <!-- =========================
+                 STATUS
+            ========================= -->
+
+            <td class="status-cell">
+
+              <!-- ADMIN / UID -->
+
+              <select
+                v-if="canManageStatus"
+
+                class="status-select"
+
+                :value="
+                  getActualStatus(
+                    jadwal.status
+                  )
+                "
+
+                :disabled="
+                  updatingId ===
+                  jadwal.id
+                "
+
+                @change="
+                  updateStatus(
+                    jadwal,
+                    $event.target.value
+                  )
+                "
+
+                :style="
+                  getStatusStyle(
+                    jadwal.status
+                  )
+                "
+              >
+
+                <option
+                  v-for="
+                    status in daftarStatus
+                  "
+                  :key="status"
+                  :value="status"
+                >
+
+                  {{ status }}
+
+                </option>
+
+              </select>
+
+
+              <!-- ROLE LAIN -->
+
+              <span
+                v-else
+
+                class="status-badge"
+
+                :style="
+                  getStatusStyle(
+                    jadwal.status
+                  )
+                "
+              >
+
+                <span
+                  class="status-dot"
+                ></span>
+
+                {{
+                  getActualStatus(
+                    jadwal.status
+                  )
+                }}
+
+              </span>
+
+            </td>
+
+
+            <!-- =========================
+                 TINDAK LANJUT
+            ========================= -->
+
+            <td class="tindak-lanjut-cell">
+
+              <!-- BELUM ADA -->
+
+              <template
+                v-if="
+                  !jadwal.tindakLanjut ||
+                  !jadwal.tindakLanjut.trim()
+                "
+              >
+
+                <!-- ADMIN -->
+
+                <button
+                  v-if="isAdmin"
+
+                  type="button"
+
+                  class="btn-detail"
+
+                  @click="
+                    lihatDetail(
+                      jadwal.id
+                    )
+                  "
+                >
+
+                  Detail
+
+                </button>
+
+
+                <!-- UID -->
+
+                <span
+                  v-else
+                  class="no-tindak-lanjut"
+                >
+
+                  Belum ada
+
+                </span>
+
+              </template>
+
+
+              <!-- SUDAH ADA -->
+
+              <template v-else>
+
+                <div
+                  class="tindak-lanjut-wrapper"
+                >
+
+                  <span
+                    class="tindak-lanjut-text"
+                  >
+
+                    {{ jadwal.tindakLanjut }}
+
+                  </span>
+
+
+                  <!-- PENSIL ADMIN -->
+
+                  <button
+                    v-if="isAdmin"
+
+                    type="button"
+
+                    class="btn-edit-tindak"
+
+                    title="Edit tindak lanjut"
+
+                    @click="
+                      lihatDetail(
+                        jadwal.id
+                      )
+                    "
+                  >
+
+                    <span
+                      class="edit-icon"
+                    >
+                      ✎
+                    </span>
+
+                  </button>
+
+                </div>
+
+              </template>
+
+            </td>
+
+          </tr>
+
+        </tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</template>
 
 
 <style scoped>
 
 /* =========================
    PAGE
-   ========================= */
+========================= */
 
-.page-container {
+.jadwal-page {
   width: 100%;
-  max-width: none;
-
-  /*
-   * Content dibuat lebih lebar
-   * dan lebih dekat dengan sidebar.
-   */
-  margin: 0;
-
-  padding: 18px 18px;
-
-  box-sizing: border-box;
+  max-width: 100%;
 }
 
 
 /* =========================
    HEADER
-   ========================= */
+========================= */
 
-.page-header {
+.header-row {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-
-  margin-bottom: 18px;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-.page-header h1 {
+h2 {
   margin: 0;
-
-  font-size: 27px;
-  font-weight: 700;
-
-  color: #1e293b;
+  font-size: 24px;
+  color: #1f2937;
 }
 
-.page-header p {
+.subtitle {
   margin: 5px 0 0;
-
-  color: #64748b;
-
+  color: #6b7280;
   font-size: 14px;
 }
 
 
 /* =========================
-   SEARCH
-   ========================= */
+   LOADING
+========================= */
 
-.toolbar {
-  margin-bottom: 18px;
+.loading-text {
+  text-align: center;
+  color: #6b7280;
+  padding: 30px;
 }
 
 
 /* =========================
-   TABLE CARD
-   ========================= */
+   ERROR
+========================= */
 
-.table-card {
-  width: 100%;
-
-  background: #ffffff;
-
-  border-radius: 14px;
-
-  overflow: hidden;
-
-  box-shadow:
-    0 4px 14px
-    rgba(15, 23, 42, 0.06);
+.error-text {
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 12px 15px;
+  border-radius: 8px;
+  font-size: 14px;
 }
 
 
 /* =========================
    TABLE WRAPPER
-   ========================= */
+========================= */
 
 .table-wrapper {
   width: 100%;
-
-  overflow: hidden;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin-top: 15px;
+  border-radius: 10px;
 }
 
 
 /* =========================
    TABLE
-   ========================= */
+========================= */
 
 table {
-  width: 100%;
-
+  width: max-content;
+  min-width: 1350px;
   border-collapse: collapse;
-
-  table-layout: fixed;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 
 /* =========================
-   TABLE HEADER
-   ========================= */
+   COLUMN WIDTH
+========================= */
 
-thead {
-  background: #eaf4ff;
+.col-id {
+  width: 55px;
 }
 
+.col-kendaraan {
+  width: 130px;
+}
+
+.col-nama {
+  width: 170px;
+}
+
+.col-daerah {
+  width: 130px;
+}
+
+.col-dealer {
+  width: 120px;
+}
+
+.col-km {
+  width: 80px;
+}
+
+.col-tanggal {
+  width: 140px;
+}
+
+.col-tanggal-tindak-lanjut {
+  width: 145px;
+}
+
+.col-keterangan {
+  width: 190px;
+}
+
+.col-status {
+  width: 135px;
+}
+
+.col-tindak-lanjut {
+  width: 260px;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
 th {
-  padding: 15px 10px;
+  padding: 12px 10px;
+
+  background: #eaf4ff;
+
+  color: #2b7cd3;
+
+  border-bottom:
+    1px solid #dbeafe;
 
   text-align: left;
 
-  font-size: 12px;
+  font-size: 11px;
 
   font-weight: 700;
 
-  color: #1d4f8f;
+  text-transform: uppercase;
 
-  border-bottom:
-    1px solid #d7e9fb;
+  letter-spacing: 0.02em;
 
-  vertical-align: middle;
+  word-break: break-word;
 
   overflow-wrap: anywhere;
+
+  white-space: nowrap;
+}
+
+th.tanggal-tindak-lanjut {
+  white-space: normal;
+  line-height: 1.25;
+  min-width: 120px;
 }
 
 
 /* =========================
-   TABLE BODY
-   ========================= */
+   BODY
+========================= */
 
 td {
-  padding: 17px 10px;
-
-  font-size: 13px;
-
-  color: #334155;
+  padding: 12px 10px;
 
   border-bottom:
-    1px solid #edf2f7;
+    1px solid #e5e7eb;
+
+  text-align: left;
 
   vertical-align: middle;
 
-  overflow-wrap: anywhere;
+  font-size: 13px;
+
+  color: #4b5563;
 
   word-break: break-word;
+
+  overflow-wrap: anywhere;
 
   box-sizing: border-box;
 }
 
-tbody tr:last-child td {
-  border-bottom: none;
-}
-
-tbody tr:hover {
-  background: #f8fbff;
+tbody tr:hover td {
+  background: #f9fbfd;
 }
 
 
 /* =========================
-   STRONG
-   ========================= */
+   DEADLINE ROW
+========================= */
 
-.strong {
-  font-weight: 700;
+tbody tr.row-deadline-danger td {
+  background-color: #fff5f4;
+}
 
-  color: #1e293b;
+tbody tr.row-deadline-danger:hover td {
+  background-color: #fde2df;
+}
+
+tbody tr.row-deadline-warning td {
+  background-color: #fffaf0;
+}
+
+tbody tr.row-deadline-warning:hover td {
+  background-color: #fff0d2;
 }
 
 
 /* =========================
-   DESCRIPTION
-   ========================= */
+   DAERAH
+========================= */
 
-.description {
-  line-height: 1.5;
+.daerah-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.uid {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  overflow-wrap: anywhere;
+}
+
+.up3 {
+  font-size: 10px;
+  color: #6b7280;
+  overflow-wrap: anywhere;
 }
 
 
 /* =========================
-   DATE
-   ========================= */
+   KETERANGAN
+========================= */
 
-.date-text {
+.keterangan-cell {
+  line-height: 1.45;
+  white-space: normal;
+}
+
+
+/* =========================
+   TANGGAL SERVICE
+========================= */
+
+.tanggal-cell {
+  vertical-align: middle;
+}
+
+.tanggal-wrapper {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  gap: 5px;
+
+  min-width: 0;
+}
+
+.tanggal-wrapper strong {
+  font-size: 13px;
   white-space: nowrap;
 }
 
 
 /* =========================
-   UID / DAERAH
-   ========================= */
+   TANGGAL TINDAK LANJUT
+========================= */
 
-.daerah-info {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 4px;
+.tanggal-tindak-lanjut-cell {
+  vertical-align: middle;
+  min-width: 145px;
 }
 
-.uid {
-  font-weight: 600;
+.tanggal-tindak-lanjut-value {
+  display: inline-block;
 
-  color: #334155;
+  font-size: 13px;
+
+  font-weight: 500;
+
+  color: #475569;
+
+  white-space: nowrap;
 }
 
-.up3 {
-  font-size: 11px;
+.no-tanggal-tindak-lanjut {
+  color: #9ca3af;
 
-  color: #64748b;
+  font-size: 12px;
+
+  font-style: italic;
+
+  white-space: nowrap;
+}
+
+
+/* =========================
+   DEADLINE LABEL
+========================= */
+
+.deadline-label {
+  display: inline-block;
+
+  max-width: 100%;
+
+  padding: 3px 7px;
+
+  border-radius: 8px;
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+
+/* NORMAL */
+
+.tanggal-wrapper:not(
+  .deadline-warning
+):not(
+  .deadline-danger
+) {
+  color: #384454;
+}
+
+
+/* WARNING */
+
+.tanggal-wrapper.deadline-warning {
+  color: #d68a00;
+}
+
+.deadline-label.deadline-warning {
+  background-color: #fff3cd;
+  color: #d68910;
+}
+
+
+/* DANGER */
+
+.tanggal-wrapper.deadline-danger {
+  color: #e74c3c;
+}
+
+.deadline-label.deadline-danger {
+  background-color: #fdecea;
+  color: #e74c3c;
 }
 
 
 /* =========================
    STATUS
-   ========================= */
+========================= */
 
 .status-cell {
-  position: relative;
+  padding-left: 8px;
+  padding-right: 8px;
+}
 
-  overflow: visible;
+
+/* =========================
+   STATUS BADGE
+========================= */
+
+.status-badge {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  width: 100%;
+
+  max-width: 135px;
+
+  box-sizing: border-box;
+
+  padding: 6px 10px;
+
+  border-radius: 18px;
+
+  font-size: 11px;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+.status-dot {
+  width: 6px;
+
+  height: 6px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: currentColor;
 }
 
 
 /* =========================
    STATUS SELECT
-   ========================= */
+========================= */
 
 .status-select {
   display: block;
 
-  width: 100%;
-
-  max-width: 115px;
-
-  min-width: 0;
+  width: 135px;
 
   box-sizing: border-box;
 
-  padding: 7px 9px;
+  padding: 6px 22px 6px 9px;
 
-  border:
-    1px solid currentColor;
+  border: 1px solid currentColor;
 
   border-radius: 18px;
 
@@ -1031,220 +1484,65 @@ tbody tr:hover {
   appearance: auto;
 }
 
-
-/* =========================
-   OPEN
-   ========================= */
-
-.status-select.status-pending {
-  background: #eaf3ff;
-
-  color: #2563eb;
-
-  border-color: #93c5fd;
-}
-
-
-/* =========================
-   ON PROGRESS
-   ========================= */
-
-.status-select.status-progress {
-  background: #fff8db;
-
-  color: #ca8a04;
-
-  border-color: #facc15;
-}
-
-
-/* =========================
-   CLOSE
-   ========================= */
-
-.status-select.status-success {
-  background: #e8f8e9;
-
-  color: #16a34a;
-
-  border-color: #22c55e;
-}
-
-
-/* =========================
-   CANCEL
-   ========================= */
-
-.status-select.status-cancel {
-  background: #fff0f0;
-
-  color: #dc2626;
-
-  border-color: #f87171;
-}
-
-
-/* =========================
-   DEFAULT
-   ========================= */
-
-.status-select.status-default {
-  background: #f1f5f9;
-
-  color: #475569;
-
-  border-color: #cbd5e1;
-}
-
-
-/* =========================
-   FOCUS
-   ========================= */
-
 .status-select:focus {
-  outline: none;
-
-  box-shadow: none;
+  box-shadow:
+    0 0 0 2px
+    rgba(43, 124, 211, 0.15);
 }
-
-
-/* =========================
-   DISABLED
-   ========================= */
 
 .status-select:disabled {
-  opacity: 0.65;
-
-  cursor: wait;
-}
-
-
-/* =========================
-   STATUS BADGE
-   ========================= */
-
-.status-badge {
-  display: inline-flex;
-
-  align-items: center;
-
-  justify-content: center;
-
-  min-width: 85px;
-
-  min-height: 36px;
-
-  padding: 0 12px;
-
-  border-radius: 999px;
-
-  font-size: 12px;
-
-  font-weight: 600;
-
-  line-height: 1.2;
-
-  text-align: center;
-
-  white-space: nowrap;
-
-  box-sizing: border-box;
-}
-
-
-/* OPEN */
-
-.status-badge.status-pending {
-  background: #eaf3ff;
-
-  color: #2563eb;
-
-  border:
-    1px solid #93c5fd;
-}
-
-
-/* ON PROGRESS */
-
-.status-badge.status-progress {
-  background: #fff8db;
-
-  color: #ca8a04;
-
-  border:
-    1px solid #facc15;
-}
-
-
-/* CLOSE */
-
-.status-badge.status-success {
-  background: #e8f8e9;
-
-  color: #16a34a;
-
-  border:
-    1px solid #22c55e;
-}
-
-
-/* CANCEL */
-
-.status-badge.status-cancel {
-  background: #fff0f0;
-
-  color: #dc2626;
-
-  border:
-    1px solid #f87171;
-}
-
-
-/* DEFAULT */
-
-.status-badge.status-default {
-  background: #f1f5f9;
-
-  color: #475569;
-
-  border:
-    1px solid #cbd5e1;
-}
-
-
-/* =========================
-   UPDATING
-   ========================= */
-
-.updating-text {
-  display: block;
-
-  margin-top: 4px;
-
-  font-size: 10px;
-
-  color: #64748b;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 
 /* =========================
    TINDAK LANJUT
-   ========================= */
+========================= */
 
 .tindak-lanjut-cell {
   vertical-align: middle;
+  min-width: 260px;
 }
 
-.detail-wrapper {
+.tindak-lanjut-wrapper {
   display: flex;
 
-  align-items: center;
+  align-items: flex-start;
+
+  gap: 8px;
+
+  min-width: 0;
+}
+
+.tindak-lanjut-text {
+  flex: 1;
+
+  min-width: 0;
+
+  color: #475569;
+
+  font-size: 14px;
+
+  line-height: 1.5;
+
+  overflow-wrap: anywhere;
+
+  word-break: break-word;
+}
+
+.no-tindak-lanjut {
+  color: #9ca3af;
+
+  font-size: 12px;
+
+  font-style: italic;
 }
 
 
 /* =========================
    DETAIL BUTTON
-   ========================= */
+========================= */
 
 .btn-detail {
   display: inline-flex;
@@ -1253,11 +1551,11 @@ tbody tr:hover {
 
   justify-content: center;
 
-  padding: 8px 13px;
+  padding: 7px 12px;
 
   border: none;
 
-  border-radius: 8px;
+  border-radius: 7px;
 
   background: #eaf3ff;
 
@@ -1271,7 +1569,9 @@ tbody tr:hover {
 
   cursor: pointer;
 
-  transition: 0.2s ease;
+  transition:
+    background 0.2s,
+    transform 0.1s;
 }
 
 .btn-detail:hover {
@@ -1280,53 +1580,21 @@ tbody tr:hover {
   color: #1d4ed8;
 }
 
-
-/* =========================
-   TINDAK LANJUT WRAPPER
-   ========================= */
-
-.tindak-lanjut-wrapper {
-  display: flex;
-
-  align-items: flex-start;
-
-  gap: 8px;
-
-  width: 100%;
+.btn-detail:active {
+  transform: scale(0.97);
 }
 
 
 /* =========================
-   TINDAK LANJUT TEXT
-   ========================= */
+   EDIT ICON
+========================= */
 
-.tindak-lanjut-text {
-  flex: 1;
-
-  min-width: 0;
-
-  color: #475569;
-
-  font-size: 12px;
-
-  line-height: 1.5;
-
-  overflow-wrap: anywhere;
-
-  word-break: break-word;
-}
-
-
-/* =========================
-   EDIT BUTTON
-   ========================= */
-
-.btn-edit {
+.btn-edit-tindak {
   flex-shrink: 0;
 
-  width: 30px;
+  width: 28px;
 
-  height: 30px;
+  height: 28px;
 
   display: inline-flex;
 
@@ -1345,373 +1613,246 @@ tbody tr:hover {
 
   color: #2563eb;
 
-  font-family: inherit;
-
-  font-size: 17px;
-
-  line-height: 1;
-
   cursor: pointer;
 
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    transform 0.2s ease;
+    background 0.2s,
+    border-color 0.2s,
+    transform 0.1s;
 }
 
-.btn-edit:hover {
+.btn-edit-tindak:hover {
   background: #dbeafe;
 
+  border-color: #93c5fd;
+
   color: #1d4ed8;
-
-  transform: translateY(-1px);
 }
 
-
-/* =========================
-   COLUMN WIDTH
-   ========================= */
-
-.col-id {
-  width: 4%;
+.btn-edit-tindak:active {
+  transform: scale(0.94);
 }
 
-.col-kendaraan {
-  width: 10%;
-}
+.edit-icon {
+  font-size: 16px;
 
-.col-nama {
-  width: 13%;
-}
+  line-height: 1;
 
-.col-daerah {
-  width: 11%;
-}
-
-.col-dealer {
-  width: 9%;
-}
-
-.col-km {
-  width: 5%;
-}
-
-.col-tanggal {
-  width: 10%;
-}
-
-.col-keterangan {
-  width: 14%;
-}
-
-.col-status {
-  width: 11%;
-}
-
-.col-tindak-lanjut {
-  width: 13%;
-}
-
-
-/* =========================
-   LOADING
-   ========================= */
-
-.state-box {
-  min-height: 250px;
-
-  display: flex;
-
-  flex-direction: column;
-
-  align-items: center;
-
-  justify-content: center;
-
-  color: #64748b;
-}
-
-.spinner {
-  width: 28px;
-
-  height: 28px;
-
-  border:
-    3px solid #e2e8f0;
-
-  border-top-color: #2563eb;
-
-  border-radius: 50%;
-
-  animation:
-    spin 0.8s linear infinite;
-
-  margin-bottom: 12px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
-/* =========================
-   ERROR
-   ========================= */
-
-.error-box {
-  padding: 14px 16px;
-
-  border-radius: 10px;
-
-  background: #fef2f2;
-
-  border:
-    1px solid #fecaca;
-
-  color: #b91c1c;
-
-  font-size: 14px;
-}
-
-
-/* =========================
-   FOOTER
-   ========================= */
-
-.table-footer {
-  padding: 13px 16px;
-
-  border-top:
-    1px solid #edf2f7;
-
-  color: #64748b;
-
-  font-size: 12px;
-}
-
-.table-footer strong {
-  color: #1e293b;
+  font-weight: 700;
 }
 
 
 /* =========================
    TABLET
-   ========================= */
+========================= */
 
 @media (max-width: 1100px) {
 
-  .page-container {
-    padding: 16px 12px;
+  th,
+  td {
+    padding: 9px 7px;
   }
 
   th {
-    padding: 12px 7px;
-
-    font-size: 11px;
+    font-size: 10px;
   }
 
   td {
-    padding: 14px 7px;
+    font-size: 12px;
+  }
 
+  .status-select,
+  .status-badge {
+    font-size: 10px;
+  }
+
+  .uid {
     font-size: 11px;
   }
 
-  .status-select {
-    max-width: 105px;
-
-    height: 35px;
-
-    font-size: 10px;
+  .up3 {
+    font-size: 9px;
   }
 
-  .status-badge {
-    min-width: 76px;
+  .tanggal-wrapper strong {
+    font-size: 12px;
+  }
 
-    min-height: 33px;
+  .tanggal-tindak-lanjut-value {
+    font-size: 12px;
+  }
 
-    font-size: 10px;
+  .no-tanggal-tindak-lanjut {
+    font-size: 11px;
+  }
+
+  .deadline-label {
+    font-size: 9px;
+    padding: 3px 6px;
   }
 
   .tindak-lanjut-text {
+    font-size: 13px;
+  }
+
+  .btn-detail {
     font-size: 10px;
+    padding: 6px 9px;
   }
 
-  .btn-edit {
-    width: 27px;
-
-    height: 27px;
-
-    font-size: 16px;
+  .btn-edit-tindak {
+    width: 26px;
+    height: 26px;
   }
+
 }
 
 
 /* =========================
    MOBILE
-   ========================= */
+========================= */
 
-@media (max-width: 768px) {
+@media (max-width: 700px) {
 
-  .page-container {
-    padding: 14px;
+  .header-row {
+    align-items: flex-start;
   }
 
-  .page-header {
-    margin-bottom: 16px;
+  h2 {
+    font-size: 20px;
   }
 
-  .page-header h1 {
-    font-size: 22px;
+  .subtitle {
+    font-size: 12px;
   }
 
-  .page-header p {
-    font-size: 13px;
-  }
-
-  .toolbar {
-    margin-bottom: 16px;
-  }
-
-  .table-wrapper {
-    overflow: visible;
-  }
-
-  table,
-  thead,
-  tbody,
-  tr,
   th,
   td {
-    display: block;
+    padding: 8px 5px;
   }
 
-  thead {
-    display: none;
-  }
-
-  tbody tr {
-    padding: 15px;
-
-    border-bottom:
-      1px solid #e2e8f0;
-  }
-
-  tbody tr:last-child {
-    border-bottom: none;
+  th {
+    font-size: 9px;
   }
 
   td {
-    width: 100% !important;
-
-    padding: 7px 0;
-
-    border: none;
-
-    display: grid;
-
-    grid-template-columns:
-      120px minmax(0, 1fr);
-
-    gap: 10px;
-  }
-
-
-  /* MOBILE LABEL */
-
-  td:nth-child(1)::before {
-    content: 'ID';
-  }
-
-  td:nth-child(2)::before {
-    content: 'No. Kendaraan';
-  }
-
-  td:nth-child(3)::before {
-    content: 'Nama Driver';
-  }
-
-  td:nth-child(4)::before {
-    content: 'UID / Daerah';
-  }
-
-  td:nth-child(5)::before {
-    content: 'Dealer';
-  }
-
-  td:nth-child(6)::before {
-    content: 'KM';
-  }
-
-  td:nth-child(7)::before {
-    content: 'Tanggal Service';
-  }
-
-  td:nth-child(8)::before {
-    content: 'Keterangan';
-  }
-
-  td:nth-child(9)::before {
-    content: 'Status';
-  }
-
-  td:nth-child(10)::before {
-    content: 'Tindak Lanjut';
-  }
-
-  td::before {
-    font-size: 12px;
-
-    font-weight: 600;
-
-    color: #64748b;
-  }
-
-  .date-text {
-    white-space: normal;
+    font-size: 11px;
   }
 
   .status-select {
-    width: 100%;
-
-    max-width: 180px;
-
-    height: 38px;
-
-    font-size: 12px;
-
-    padding: 0 12px;
+    padding: 5px 6px;
+    font-size: 9px;
   }
 
   .status-badge {
-    min-width: 90px;
-
-    min-height: 36px;
+    padding: 5px 8px;
+    font-size: 9px;
   }
 
-  .tindak-lanjut-wrapper {
-    align-items: flex-start;
+  .status-dot {
+    display: none;
+  }
+
+  .tanggal-wrapper strong {
+    font-size: 11px;
+  }
+
+  .tanggal-tindak-lanjut-value {
+    font-size: 11px;
+  }
+
+  .no-tanggal-tindak-lanjut {
+    font-size: 10px;
+  }
+
+  .deadline-label {
+    font-size: 9px;
+    padding: 2px 5px;
   }
 
   .tindak-lanjut-text {
     font-size: 12px;
+  }
 
-    line-height: 1.5;
+  .no-tindak-lanjut {
+    font-size: 9px;
   }
 
   .btn-detail {
-    font-size: 11px;
-
-    padding: 7px 13px;
+    font-size: 9px;
+    padding: 5px 8px;
   }
 
-  .btn-edit {
-    width: 30px;
+  .btn-edit-tindak {
+    width: 24px;
+    height: 24px;
+  }
 
-    height: 30px;
+  .edit-icon {
+    font-size: 14px;
+  }
 
-    font-size: 17px;
+}
+
+
+/* =========================
+   VERY SMALL
+========================= */
+
+@media (max-width: 500px) {
+
+  th,
+  td {
+    padding: 7px 4px;
+  }
+
+  .status-select {
+    padding: 4px 5px;
+    font-size: 8px;
+  }
+
+  .status-badge {
+    padding: 4px 6px;
+    font-size: 8px;
+  }
+
+  .tanggal-wrapper strong {
+    font-size: 10px;
+  }
+
+  .tanggal-tindak-lanjut-value {
+    font-size: 10px;
+  }
+
+  .no-tanggal-tindak-lanjut {
+    font-size: 9px;
+  }
+
+  .deadline-label {
+    font-size: 8px;
+    padding: 2px 4px;
+  }
+
+  .tindak-lanjut-text {
+    font-size: 11px;
+  }
+
+  .no-tindak-lanjut {
+    font-size: 8px;
+  }
+
+  .btn-detail {
+    font-size: 8px;
+    padding: 4px 6px;
+  }
+
+  .btn-edit-tindak {
+    width: 22px;
+    height: 22px;
+  }
+
+  .edit-icon {
+    font-size: 13px;
   }
 
 }

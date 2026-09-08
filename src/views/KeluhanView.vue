@@ -748,12 +748,9 @@ onMounted(() => {
       class="table-wrapper"
     >
 
-      <table>
+      <table class="data-table">
 
         <colgroup>
-
-          <col class="col-id">
-
           <col class="col-kendaraan">
 
           <col class="col-pengaduan">
@@ -768,6 +765,8 @@ onMounted(() => {
 
           <col class="col-tindak-lanjut">
 
+          <col class="col-tanggal-tindak-lanjut">
+
         </colgroup>
 
 
@@ -776,11 +775,7 @@ onMounted(() => {
           <tr>
 
             <th>
-              ID
-            </th>
-
-            <th>
-              Nomor Kendaraan
+              No Kendaraan
             </th>
 
             <th>
@@ -792,7 +787,12 @@ onMounted(() => {
             </th>
 
             <th>
-              Tanggal
+              Tanggal Pengajuan
+            </th>
+
+            <th>
+              Tanggal <br />
+              Tindak Lanjut
             </th>
 
             <th>
@@ -831,14 +831,6 @@ onMounted(() => {
                 ).class === 'deadline-warning'
             }"
           >
-
-            <!-- =========================
-                 ID
-            ========================= -->
-
-            <td>
-              {{ keluhan.id }}
-            </td>
 
 
             <!-- =========================
@@ -977,6 +969,37 @@ onMounted(() => {
                 </span>
 
               </div>
+
+            </td>
+
+            <!-- =========================
+                 TANGGAL TINDAK LANJUT
+            ========================= -->
+
+            <td class="tanggal-tindak-lanjut-cell">
+
+              <span
+                v-if="keluhan.tanggalTindakLanjut"
+                class="tanggal-tindak-lanjut"
+              >
+
+                {{
+                  formatTanggal(
+                    keluhan.tanggalTindakLanjut
+                  )
+                }}
+
+              </span>
+
+
+              <span
+                v-else
+                class="no-tanggal-tindak-lanjut"
+              >
+
+                Belum ada
+
+              </span>
 
             </td>
 
@@ -1347,9 +1370,9 @@ h2 {
 
 .table-wrapper {
   width: 100%;
-  max-width: 100%;
-  overflow: hidden;
-  margin-top: 15px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  border-radius: 10px;
 }
 
 
@@ -1360,11 +1383,19 @@ h2 {
 table {
   width: 100%;
   max-width: 100%;
-  table-layout: fixed;
   border-collapse: collapse;
   background: white;
   border-radius: 10px;
   overflow: hidden;
+}
+
+
+
+.data-table {
+  width: max-content;
+  min-width: 1100px;
+  border-collapse: collapse;
+  background: white;
 }
 
 
@@ -1377,31 +1408,35 @@ table {
 }
 
 .col-kendaraan {
-  width: 12%;
-}
-
-.col-pengaduan {
-  width: 22%;
-}
-
-.col-foto {
-  width: 8%;
-}
-
-.col-tanggal {
-  width: 12%;
-}
-
-.col-pengaju {
-  width: 17%;
-}
-
-.col-status {
   width: 11%;
 }
 
+.col-pengaduan {
+  width: 18%;
+}
+
+.col-foto {
+  width: 7%;
+}
+
+.col-tanggal {
+  width: 11%;
+}
+
+.col-pengaju {
+  width: 16%;
+}
+
+.col-status {
+  width: 10%;
+}
+
 .col-tindak-lanjut {
-  width: 14%;
+  width: 12%;
+}
+
+.col-tanggal-tindak-lanjut {
+  width: 11%;
 }
 
 
@@ -1734,6 +1769,53 @@ tbody tr.row-deadline-warning:hover td {
   font-style: italic;
 }
 
+.data-table th:nth-child(6),
+.data-table td:nth-child(6) {
+  min-width: 180px;
+}
+
+.data-table th:nth-child(8),
+.data-table td:nth-child(8) {
+  min-width: 200px;
+}
+
+.data-table td:nth-child(8) {
+  font-size: 14px;
+}
+
+.data-table th:nth-child(2),
+.data-table td:nth-child(2) {
+  font-size: 12px;
+}
+
+.data-table th:nth-child(1),
+.data-table td:nth-child(1) {
+  font-size: 12px;
+}
+
+/* =========================
+   TANGGAL TINDAK LANJUT
+========================= */
+
+.tanggal-tindak-lanjut-cell {
+  vertical-align: middle
+;
+}
+
+.tanggal-tindak-lanjut {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.no-tanggal-tindak-lanjut {
+  color: #9ca3af;
+  font-size: 13px;
+  font-style: italic;
+}
+
 
 /* =========================
    DETAIL BUTTON
@@ -1753,7 +1835,7 @@ tbody tr.row-deadline-warning:hover td {
   color: #2563eb;
 
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 
   cursor: pointer;
@@ -1822,7 +1904,8 @@ tbody tr.row-deadline-warning:hover td {
 
 /* =========================
    BUTTON
-========================= */
+=========================
+ */
 
 .btn-primary {
   background: #2563eb;
@@ -1934,11 +2017,19 @@ tbody tr.row-deadline-warning:hover td {
   }
 
   .tindak-lanjut-text {
+    font-size: 13px;
+  }
+
+  .tanggal-tindak-lanjut {
+    font-size: 13px;
+  }
+
+  .no-tanggal-tindak-lanjut {
     font-size: 10px;
   }
 
   .btn-detail {
-    font-size: 10px;
+    font-size: 12px;
     padding: 6px 9px;
   }
 
@@ -2027,8 +2118,16 @@ tbody tr.row-deadline-warning:hover td {
     font-size: 9px;
   }
 
-  .btn-detail {
+  .tanggal-tindak-lanjut {
     font-size: 9px;
+  }
+
+  .no-tanggal-tindak-lanjut {
+    font-size: 9px;
+  }
+
+  .btn-detail {
+    font-size: 13px;
     padding: 5px 8px;
   }
 
@@ -2085,6 +2184,14 @@ tbody tr.row-deadline-warning:hover td {
   }
 
   .no-tindak-lanjut {
+    font-size: 8px;
+  }
+
+  .tanggal-tindak-lanjut {
+    font-size: 8px;
+  }
+
+  .no-tanggal-tindak-lanjut {
     font-size: 8px;
   }
 

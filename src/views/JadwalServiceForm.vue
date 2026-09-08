@@ -45,10 +45,31 @@ const form = ref({
   km: null,
   picDriver: '',
   tanggalService: '',
+  tanggalTindakLanjut: '',
   keterangan: '',
   status: 'Open',
   tindakLanjut: ''
 })
+
+// =========================
+// FORMAT TANGGAL
+// =========================
+
+const formatTanggal = (tanggal) => {
+  if (!tanggal) return '-'
+
+  const date = new Date(tanggal)
+
+  if (isNaN(date.getTime())) {
+    return tanggal
+  }
+
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  })
+}
 
 // =========================
 // AMBIL DATA JADWAL
@@ -76,6 +97,7 @@ const ambilDataJadwal = async () => {
       km: jadwal.km ?? null,
       picDriver: jadwal.picDriver || '',
       tanggalService: jadwal.tanggalService || '',
+      tanggalTindakLanjut: jadwal.tanggalTindakLanjut || '',
       keterangan: jadwal.keterangan || '',
       status: jadwal.status || 'Open',
       tindakLanjut: jadwal.tindakLanjut || ''
@@ -108,15 +130,12 @@ const submitForm = async () => {
 
   try {
 
-    /*
-     * =========================
-     * UID
-     * =========================
-     *
-     * UID hanya mengirim status.
-     */
-    if (role.value === 'uid') {
+    // =========================
+    // UID
+    // =========================
+    // UID hanya boleh mengubah status
 
+    if (role.value === 'uid') {
       await api.put(
         `/jadwal-service/${form.value.id}`,
         {
@@ -129,22 +148,22 @@ const submitForm = async () => {
       )
     }
 
-    /*
-     * =========================
-     * ADMIN
-     * =========================
-     *
-     * Admin boleh mengubah:
-     * - status
-     * - tindak lanjut
-     */
-    if (role.value === 'admin') {
+    // =========================
+    // ADMIN
+    // =========================
+    // Admin boleh mengubah:
+    // - status
+    // - tindak lanjut
+    // - tanggal tindak lanjut
 
+    if (role.value === 'admin') {
       await api.put(
         `/jadwal-service/${form.value.id}`,
         {
           status: form.value.status,
-          tindakLanjut: form.value.tindakLanjut
+          tindakLanjut: form.value.tindakLanjut,
+          tanggalTindakLanjut:
+            form.value.tanggalTindakLanjut || null
         }
       )
 
@@ -257,7 +276,7 @@ onMounted(() => {
         />
       </div>
 
-      <!-- TANGGAL SERVICE -->
+      <!-- RENCANA TANGGAL SERVICE -->
       <div class="form-row">
         <label>
           Rencana Tanggal Service
@@ -268,6 +287,33 @@ onMounted(() => {
           type="date"
           readonly
         />
+      </div>
+
+      <!-- TANGGAL TINDAK LANJUT -->
+      <div class="form-row">
+        <label>
+          Tanggal Tindak Lanjut
+        </label>
+
+        <!-- ADMIN BOLEH EDIT -->
+        <input
+          v-if="isAdmin"
+          v-model="form.tanggalTindakLanjut"
+          type="date"
+          :disabled="loading"
+        />
+
+        <!-- UID / ROLE LAIN READONLY -->
+        <div
+          v-else
+          class="readonly-date"
+        >
+          {{
+            form.tanggalTindakLanjut
+              ? formatTanggal(form.tanggalTindakLanjut)
+              : 'Belum ada tanggal tindak lanjut'
+          }}
+        </div>
       </div>
 
       <!-- KETERANGAN -->
@@ -293,6 +339,7 @@ onMounted(() => {
         <select
           v-if="canManage"
           v-model="form.status"
+          :disabled="loading"
         >
           <option value="Open">
             Open
@@ -332,6 +379,7 @@ onMounted(() => {
           v-model="form.tindakLanjut"
           rows="5"
           placeholder="Tuliskan tindak lanjut jadwal service..."
+          :disabled="loading"
         ></textarea>
 
         <!-- UID / ROLE LAIN -->
@@ -424,6 +472,13 @@ textarea[readonly] {
   cursor: default;
 }
 
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 textarea {
   resize: vertical;
   min-height: 90px;
@@ -447,6 +502,18 @@ input:hover,
 textarea:hover,
 select:hover {
   border-color: #cfe4fb;
+}
+
+.readonly-date {
+  width: 100%;
+  min-height: 42px;
+  padding: 11px 14px;
+  border: 1.5px solid #e3edf7;
+  border-radius: 10px;
+  box-sizing: border-box;
+  font-size: 14px;
+  background: #f7f9fc;
+  color: #5f6b7a;
 }
 
 .readonly-text {

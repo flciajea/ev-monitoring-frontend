@@ -118,7 +118,9 @@ const form = ref({
 
   status: 'Open',
 
-  tindakLanjut: ''
+  tindakLanjut: '',
+
+  tanggalTindakLanjut: ''
 
 })
 
@@ -151,6 +153,8 @@ const ambilDataKeluhan = async () => {
 
     form.value.tindakLanjut = ''
 
+    form.value.tanggalTindakLanjut = ''
+
     return
 
   }
@@ -180,7 +184,10 @@ const ambilDataKeluhan = async () => {
       ...response.data,
 
       tindakLanjut:
-        response.data.tindakLanjut || ''
+        response.data.tindakLanjut || '',
+
+      tanggalTindakLanjut:
+        response.data.tanggalTindakLanjut || ''
 
     }
 
@@ -259,6 +266,53 @@ const handleFileChange = (event) => {
 
 
 /* =========================
+   STATUS DISPLAY
+   ========================= */
+
+const normalizeStatus = (status) => {
+
+  return status || 'Open'
+
+}
+
+
+const getStatusClass = (status) => {
+
+  const actualStatus =
+    normalizeStatus(status)
+
+  if (actualStatus === 'Open') {
+
+    return 'status-pending'
+
+  }
+
+  if (
+    actualStatus === 'On Progress'
+  ) {
+
+    return 'status-progress'
+
+  }
+
+  if (actualStatus === 'Close') {
+
+    return 'status-success'
+
+  }
+
+  if (actualStatus === 'Cancel') {
+
+    return 'status-cancel'
+
+  }
+
+  return 'status-default'
+
+}
+
+
+/* =========================
    SUBMIT
    ========================= */
 
@@ -305,6 +359,9 @@ const submitForm = async () => {
 
         payload.tindakLanjut =
           form.value.tindakLanjut
+
+        payload.tanggalTindakLanjut =
+          form.value.tanggalTindakLanjut
 
       }
 
@@ -651,7 +708,9 @@ onMounted(() => {
           class="status-badge"
           :class="getStatusClass(form.status)"
         >
+
           {{ normalizeStatus(form.status) }}
+
         </div>
 
       </div>
@@ -672,6 +731,7 @@ onMounted(() => {
 
 
         <!-- ADMIN -->
+
         <textarea
           v-if="isAdmin"
           v-model="form.tindakLanjut"
@@ -682,6 +742,7 @@ onMounted(() => {
 
 
         <!-- UID / ROLE LAIN -->
+
         <div
           v-else
           class="tindak-lanjut-readonly"
@@ -702,6 +763,57 @@ onMounted(() => {
           class="field-info"
         >
           Tindak lanjut hanya dapat diisi atau diubah oleh Admin.
+        </small>
+
+      </div>
+
+
+      <!-- =========================
+           TANGGAL TINDAK LANJUT
+           ========================= -->
+
+      <div
+        v-if="isEditMode"
+        class="form-row"
+      >
+
+        <label>
+          Tanggal Tindak Lanjut
+        </label>
+
+
+        <!-- ADMIN -->
+
+        <input
+          v-if="isAdmin"
+          v-model="form.tanggalTindakLanjut"
+          type="date"
+          :disabled="loading"
+        />
+
+
+        <!-- UID / ROLE LAIN -->
+
+        <div
+          v-else
+          class="tanggal-tindak-lanjut-readonly"
+        >
+
+          {{
+            form.tanggalTindakLanjut ||
+            'Belum ada tanggal tindak lanjut.'
+          }}
+
+        </div>
+
+
+        <!-- INFO ADMIN -->
+
+        <small
+          v-if="isAdmin"
+          class="field-info"
+        >
+          Tanggal tindak lanjut hanya dapat diisi atau diubah oleh Admin.
         </small>
 
       </div>
@@ -744,7 +856,9 @@ onMounted(() => {
           class="btn-secondary"
           @click="batal"
         >
+
           Kembali
+
         </button>
 
       </div>
@@ -754,10 +868,6 @@ onMounted(() => {
   </div>
 
 </template>
-
-
-<script setup>
-</script>
 
 
 <style scoped>
@@ -938,7 +1048,8 @@ textarea {
    ========================= */
 
 select:disabled,
-textarea:disabled {
+textarea:disabled,
+input:disabled {
 
   opacity: 0.7;
 
@@ -1073,6 +1184,34 @@ textarea:focus {
   white-space: pre-wrap;
 
   overflow-wrap: anywhere;
+
+}
+
+
+/* =========================
+   TANGGAL TINDAK LANJUT READONLY
+   ========================= */
+
+.tanggal-tindak-lanjut-readonly {
+
+  min-height: 42px;
+
+  padding: 11px 14px;
+
+  box-sizing: border-box;
+
+  border:
+    1.5px solid #e3edf7;
+
+  border-radius: 10px;
+
+  background: #f4f7fa;
+
+  color: #475569;
+
+  font-size: 14px;
+
+  line-height: 1.5;
 
 }
 
