@@ -2,17 +2,14 @@
 import { ref, onMounted, computed } from 'vue'
 import api from '../api'
 
-import EmptyState from '../components/EmptyState.vue'
-import SearchInput from '../components/SearchInput.vue'
-
 const daftarSparepart = ref([])
 const loading = ref(true)
 const errorMsg = ref('')
 const searchQuery = ref('')
 
-// =========================
-// FILTER
-// =========================
+/* =========================
+   FILTER
+========================= */
 
 const filteredSparepart = computed(() => {
   const query = searchQuery.value
@@ -23,16 +20,47 @@ const filteredSparepart = computed(() => {
     return daftarSparepart.value
   }
 
-  return daftarSparepart.value.filter(item =>
-    item.namaSparepart
-      ?.toLowerCase()
-      .includes(query)
-  )
+  return daftarSparepart.value.filter(item => {
+    const searchableText = [
+      item.id,
+      item.namaSparepart,
+      item.fUsed ? 'digunakan' : 'tidak digunakan'
+    ]
+      .filter(
+        value =>
+          value !== null &&
+          value !== undefined
+      )
+      .join(' ')
+      .toLowerCase()
+
+    return searchableText.includes(query)
+  })
 })
 
-// =========================
-// AMBIL DATA
-// =========================
+/* =========================
+   STATISTICS
+========================= */
+
+const totalSparepart = computed(() =>
+  daftarSparepart.value.length
+)
+
+const totalDigunakan = computed(() =>
+  daftarSparepart.value.filter(
+    item => item.fUsed === true
+  ).length
+)
+
+const totalTidakDigunakan = computed(() =>
+  daftarSparepart.value.filter(
+    item => item.fUsed !== true
+  ).length
+)
+
+/* =========================
+   AMBIL DATA
+========================= */
 
 const ambilData = async () => {
   loading.value = true
@@ -46,21 +74,22 @@ const ambilData = async () => {
       : []
 
   } catch (error) {
+    console.error(error)
+
     errorMsg.value =
-      'Gagal mengambil data: ' +
-      (
-        error.response?.data?.error ||
-        error.message
-      )
+      error?.response?.data?.error ||
+      error?.response?.data?.message ||
+      error?.message ||
+      'Gagal mengambil data sparepart.'
 
   } finally {
     loading.value = false
   }
 }
 
-// =========================
-// INIT
-// =========================
+/* =========================
+   INIT
+========================= */
 
 onMounted(() => {
   ambilData()
@@ -69,142 +98,294 @@ onMounted(() => {
 
 
 <template>
-  <div>
+  <div class="sparepart-page">
 
-    <!-- HEADER -->
+    <!-- =========================
+         HEADER
+    ========================== -->
+    <section class="page-header">
 
-    <div class="header-row">
+      <div class="header-content">
 
-      <div>
+        <p class="page-eyebrow">
+          Master Data
+        </p>
 
-        <h2>
+        <h1>
           Daftar Sparepart
-        </h2>
+        </h1>
 
-        <p class="subtitle">
+        <p class="page-description">
           Data sparepart yang tersedia dalam sistem
         </p>
 
       </div>
 
-    </div>
+    </section>
 
 
-    <!-- SEARCH -->
+    <!-- =========================
+         STATISTICS
+    ========================== -->
+    <section class="stats-grid">
 
-    <SearchInput
-      v-model="searchQuery"
-      placeholder="Cari nama sparepart..."
-    />
+      <div class="stat-card">
 
+        <span class="stat-label">
+          Total Sparepart
+        </span>
 
-    <!-- LOADING -->
+        <strong class="stat-value">
+          {{ totalSparepart }}
+        </strong>
 
-    <p v-if="loading">
-      Loading...
-    </p>
-
-
-    <!-- ERROR -->
-
-    <p
-      v-else-if="errorMsg"
-      class="error-text"
-    >
-      {{ errorMsg }}
-    </p>
+      </div>
 
 
-    <!-- EMPTY -->
+      <div class="stat-card stat-used">
 
-    <EmptyState
-      v-else-if="filteredSparepart.length === 0"
-      :message="
-        searchQuery
-          ? 'Tidak ada hasil ditemukan'
-          : 'Belum ada data sparepart'
-      "
-      :subtext="
-        searchQuery
-          ? 'Coba kata kunci lain'
-          : 'Belum ada data sparepart'
-      "
-    />
+        <span class="stat-label">
+          Digunakan
+        </span>
+
+        <strong class="stat-value">
+          {{ totalDigunakan }}
+        </strong>
+
+      </div>
 
 
-    <!-- TABLE -->
+      <div class="stat-card stat-unused">
 
-    <div
-      v-else
-      class="table-wrapper"
-    >
+        <span class="stat-label">
+          Tidak Digunakan
+        </span>
 
-      <table>
+        <strong class="stat-value">
+          {{ totalTidakDigunakan }}
+        </strong>
 
-        <thead>
+      </div>
 
-          <tr>
-
-            <th>
-              ID
-            </th>
-
-            <th>
-              Nama Sparepart
-            </th>
-
-            <th>
-              Status
-            </th>
-
-          </tr>
-
-        </thead>
+    </section>
 
 
-        <tbody>
+    <!-- =========================
+         SEARCH
+    ========================== -->
+    <section class="toolbar">
 
-          <tr
-            v-for="item in filteredSparepart"
-            :key="item.id"
-          >
+      <div class="search-box">
 
-            <td>
-              {{ item.id }}
-            </td>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Cari nama sparepart..."
+        />
 
-            <td>
-              <strong>
-                {{ item.namaSparepart || '-' }}
-              </strong>
-            </td>
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="clear-search"
+          @click="searchQuery = ''"
+        >
+          Clear
+        </button>
 
-            <td>
+      </div>
 
-              <span
-                class="status-badge"
-                :class="
-                  item.fUsed
-                    ? 'aktif'
-                    : 'nonaktif'
-                "
-              >
-                {{
-                  item.fUsed
-                    ? 'Digunakan'
-                    : 'Tidak digunakan'
-                }}
-              </span>
+    </section>
 
-            </td>
 
-          </tr>
+    <!-- =========================
+         DATA SECTION
+    ========================== -->
+    <section class="data-section">
 
-        </tbody>
+      <div class="section-header">
 
-      </table>
+        <div>
 
-    </div>
+          <h2>
+            Data Sparepart
+          </h2>
+
+          <p>
+            {{ filteredSparepart.length }}
+            data ditemukan
+          </p>
+
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           LOADING
+      ========================== -->
+      <div
+        v-if="loading"
+        class="state-card"
+      >
+
+        <div class="loading-line"></div>
+
+        <div class="loading-line short"></div>
+
+        <div class="loading-table"></div>
+
+      </div>
+
+
+      <!-- =========================
+           ERROR
+      ========================== -->
+      <div
+        v-else-if="errorMsg"
+        class="state-card error-state"
+      >
+
+        <h3>
+          Data tidak dapat dimuat
+        </h3>
+
+        <p>
+          {{ errorMsg }}
+        </p>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          @click="ambilData"
+        >
+          Coba Lagi
+        </button>
+
+      </div>
+
+
+      <!-- =========================
+           EMPTY
+      ========================== -->
+      <div
+        v-else-if="filteredSparepart.length === 0"
+        class="state-card empty-state"
+      >
+
+        <h3>
+          Tidak ada data sparepart
+        </h3>
+
+        <p v-if="searchQuery">
+          Tidak ditemukan sparepart yang sesuai
+          dengan pencarian.
+        </p>
+
+        <p v-else>
+          Belum terdapat data sparepart dalam sistem.
+        </p>
+
+      </div>
+
+
+      <!-- =========================
+           TABLE
+      ========================== -->
+      <div
+        v-else
+        class="table-container"
+      >
+
+        <table class="data-table">
+
+          <colgroup>
+
+            <col class="col-id" />
+
+            <col class="col-nama" />
+
+            <col class="col-status" />
+
+          </colgroup>
+
+
+          <thead>
+
+            <tr>
+
+              <th>
+                ID
+              </th>
+
+              <th>
+                Nama Sparepart
+              </th>
+
+              <th>
+                Status
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            <tr
+              v-for="item in filteredSparepart"
+              :key="item.id"
+            >
+
+              <!-- ID -->
+              <td>
+
+                <span class="id-text">
+                  {{ item.id }}
+                </span>
+
+              </td>
+
+
+              <!-- NAMA -->
+              <td>
+
+                <div class="sparepart-name">
+                  {{ item.namaSparepart || '-' }}
+                </div>
+
+              </td>
+
+
+              <!-- STATUS -->
+              <td>
+
+                <span
+                  class="status-badge"
+                  :class="
+                    item.fUsed
+                      ? 'status-used'
+                      : 'status-unused'
+                  "
+                >
+                  {{
+                    item.fUsed
+                      ? 'Digunakan'
+                      : 'Tidak digunakan'
+                  }}
+                </span>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
 
   </div>
 </template>
@@ -212,48 +393,264 @@ onMounted(() => {
 
 <style scoped>
 
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+/* =========================
+   PAGE
+========================= */
 
-  margin-bottom: 16px;
+.sparepart-page {
+  width: 100%;
+  max-width: 100%;
 
-  flex-wrap: wrap;
-  gap: 10px;
-}
+  padding: 32px 36px 48px;
 
-h2 {
-  color: #2b7cd3;
-
-  font-size: 22px;
-
-  margin: 0;
-}
-
-.subtitle {
-  margin: 4px 0 0;
-
-  color: #718096;
-
-  font-size: 13px;
+  box-sizing: border-box;
 }
 
 
 /* =========================
-   ERROR
+   HEADER
 ========================= */
 
-.error-text {
-  color: #e74c3c;
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
 
-  background: #fdecea;
+  gap: 24px;
 
-  padding: 10px 14px;
+  margin-bottom: 28px;
+}
 
-  border-radius: 8px;
+
+.page-eyebrow {
+  margin: 0 0 6px;
+
+  color: #2563eb;
+
+  font-size: 12px;
+  font-weight: 750;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+
+.page-header h1 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 30px;
+  line-height: 1.2;
+
+  font-weight: 750;
+}
+
+
+.page-description {
+  margin: 8px 0 0;
+
+  color: #64748b;
+
+  font-size: 15px;
+}
+
+
+/* =========================
+   STATISTICS
+========================= */
+
+.stats-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 24px;
+}
+
+
+.stat-card {
+  min-height: 90px;
+
+  padding: 18px 20px;
+
+  box-sizing: border-box;
+
+  background: white;
+
+  border: 1px solid #e5eaf1;
+
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.035);
+}
+
+
+.stat-card:first-child {
+  border-top: 3px solid #3b82f6;
+}
+
+
+.stat-used {
+  border-top: 3px solid #22c55e;
+}
+
+
+.stat-unused {
+  border-top: 3px solid #94a3b8;
+}
+
+
+.stat-label {
+  margin-bottom: 7px;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+.stat-value {
+  color: #172033;
+
+  font-size: 25px;
+  line-height: 1;
+
+  font-weight: 750;
+}
+
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar {
+  margin-bottom: 24px;
+}
+
+
+.search-box {
+  position: relative;
+
+  width: 100%;
+}
+
+
+.search-box input {
+  width: 100%;
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 80px 0 16px;
 
   font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.search-box input::placeholder {
+  color: #94a3b8;
+}
+
+
+.search-box input:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.clear-search {
+  position: absolute;
+
+  top: 50%;
+  right: 12px;
+
+  transform: translateY(-50%);
+
+  border: none;
+
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+}
+
+
+.clear-search:hover {
+  color: #2563eb;
+}
+
+
+/* =========================
+   DATA SECTION
+========================= */
+
+.data-section {
+  background: white;
+
+  border: 1px solid #e5eaf1;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 2px 10px rgba(15, 23, 42, 0.035);
+}
+
+
+.section-header {
+  padding: 22px 24px 18px;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+
+.section-header h2 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 19px;
+  font-weight: 720;
+}
+
+
+.section-header p {
+  margin: 5px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
 }
 
 
@@ -261,73 +658,124 @@ h2 {
    TABLE
 ========================= */
 
-.table-wrapper {
+.table-container {
   width: 100%;
 
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
-table {
+
+.data-table {
   width: 100%;
 
   border-collapse: collapse;
 
-  background: white;
+  table-layout: fixed;
+}
 
-  border-radius: 12px;
 
-  overflow: hidden;
+.col-id {
+  width: 15%;
+}
 
-  box-shadow:
-    0 2px 12px
-    rgba(
-      58,
-      141,
-      222,
-      0.08
-    );
+
+.col-nama {
+  width: 60%;
+}
+
+
+.col-status {
+  width: 25%;
 }
 
 
 /* =========================
-   HEADER TABLE
+   TABLE HEADER
 ========================= */
 
-th {
-  background-color: #eaf4ff;
+.data-table thead th {
+  padding: 15px 18px;
 
-  color: #2b7cd3;
+  background: #f8fafc;
 
-  padding: 14px 16px;
+  border-bottom: 1px solid #e2e8f0;
 
-  text-align: left;
+  color: #64748b;
 
-  font-size: 13px;
-
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 750;
 
   text-transform: uppercase;
 
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+
+  text-align: left;
+
+  vertical-align: middle;
 }
 
 
 /* =========================
-   DATA TABLE
+   TABLE BODY
 ========================= */
 
-td {
-  padding: 14px 16px;
+.data-table tbody td {
+  padding: 17px 18px;
 
-  border-top: 1px solid #eef4fa;
+  border-bottom: 1px solid #edf0f4;
 
-  font-size: 14px;
+  color: #374151;
 
-  color: #384454;
+  font-size: 13px;
+
+  vertical-align: middle;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-tbody tr:hover td {
-  background-color: #f7fbff;
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+.data-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+
+.data-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+
+/* =========================
+   ID
+========================= */
+
+.id-text {
+  color: #64748b;
+
+  font-size: 12px;
+
+  font-weight: 600;
+}
+
+
+/* =========================
+   NAMA SPAREPART
+========================= */
+
+.sparepart-name {
+  color: #172033;
+
+  font-size: 13px;
+
+  font-weight: 650;
+
+  line-height: 1.5;
 }
 
 
@@ -336,27 +784,247 @@ tbody tr:hover td {
 ========================= */
 
 .status-badge {
-  display: inline-block;
+  display: inline-flex;
 
-  padding: 4px 10px;
+  align-items: center;
 
-  border-radius: 12px;
+  min-height: 32px;
+
+  padding: 6px 10px;
+
+  box-sizing: border-box;
+
+  border-radius: 8px;
 
   font-size: 11px;
 
-  font-weight: 600;
+  font-weight: 700;
 }
 
-.status-badge.aktif {
-  background-color: #e3f9e5;
 
-  color: #1e9e3a;
+/* DIGUNAKAN */
+
+.status-used {
+  color: #15803d;
+
+  background: #f0fdf4;
+
+  border: 1px solid #bbf7d0;
 }
 
-.status-badge.nonaktif {
-  background-color: #fdecea;
 
-  color: #e74c3c;
+/* TIDAK DIGUNAKAN */
+
+.status-unused {
+  color: #64748b;
+
+  background: #f1f5f9;
+
+  border: 1px solid #cbd5e1;
+}
+
+
+/* =========================
+   STATES
+========================= */
+
+.state-card {
+  padding: 50px 24px;
+
+  text-align: center;
+}
+
+
+.state-card h3 {
+  margin: 0 0 8px;
+
+  color: #334155;
+
+  font-size: 16px;
+}
+
+
+.state-card p {
+  margin: 0 0 18px;
+
+  color: #94a3b8;
+
+  font-size: 13px;
+}
+
+
+.error-state h3 {
+  color: #b91c1c;
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+
+.btn-secondary {
+  border: none;
+
+  border-radius: 9px;
+
+  padding: 10px 16px;
+
+  background: #eef2f7;
+
+  color: #374151;
+
+  font-size: 13px;
+
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+
+/* =========================
+   LOADING
+========================= */
+
+.loading-line {
+  width: 180px;
+  height: 14px;
+
+  margin: 0 auto 10px;
+
+  border-radius: 5px;
+
+  background: #edf2f7;
+
+  animation:
+    pulse 1.4s infinite ease-in-out;
+}
+
+
+.loading-line.short {
+  width: 110px;
+}
+
+
+.loading-table {
+  width: 90%;
+  height: 180px;
+
+  margin: 28px auto 0;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+
+  animation:
+    pulse 1.4s infinite ease-in-out;
+}
+
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+  .sparepart-page {
+    padding: 28px 26px 40px;
+  }
+
+
+  .stats-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+}
+
+
+@media (max-width: 768px) {
+
+  .sparepart-page {
+    padding: 20px 16px 32px;
+  }
+
+
+  .page-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    margin-bottom: 22px;
+  }
+
+
+  .page-header h1 {
+    font-size: 26px;
+  }
+
+
+  .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+  }
+
+
+  .stat-card {
+    min-height: 80px;
+
+    padding: 15px;
+  }
+
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+
+  .data-table {
+    min-width: 650px;
+  }
+
+
+  .section-header {
+    padding: 18px;
+  }
+
+}
+
+
+@media (max-width: 480px) {
+
+  .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+
+  .stat-card:first-child {
+    grid-column: span 2;
+  }
+
 }
 
 </style>

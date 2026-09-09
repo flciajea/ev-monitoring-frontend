@@ -71,9 +71,14 @@ const isLoginPage = computed(() => {
 // =========================
 
 const sidebarOpen = ref(false)
+const sidebarCollapsed = ref(false)
 
 const closeSidebar = () => {
   sidebarOpen.value = false
+}
+
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
 
@@ -94,7 +99,12 @@ const handleLogout = () => {
 
 <template>
 
-  <div id="app">
+  <div
+    id="app"
+    :class="{
+      'sidebar-collapsed': sidebarCollapsed
+    }"
+  >
 
     <!-- ========================= -->
     <!-- SIDEBAR -->
@@ -102,7 +112,7 @@ const handleLogout = () => {
 
     <template v-if="!isLoginPage">
 
-      <!-- HAMBURGER -->
+      <!-- MOBILE HAMBURGER -->
 
       <button
         class="hamburger"
@@ -115,7 +125,7 @@ const handleLogout = () => {
       </button>
 
 
-      <!-- OVERLAY -->
+      <!-- OVERLAY MOBILE -->
 
       <div
         v-if="sidebarOpen"
@@ -135,9 +145,32 @@ const handleLogout = () => {
 
         <div class="sidebar-header">
 
-          <h1>
-            EV Monitoring
-          </h1>
+          <div class="brand">
+
+            <div class="brand-icon">
+              EV
+            </div>
+
+            <h1>
+              EV Monitoring
+            </h1>
+
+          </div>
+
+
+          <!-- COLLAPSE BUTTON -->
+
+          <button
+            class="collapse-btn"
+            @click="toggleSidebar"
+            :aria-label="
+              sidebarCollapsed
+                ? 'Buka sidebar'
+                : 'Tutup sidebar'
+            "
+          >
+            {{ sidebarCollapsed ? '›' : '‹' }}
+          </button>
 
         </div>
 
@@ -155,50 +188,80 @@ const handleLogout = () => {
             <RouterLink
               to="/unit"
               @click="closeSidebar"
+              title="Unit"
             >
-              Unit
+              <span class="nav-icon">▣</span>
+              <span class="nav-label">Unit</span>
             </RouterLink>
+
 
             <RouterLink
               to="/users"
               @click="closeSidebar"
+              title="Users"
             >
-              Users
+              <span class="nav-icon">♙</span>
+              <span class="nav-label">Users</span>
             </RouterLink>
+
 
             <RouterLink
               to="/jadwal-service"
               @click="closeSidebar"
+              title="Jadwal Service"
             >
-              Jadwal Service
+              <span class="nav-icon">▤</span>
+              <span class="nav-label">Jadwal Service</span>
             </RouterLink>
+
 
             <RouterLink
               to="/keluhan"
               @click="closeSidebar"
+              title="Keluhan"
             >
-              Keluhan
+              <span class="nav-icon">⚠</span>
+              <span class="nav-label">Keluhan</span>
             </RouterLink>
+
 
             <RouterLink
               to="/sparepart"
               @click="closeSidebar"
+              title="Sparepart"
             >
-              Sparepart
+              <span class="nav-icon">⚙</span>
+              <span class="nav-label">Sparepart</span>
             </RouterLink>
+
 
             <RouterLink
               to="/ganti-sparepart"
               @click="closeSidebar"
+              title="Ganti Sparepart"
             >
-              Ganti Sparepart
+              <span class="nav-icon">↻</span>
+              <span class="nav-label">Ganti Sparepart</span>
             </RouterLink>
+
+
+            <RouterLink
+              to="/spk"
+              @click="closeSidebar"
+              title="Surat Perintah Kerja"
+            >
+              <span class="nav-icon">▤</span>
+              <span class="nav-label">Surat Perintah Kerja</span>
+            </RouterLink>
+
 
             <RouterLink
               to="/emisi-karbon"
               @click="closeSidebar"
+              title="Emisi Karbon"
             >
-              Emisi Karbon
+              <span class="nav-icon">♻</span>
+              <span class="nav-label">Emisi Karbon</span>
             </RouterLink>
 
           </template>
@@ -213,50 +276,70 @@ const handleLogout = () => {
             <RouterLink
               to="/unit"
               @click="closeSidebar"
+              title="Unit"
             >
-              Unit
+              <span class="nav-icon">▣</span>
+              <span class="nav-label">Unit</span>
             </RouterLink>
+
 
             <RouterLink
               to="/users"
               @click="closeSidebar"
+              title="Users"
             >
-              Users
+              <span class="nav-icon">♙</span>
+              <span class="nav-label">Users</span>
             </RouterLink>
+
 
             <RouterLink
               to="/jadwal-service"
               @click="closeSidebar"
+              title="Jadwal Service"
             >
-              Jadwal Service
+              <span class="nav-icon">▤</span>
+              <span class="nav-label">Jadwal Service</span>
             </RouterLink>
+
 
             <RouterLink
               to="/keluhan"
               @click="closeSidebar"
+              title="Keluhan"
             >
-              Keluhan
+              <span class="nav-icon">⚠</span>
+              <span class="nav-label">Keluhan</span>
             </RouterLink>
+
 
             <RouterLink
               to="/sparepart"
               @click="closeSidebar"
+              title="Sparepart"
             >
-              Sparepart
+              <span class="nav-icon">⚙</span>
+              <span class="nav-label">Sparepart</span>
             </RouterLink>
+
 
             <RouterLink
               to="/ganti-sparepart"
               @click="closeSidebar"
+              title="Ganti Sparepart"
             >
-              Ganti Sparepart
+              <span class="nav-icon">↻</span>
+              <span class="nav-label">Ganti Sparepart</span>
             </RouterLink>
+
 
             <RouterLink
               to="/emisi-karbon"
               @click="closeSidebar"
+              title="Emisi Karbon"
             >
-              Emisi Karbon
+              <span class="nav-icon">♻</span>
+              <span class="nav-label">Emisi Karbon</span>
             </RouterLink>
 
           </template>
@@ -271,8 +354,10 @@ const handleLogout = () => {
             <RouterLink
               to="/keluhan"
               @click="closeSidebar"
+              title="Keluhan"
             >
-              Keluhan
+              <span class="nav-icon">⚠</span>
+              <span class="nav-label">Keluhan</span>
             </RouterLink>
 
           </template>
@@ -291,13 +376,30 @@ const handleLogout = () => {
             class="user-info"
           >
 
-            <div class="user-name">
-              {{ currentUser.namaLengkap || currentUser.username }}
+            <div class="user-avatar">
+              {{
+                (
+                  currentUser.namaLengkap ||
+                  currentUser.username ||
+                  'U'
+                )
+                  .charAt(0)
+                  .toUpperCase()
+              }}
             </div>
 
-            <span class="role-badge">
-              {{ currentUser.role }}
-            </span>
+
+            <div class="user-details">
+
+              <div class="user-name">
+                {{ currentUser.namaLengkap || currentUser.username }}
+              </div>
+
+              <span class="role-badge">
+                {{ currentUser.role }}
+              </span>
+
+            </div>
 
           </div>
 
@@ -305,8 +407,10 @@ const handleLogout = () => {
           <button
             @click="handleLogout"
             class="logout-btn"
+            title="Logout"
           >
-            Logout
+            <span class="logout-icon">↪</span>
+            <span class="logout-label">Logout</span>
           </button>
 
         </div>
@@ -367,50 +471,6 @@ body {
 
 
 /* =========================
-   HAMBURGER
-========================= */
-
-.hamburger {
-  display: none;
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 60;
-
-  background: #1e2a3a;
-  border: none;
-  border-radius: 8px;
-
-  width: 42px;
-  height: 42px;
-
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  gap: 4px;
-  cursor: pointer;
-}
-
-.hamburger span {
-  width: 20px;
-  height: 2px;
-
-  background: white;
-  border-radius: 2px;
-}
-
-
-/* =========================
-   OVERLAY
-========================= */
-
-.overlay {
-  display: none;
-}
-
-
-/* =========================
    SIDEBAR
 ========================= */
 
@@ -428,6 +488,18 @@ body {
   height: 100vh;
 
   flex-shrink: 0;
+
+  transition:
+    width 0.25s ease;
+}
+
+
+/* =========================
+   COLLAPSED SIDEBAR
+========================= */
+
+.sidebar-collapsed .sidebar {
+  width: 72px;
 }
 
 
@@ -436,17 +508,141 @@ body {
 ========================= */
 
 .sidebar-header {
-  padding: 24px 20px;
+  min-height: 64px;
+
+  padding: 12px 16px;
 
   border-bottom: 1px solid
     rgba(255, 255, 255, 0.08);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+
+  min-width: 0;
+
+  gap: 10px;
+}
+
+.brand-icon {
+  width: 34px;
+  height: 34px;
+
+  flex-shrink: 0;
+
+  border-radius: 9px;
+
+  background: #4a9eeb;
+
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .sidebar-header h1 {
   color: white;
 
-  font-size: 18px;
+  font-size: 17px;
+  font-weight: 700;
+
   margin: 0;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  transition:
+    opacity 0.2s ease,
+    width 0.25s ease;
+}
+
+
+/* =========================
+   COLLAPSE BUTTON
+========================= */
+
+.collapse-btn {
+  width: 28px;
+  height: 28px;
+
+  flex-shrink: 0;
+
+  border: none;
+  border-radius: 6px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  color: #b8c4d4;
+
+  cursor: pointer;
+
+  font-size: 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.collapse-btn:hover {
+  background:
+    rgba(255, 255, 255, 0.15);
+
+  color: white;
+}
+
+
+/* =========================
+   COLLAPSED HEADER
+========================= */
+
+.sidebar-collapsed .sidebar-header {
+  justify-content: center;
+
+  padding: 16px 10px;
+}
+
+.sidebar-collapsed .brand {
+  gap: 0;
+}
+
+.sidebar-collapsed .sidebar-header h1 {
+  width: 0;
+  opacity: 0;
+}
+
+.sidebar-collapsed .collapse-btn {
+  position: absolute;
+
+  top: 44px;
+  right: -12px;
+
+  width: 24px;
+  height: 24px;
+
+  border-radius: 50%;
+
+  background: #4a9eeb;
+
+  color: white;
+
+  z-index: 5;
 }
 
 
@@ -460,9 +656,11 @@ body {
   display: flex;
   flex-direction: column;
 
-  padding: 16px 12px;
+  padding: 10px 12px;
 
-  gap: 4px;
+  gap: 2px;
+
+  overflow: hidden;
 }
 
 .sidebar-nav a {
@@ -473,11 +671,20 @@ body {
   font-weight: 500;
   font-size: 14px;
 
-  padding: 10px 14px;
+  padding: 8px 12px;
 
   border-radius: 8px;
 
-  transition: all 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  min-height: 38px;
 }
 
 .sidebar-nav a:hover {
@@ -489,7 +696,54 @@ body {
 
 .sidebar-nav a.router-link-active {
   background-color: #4a9eeb;
+
   color: white;
+}
+
+.nav-icon {
+  width: 22px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 17px;
+}
+
+.nav-label {
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  transition:
+    opacity 0.15s ease;
+}
+
+
+/* =========================
+   COLLAPSED NAVIGATION
+========================= */
+
+.sidebar-collapsed .sidebar-nav {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.sidebar-collapsed .sidebar-nav a {
+  justify-content: center;
+
+  padding-left: 8px;
+  padding-right: 8px;
+
+  gap: 0;
+}
+
+.sidebar-collapsed .nav-label {
+  width: 0;
+
+  opacity: 0;
 }
 
 
@@ -498,23 +752,69 @@ body {
 ========================= */
 
 .sidebar-footer {
-  padding: 16px 20px;
+  padding: 12px 16px;
 
   border-top: 1px solid
     rgba(255, 255, 255, 0.08);
 }
 
+/* =========================
+   USER INFO
+========================= */
+
 .user-info {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
   margin-bottom: 12px;
+
+  min-width: 0;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+
+  flex-shrink: 0;
+
+  border-radius: 50%;
+
+  background: #4a9eeb;
+
+  color: white;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.user-details {
+  min-width: 0;
+
+  overflow: hidden;
+
+  transition:
+    opacity 0.15s ease;
 }
 
 .user-name {
   color: white;
 
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
 
   margin-bottom: 4px;
+
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
 }
 
 .role-badge {
@@ -522,14 +822,40 @@ body {
 
   color: white;
 
-  padding: 2px 10px;
+  padding: 2px 9px;
 
   border-radius: 12px;
 
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
 
   text-transform: uppercase;
+}
+
+
+/* =========================
+   COLLAPSED USER
+========================= */
+
+.sidebar-collapsed .sidebar-footer {
+  padding: 12px 10px;
+}
+
+.sidebar-collapsed .user-info {
+  justify-content: center;
+}
+
+.sidebar-collapsed .user-details {
+  width: 0;
+
+  opacity: 0;
+}
+
+.sidebar-collapsed .logout-btn {
+  justify-content: center;
+
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 
@@ -559,11 +885,38 @@ body {
 
   transition:
     background-color 0.2s;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
 }
 
 .logout-btn:hover {
   background-color:
     rgba(231, 76, 60, 0.25);
+}
+
+.logout-icon {
+  font-size: 17px;
+
+  flex-shrink: 0;
+}
+
+.logout-label {
+  white-space: nowrap;
+
+  overflow: hidden;
+
+  transition:
+    opacity 0.15s ease;
+}
+
+.sidebar-collapsed .logout-label {
+  width: 0;
+
+  opacity: 0;
 }
 
 
@@ -581,10 +934,65 @@ main {
   min-height: 100vh;
 
   min-width: 0;
+
+  transition:
+    padding 0.25s ease;
 }
 
 main.full-width {
   padding: 0;
+}
+
+
+/* =========================
+   HAMBURGER
+========================= */
+
+.hamburger {
+  display: none;
+
+  position: fixed;
+
+  top: 16px;
+  left: 16px;
+
+  z-index: 60;
+
+  background: #1e2a3a;
+
+  border: none;
+
+  border-radius: 8px;
+
+  width: 42px;
+  height: 42px;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  cursor: pointer;
+}
+
+.hamburger span {
+  width: 20px;
+  height: 2px;
+
+  background: white;
+
+  border-radius: 2px;
+}
+
+
+/* =========================
+   OVERLAY
+========================= */
+
+.overlay {
+  display: none;
 }
 
 
@@ -598,11 +1006,22 @@ main.full-width {
     display: flex;
   }
 
+
+  /* Jangan gunakan collapsed
+     sidebar di mobile */
+
+  .sidebar-collapsed .sidebar {
+    width: 240px;
+  }
+
+
   .sidebar {
     position: fixed;
 
     left: -260px;
     top: 0;
+
+    width: 240px;
 
     height: 100vh;
 
@@ -612,9 +1031,11 @@ main.full-width {
       left 0.25s ease;
   }
 
+
   .sidebar.open {
     left: 0;
   }
+
 
   .overlay {
     display: block;
@@ -628,6 +1049,41 @@ main.full-width {
 
     z-index: 40;
   }
+
+
+  .collapse-btn {
+    display: none;
+  }
+
+
+  .sidebar-header {
+    padding: 16px 20px;
+  }
+
+
+  .sidebar-header h1 {
+    width: auto;
+    opacity: 1;
+  }
+
+
+  .nav-label {
+    width: auto !important;
+    opacity: 1 !important;
+  }
+
+
+  .user-details {
+    width: auto !important;
+    opacity: 1 !important;
+  }
+
+
+  .logout-label {
+    width: auto !important;
+    opacity: 1 !important;
+  }
+
 
   main {
     padding: 70px 16px 24px;

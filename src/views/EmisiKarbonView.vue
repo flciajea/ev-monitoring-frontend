@@ -18,12 +18,12 @@ const ambilData = async () => {
     } else {
       dataEmisi.value = null
     }
-
   } catch (error) {
-    errorMsg.value =
-      'Gagal ambil data: ' +
-      (error.response?.data?.error || error.message)
+    console.error('Gagal mengambil data emisi karbon:', error)
 
+    errorMsg.value =
+      'Gagal mengambil data: ' +
+      (error.response?.data?.error || error.message)
   } finally {
     loading.value = false
   }
@@ -50,239 +50,505 @@ onMounted(() => {
 })
 </script>
 
-
 <template>
-  <div>
+  <div class="emisi-page">
 
-    <div class="header-row">
-      <h2>
-        Ringkasan Emisi Karbon
-      </h2>
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+
+      <div>
+        <div class="breadcrumb">
+          DATA EMISI KARBON
+        </div>
+
+        <h1>
+          Ringkasan Emisi Karbon
+        </h1>
+
+        <p>
+          Ringkasan penggunaan kendaraan dan dampak emisi karbon.
+        </p>
+      </div>
+
     </div>
-
 
     <!-- LOADING -->
+    <div
+      v-if="loading"
+      class="state-card"
+    >
+      <div class="state-title">
+        Memuat data emisi karbon
+      </div>
 
-    <p v-if="loading">
-      Loading...
-    </p>
-
+      <div class="state-text">
+        Silakan tunggu sebentar.
+      </div>
+    </div>
 
     <!-- ERROR -->
-
-    <p
+    <div
       v-else-if="errorMsg"
-      class="error-text"
+      class="error-card"
     >
-      {{ errorMsg }}
-    </p>
+      <div class="error-title">
+        Data tidak dapat dimuat
+      </div>
 
+      <div class="error-message">
+        {{ errorMsg }}
+      </div>
+    </div>
 
-    <!-- DATA KOSONG -->
-
+    <!-- EMPTY -->
     <div
       v-else-if="!dataEmisi"
-      class="empty-state"
+      class="state-card"
     >
-      Belum ada data emisi karbon.
+      <div class="state-title">
+        Belum ada data emisi karbon
+      </div>
+
+      <div class="state-text">
+        Data emisi karbon belum tersedia.
+      </div>
     </div>
 
+    <!-- DATA -->
+    <template v-else>
 
-    <!-- STATISTIK -->
+      <!-- SUMMARY -->
+      <section class="summary-card">
 
-    <div
-      v-else
-      class="stats-grid"
-    >
+        <div class="summary-header">
+          <div>
+            <h2>
+              Ringkasan Emisi
+            </h2>
 
-      <div class="stat-card">
-
-        <div class="stat-label">
-          Total Kendaraan
+            <p>
+              Informasi keseluruhan berdasarkan data kendaraan yang tersedia.
+            </p>
+          </div>
         </div>
 
-        <div class="stat-value">
-          {{ formatAngka(dataEmisi.totalKendaraan) }}
+        <div class="stats-grid">
+
+          <!-- TOTAL KENDARAAN -->
+          <div class="stat-card">
+
+            <div class="stat-label">
+              Total Kendaraan
+            </div>
+
+            <div class="stat-value">
+              {{ formatAngka(dataEmisi.totalKendaraan) }}
+            </div>
+
+            <div class="stat-unit">
+              kendaraan
+            </div>
+
+          </div>
+
+          <!-- TOTAL JARAK -->
+          <div class="stat-card">
+
+            <div class="stat-label">
+              Total Jarak Tempuh
+            </div>
+
+            <div class="stat-value">
+              {{ formatAngka(dataEmisi.totalJarakTempuh) }}
+            </div>
+
+            <div class="stat-unit">
+              kilometer
+            </div>
+
+          </div>
+
+          <!-- EMISI EV -->
+          <div class="stat-card">
+
+            <div class="stat-label">
+              Emisi EV
+            </div>
+
+            <div class="stat-value">
+              {{ formatAngka(dataEmisi.totalEmisiEv) }}
+            </div>
+
+            <div class="stat-unit">
+              kg CO₂
+            </div>
+
+          </div>
+
+          <!-- EMISI ICE -->
+          <div class="stat-card">
+
+            <div class="stat-label">
+              Emisi ICE
+            </div>
+
+            <div class="stat-value">
+              {{ formatAngka(dataEmisi.totalEmisiIce) }}
+            </div>
+
+            <div class="stat-unit">
+              kg CO₂
+            </div>
+
+          </div>
+
         </div>
 
-      </div>
+      </section>
 
+      <!-- DAMPAK -->
+      <section class="impact-card">
 
-      <div class="stat-card">
+        <div class="impact-header">
 
-        <div class="stat-label">
-          Total Jarak Tempuh
+          <div>
+            <h2>
+              Dampak Penggunaan Kendaraan Listrik
+            </h2>
+
+            <p>
+              Perbandingan pengurangan emisi dan estimasi reduksi biaya karbon.
+            </p>
+          </div>
+
         </div>
 
-        <div class="stat-value">
-          {{ formatAngka(dataEmisi.totalJarakTempuh) }}
-          km
+        <div class="impact-grid">
+
+          <!-- PENURUNAN EMISI -->
+          <div class="impact-item">
+
+            <div class="impact-label">
+              Penurunan Emisi
+            </div>
+
+            <div class="impact-value">
+              {{ formatAngka(dataEmisi.totalPenurunanEmisi) }}
+            </div>
+
+            <div class="impact-unit">
+              kg CO₂
+            </div>
+
+          </div>
+
+          <!-- REDUKSI BIAYA -->
+          <div class="impact-item">
+
+            <div class="impact-label">
+              Reduksi Biaya Karbon
+            </div>
+
+            <div class="impact-value">
+              {{ formatRupiah(dataEmisi.totalRpReduksiCarbon) }}
+            </div>
+
+            <div class="impact-unit">
+              estimasi reduksi biaya
+            </div>
+
+          </div>
+
         </div>
 
-      </div>
+      </section>
 
-
-      <div class="stat-card">
-
-        <div class="stat-label">
-          Emisi EV
-        </div>
-
-        <div class="stat-value">
-          {{ formatAngka(dataEmisi.totalEmisiEv) }}
-          kg CO₂
-        </div>
-
-      </div>
-
-
-      <div class="stat-card">
-
-        <div class="stat-label">
-          Emisi ICE (Estimasi)
-        </div>
-
-        <div class="stat-value">
-          {{ formatAngka(dataEmisi.totalEmisiIce) }}
-          kg CO₂
-        </div>
-
-      </div>
-
-
-      <div class="stat-card highlight">
-
-        <div class="stat-label">
-          Penurunan Emisi
-        </div>
-
-        <div class="stat-value">
-          {{ formatAngka(dataEmisi.totalPenurunanEmisi) }}
-          kg CO₂
-        </div>
-
-      </div>
-
-
-      <div class="stat-card highlight">
-
-        <div class="stat-label">
-          Reduksi Biaya Karbon
-        </div>
-
-        <div class="stat-value">
-          {{ formatRupiah(dataEmisi.totalRpReduksiCarbon) }}
-        </div>
-
-      </div>
-
-    </div>
+    </template>
 
   </div>
 </template>
 
-
 <style scoped>
-
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  margin-bottom: 20px;
+.emisi-page {
+  width: 100%;
+  max-width: 100%;
+  padding: 0 0 32px;
+  box-sizing: border-box;
 }
 
-h2 {
-  color: #2b7cd3;
+/* =========================
+   PAGE HEADER
+========================= */
 
-  font-size: 22px;
+.page-header {
+  margin-bottom: 24px;
+}
 
+.breadcrumb {
+  margin-bottom: 7px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.page-header h1 {
   margin: 0;
+  color: #0f172a;
+  font-size: 28px;
+  line-height: 1.25;
+  font-weight: 700;
 }
 
-.error-text {
-  color: #e74c3c;
+.page-header p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.6;
+}
 
-  background: #fdecea;
+/* =========================
+   STATE
+========================= */
 
-  padding: 10px 14px;
+.state-card {
+  padding: 44px 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  text-align: center;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
 
-  border-radius: 8px;
+.state-title {
+  color: #334155;
+  font-size: 15px;
+  font-weight: 600;
+}
 
+.state-text {
+  margin-top: 6px;
+  color: #64748b;
   font-size: 14px;
 }
 
-.empty-state {
-  background: white;
+/* =========================
+   ERROR
+========================= */
 
-  padding: 30px;
-
-  border-radius: 12px;
-
-  text-align: center;
-
-  color: #718096;
-
-  box-shadow:
-    0 2px 12px
-    rgba(58, 141, 222, 0.08);
+.error-card {
+  padding: 16px 18px;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
+  background: #fffafa;
 }
+
+.error-title {
+  margin-bottom: 4px;
+  color: #b91c1c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.error-message {
+  color: #7f1d1d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================
+   SUMMARY CARD
+========================= */
+
+.summary-card,
+.impact-card {
+  margin-bottom: 20px;
+  padding: 26px 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.summary-header,
+.impact-header {
+  margin-bottom: 22px;
+}
+
+.summary-header h2,
+.impact-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.summary-header p,
+.impact-header p {
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================
+   STATISTICS
+========================= */
 
 .stats-grid {
   display: grid;
-
-  grid-template-columns:
-    repeat(
-      auto-fit,
-      minmax(220px, 1fr)
-    );
-
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .stat-card {
-  background: white;
-
+  min-width: 0;
   padding: 20px;
-
-  border-radius: 12px;
-
-  box-shadow:
-    0 2px 12px
-    rgba(58, 141, 222, 0.08);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
-.stat-card.highlight {
-  background:
-    linear-gradient(
-      135deg,
-      #eaf4ff 0%,
-      #ffffff 100%
-    );
-
-  border: 1px solid #cfe4fb;
+.stat-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  transform: translateY(-1px);
 }
 
 .stat-label {
+  margin-bottom: 12px;
+  color: #64748b;
   font-size: 13px;
-
-  color: #718096;
-
   font-weight: 600;
-
-  margin-bottom: 8px;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.02em;
 }
 
 .stat-value {
-  font-size: 24px;
-
+  color: #2563eb;
+  font-size: 26px;
+  line-height: 1.2;
   font-weight: 700;
-
-  color: #2b7cd3;
+  overflow-wrap: anywhere;
 }
 
+.stat-unit {
+  margin-top: 6px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+/* =========================
+   IMPACT
+========================= */
+
+.impact-card {
+  margin-bottom: 0;
+}
+
+.impact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.impact-item {
+  position: relative;
+  min-width: 0;
+  padding: 22px 24px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    #f8fbff 0%,
+    #eff6ff 100%
+  );
+}
+
+.impact-label {
+  margin-bottom: 10px;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.impact-value {
+  color: #1d4ed8;
+  font-size: 27px;
+  line-height: 1.2;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.impact-unit {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 800px) {
+  .summary-card,
+  .impact-card {
+    padding: 22px;
+  }
+
+  .impact-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .page-header p {
+    font-size: 14px;
+  }
+
+  .summary-card,
+  .impact-card {
+    padding: 18px 16px;
+    border-radius: 10px;
+  }
+
+  .summary-header h2,
+  .impact-header h2 {
+    font-size: 18px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 18px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .impact-item {
+    padding: 20px;
+  }
+
+  .impact-value {
+    font-size: 24px;
+  }
+}
 </style>

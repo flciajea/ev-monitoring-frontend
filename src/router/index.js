@@ -3,10 +3,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 
 import UnitView from '../views/UnitView.vue'
-import UnitForm from '../views/UnitForm.vue'
 
 import UsersView from '../views/UsersView.vue'
-import UserForm from '../views/UserForm.vue'
 
 import JadwalServiceView from '../views/JadwalServiceView.vue'
 import JadwalServiceForm from '../views/JadwalServiceForm.vue'
@@ -21,10 +19,15 @@ import GantiSparepartForm from '../views/GantiSparepartForm.vue'
 
 import EmisiKarbonView from '../views/EmisiKarbonView.vue'
 
+import SpkView from '../views/SpkView.vue'
+import SpkForm from '../views/SpkForm.vue'
+import SpkDetailView from '../views/SpkDetailView.vue'
+
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
 
   routes: [
+
     // =========================
     // LOGIN
     // =========================
@@ -49,19 +52,7 @@ const router = createRouter({
       name: 'unit',
       component: UnitView
     },
-
-    {
-      path: '/unit/tambah',
-      name: 'unit-tambah',
-      component: UnitForm
-    },
-
-    {
-      path: '/unit/edit/:id',
-      name: 'unit-edit',
-      component: UnitForm
-    },
-
+    
     // =========================
     // USERS
     // =========================
@@ -70,18 +61,6 @@ const router = createRouter({
       path: '/users',
       name: 'users',
       component: UsersView
-    },
-
-    {
-      path: '/users/tambah',
-      name: 'users-tambah',
-      component: UserForm
-    },
-
-    {
-      path: '/users/edit/:id',
-      name: 'users-edit',
-      component: UserForm
     },
 
     // =========================
@@ -104,6 +83,30 @@ const router = createRouter({
       path: '/jadwal-service/edit/:id',
       name: 'jadwal-service-edit',
       component: JadwalServiceForm
+    },
+
+    // =========================
+    // SPK
+    // =========================
+    {
+      path: '/spk',
+      name: 'spk',
+      component: SpkView
+    },
+    {
+      path: '/spk/tambah',
+      name: 'spk-tambah',
+      component: SpkForm
+    },
+    {
+      path: '/spk/edit/:id',
+      name: 'spk-edit',
+      component: SpkForm
+    },
+    {
+      path: '/spk/:id',
+      name: 'spk-detail',
+      component: SpkDetailView
     },
 
     // =========================
@@ -169,6 +172,7 @@ const router = createRouter({
       name: 'emisi-karbon',
       component: EmisiKarbonView
     }
+
   ]
 })
 

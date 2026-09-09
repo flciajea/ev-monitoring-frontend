@@ -1,178 +1,935 @@
+<template>
+  <div class="keluhan-page">
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+    <section class="page-header">
+      <div class="header-content">
+        <p class="page-eyebrow">Monitoring</p>
+
+        <h1>Daftar Keluhan</h1>
+
+        <p class="page-description">
+          Monitoring dan tindak lanjut keluhan kendaraan
+        </p>
+      </div>
+
+      <button
+        v-if="isDriver"
+        type="button"
+        class="btn-primary"
+        @click="router.push('/keluhan/tambah')"
+      >
+        Lapor Keluhan
+      </button>
+    </section>
+
+
+    <!-- =========================
+         STATISTICS
+    ========================== -->
+    <section class="stats-grid">
+
+      <div class="stat-card">
+        <span class="stat-label">
+          Total Keluhan
+        </span>
+
+        <strong class="stat-value">
+          {{ totalKeluhan }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-open">
+        <span class="stat-label">
+          Open
+        </span>
+
+        <strong class="stat-value">
+          {{ totalOpen }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-progress">
+        <span class="stat-label">
+          On Progress
+        </span>
+
+        <strong class="stat-value">
+          {{ totalOnProgress }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-close">
+        <span class="stat-label">
+          Close
+        </span>
+
+        <strong class="stat-value">
+          {{ totalClose }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-cancel">
+        <span class="stat-label">
+          Cancel
+        </span>
+
+        <strong class="stat-value">
+          {{ totalCancel }}
+        </strong>
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         SEARCH
+    ========================== -->
+    <section class="toolbar">
+
+      <div class="search-box">
+
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Cari kendaraan, pengaju, UID, UP3, unit, status..."
+        />
+
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="clear-search"
+          @click="searchQuery = ''"
+        >
+          Clear
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         DATA SECTION
+    ========================== -->
+    <section class="data-section">
+
+      <div class="section-header">
+
+        <div>
+          <h2>Data Keluhan</h2>
+
+          <p>
+            {{ filteredKeluhan.length }} data ditemukan
+          </p>
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           LOADING
+      ========================== -->
+      <div
+        v-if="loading"
+        class="state-card"
+      >
+        <div class="loading-line"></div>
+        <div class="loading-line short"></div>
+        <div class="loading-table"></div>
+      </div>
+
+
+      <!-- =========================
+           ERROR
+      ========================== -->
+      <div
+        v-else-if="errorMsg"
+        class="state-card error-state"
+      >
+        <h3>Data tidak dapat dimuat</h3>
+
+        <p>
+          {{ errorMsg }}
+        </p>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          @click="ambilData"
+        >
+          Coba Lagi
+        </button>
+      </div>
+
+
+      <!-- =========================
+           EMPTY
+      ========================== -->
+      <div
+        v-else-if="filteredKeluhan.length === 0"
+        class="state-card empty-state"
+      >
+        <h3>Tidak ada data keluhan</h3>
+
+        <p v-if="searchQuery">
+          Tidak ditemukan keluhan yang sesuai dengan pencarian.
+        </p>
+
+        <p v-else>
+          Belum terdapat data keluhan.
+        </p>
+      </div>
+
+
+      <!-- =========================
+           TABLE
+      ========================== -->
+      <div
+        v-else
+        class="table-container"
+      >
+
+        <table class="data-table">
+
+          <colgroup>
+            <col class="col-kendaraan" />
+            <col class="col-pengaduan" />
+            <col class="col-foto" />
+            <col class="col-tanggal" />
+            <col class="col-tindak-tanggal" />
+            <col class="col-pengaju" />
+            <col class="col-status" />
+            <col class="col-tindak-lanjut" />
+          </colgroup>
+
+
+          <thead>
+            <tr>
+              <th>Kendaraan</th>
+              <th>Pengaduan</th>
+              <th>Foto</th>
+              <th>Tanggal Pengajuan</th>
+              <th>Tanggal Tindak Lanjut</th>
+              <th>Pengaju</th>
+              <th>Status</th>
+              <th>Tindak Lanjut</th>
+            </tr>
+          </thead>
+
+
+          <tbody>
+
+            <tr
+              v-for="item in filteredKeluhan"
+              :key="item.id"
+              :class="getRowClass(item)"
+            >
+
+              <!-- =========================
+                   KENDARAAN
+              ========================== -->
+              <td>
+
+                <div class="vehicle-cell">
+
+                  <span class="vehicle-number">
+                    {{ item.nomorKendaraan || '-' }}
+                  </span>
+
+
+                  <!-- DEADLINE -->
+                  <span
+                    v-if="getDeadlineText(item)"
+                    class="deadline-text"
+                    :class="getDeadlineClass(item)"
+                  >
+                    {{ getDeadlineText(item) }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   PENGADUAN
+              ========================== -->
+              <td>
+
+                <div class="complaint-text">
+                  {{ item.pengaduan || '-' }}
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   FOTO
+              ========================== -->
+              <td>
+
+                <div
+                  v-if="getPhotos(item).length > 0"
+                  class="photo-list"
+                >
+
+                  <img
+                    v-for="(photo, index) in getPhotos(item).slice(0, 3)"
+                    :key="index"
+                    :src="photo"
+                    alt="Foto keluhan"
+                    class="photo-thumbnail"
+                    @click="openPhoto(photo)"
+                  />
+
+                  <span
+                    v-if="getPhotos(item).length > 3"
+                    class="photo-more"
+                  >
+                    +{{ getPhotos(item).length - 3 }}
+                  </span>
+
+                </div>
+
+
+                <span
+                  v-else
+                  class="no-photo"
+                >
+                  Tidak ada foto
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   TANGGAL PENGAJUAN
+              ========================== -->
+              <td>
+
+                <span class="date-text">
+                  {{ formatTanggal(item.tanggal) }}
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   TANGGAL TINDAK LANJUT
+              ========================== -->
+              <td>
+
+                <span
+                  v-if="item.tanggalTindakLanjut"
+                  class="follow-date"
+                  :class="{
+                    'follow-date-overdue':
+                      isDeadlineOverdue(item),
+
+                    'follow-date-today':
+                      isDeadlineToday(item),
+
+                    'follow-date-upcoming':
+                      isDeadlineUpcoming(item)
+                  }"
+                >
+                  {{ formatTanggal(item.tanggalTindakLanjut) }}
+                </span>
+
+
+                <span
+                  v-else
+                  class="empty-text"
+                >
+                  Belum ditentukan
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   PENGAJU
+              ========================== -->
+              <td>
+
+                <div class="requester-cell">
+
+                  <strong>
+                    {{ getNamaPengaju(item) }}
+                  </strong>
+
+                  <span
+                    v-if="getUid(item)"
+                  >
+                    UID: {{ getUid(item) }}
+                  </span>
+
+                  <span
+                    v-if="getUp3(item)"
+                  >
+                    {{ getUp3(item) }}
+                  </span>
+
+                  <span
+                    v-if="getUnit(item)"
+                  >
+                    {{ getUnit(item) }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   STATUS
+              ========================== -->
+              <td>
+
+                <select
+                  v-if="canUpdateStatus"
+                  v-model="item.status"
+                  class="status-select"
+                  :class="getStatusClass(item.status)"
+                  @change="updateStatus(item)"
+                >
+
+                  <option value="Open">
+                    Open
+                  </option>
+
+                  <option value="On Progress">
+                    On Progress
+                  </option>
+
+                  <option value="Close">
+                    Close
+                  </option>
+
+                  <option value="Cancel">
+                    Cancel
+                  </option>
+
+                </select>
+
+
+                <span
+                  v-else
+                  class="status-badge"
+                  :class="getStatusClass(item.status)"
+                >
+                  {{ item.status || 'Open' }}
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   TINDAK LANJUT
+              ========================== -->
+              <td>
+
+                <div class="follow-up-cell">
+
+                  <p
+                    v-if="item.tindakLanjut"
+                    class="follow-up-text"
+                  >
+                    {{ item.tindakLanjut }}
+                  </p>
+
+                  <span
+                    v-else
+                    class="empty-text"
+                  >
+                    Belum ada tindak lanjut
+                  </span>
+
+
+                  <button
+                    v-if="isAdmin"
+                    type="button"
+                    class="detail-button"
+                    @click="
+                      router.push(`/keluhan/edit/${item.id}`)
+                    "
+                  >
+                    {{
+                      item.tindakLanjut
+                        ? 'Lihat Detail'
+                        : 'Isi Detail'
+                    }}
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         PHOTO MODAL
+    ========================== -->
+    <div
+      v-if="selectedPhoto"
+      class="photo-modal"
+      @click.self="selectedPhoto = ''"
+    >
+
+      <div class="photo-modal-content">
+
+        <button
+          type="button"
+          class="photo-close"
+          @click="selectedPhoto = ''"
+        >
+          Tutup
+        </button>
+
+        <img
+          :src="selectedPhoto"
+          alt="Preview foto keluhan"
+        />
+
+      </div>
+
+    </div>
+
+  </div>
+</template>
+
+
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
 
-import EmptyState from '../components/EmptyState.vue'
-import SearchInput from '../components/SearchInput.vue'
-import { useToast } from '../composables/useToast'
-
 const router = useRouter()
-const { showToast } = useToast()
+
 
 /* =========================
-   DATA
+   STATE
 ========================= */
 
 const daftarKeluhan = ref([])
 const loading = ref(true)
 const errorMsg = ref('')
 const searchQuery = ref('')
+const selectedPhoto = ref('')
+
 
 /* =========================
-   FOTO MODAL
+   CURRENT USER
 ========================= */
 
-const showFoto = ref(false)
-const fotoDipilih = ref('')
+const currentUser = ref(null)
 
-/* =========================
-   UPDATE STATUS
-========================= */
+try {
+  const user = localStorage.getItem('user')
 
-const updatingId = ref(null)
-
-/* =========================
-   USER
-========================= */
-
-const currentUser = computed(() => {
-  const userData = localStorage.getItem('user')
-
-  if (!userData) {
-    return null
+  if (user) {
+    currentUser.value = JSON.parse(user)
   }
+} catch (error) {
+  currentUser.value = null
+}
+
+
+const role = computed(() =>
+  String(currentUser.value?.role || '').toLowerCase()
+)
+
+
+const isAdmin = computed(() =>
+  role.value === 'admin'
+)
+
+
+const isUid = computed(() =>
+  role.value === 'uid'
+)
+
+
+const isDriver = computed(() =>
+  role.value === 'driver'
+)
+
+
+const canUpdateStatus = computed(() =>
+  isAdmin.value || isUid.value
+)
+
+
+/* =========================
+   GET DATA
+========================= */
+
+const ambilData = async () => {
+  loading.value = true
+  errorMsg.value = ''
 
   try {
-    return JSON.parse(userData)
-  } catch {
-    return null
+    const response = await api.get('/keluhan')
+
+    daftarKeluhan.value = Array.isArray(response.data)
+      ? response.data
+      : []
+
+  } catch (error) {
+    console.error(error)
+
+    errorMsg.value =
+      error?.response?.data?.message ||
+      'Terjadi kesalahan saat mengambil data keluhan.'
+
+  } finally {
+    loading.value = false
   }
-})
+}
 
-const role = computed(() => {
-  return currentUser.value?.role?.toLowerCase() || ''
-})
-
-const isDriver = computed(() => {
-  return role.value === 'driver'
-})
-
-const isAdmin = computed(() => {
-  return role.value === 'admin'
-})
-
-const canManageStatus = computed(() => {
-  return ['admin', 'uid'].includes(role.value)
-})
 
 /* =========================
-   STATUS
+   STATISTICS
 ========================= */
 
-const daftarStatus = [
-  'Open',
-  'On Progress',
-  'Close',
-  'Cancel'
-]
+const totalKeluhan = computed(() =>
+  daftarKeluhan.value.length
+)
 
-const getActualStatus = (status) => {
-  return status || 'Open'
-}
 
-const getStatusStyle = (status) => {
-  const actualStatus = getActualStatus(status)
+const totalOpen = computed(() =>
+  daftarKeluhan.value.filter(
+    item => normalizeStatus(item.status) === 'open'
+  ).length
+)
 
-  const styles = {
-    Open: {
-      backgroundColor: '#e0f0ff',
-      color: '#2b7cd3'
-    },
 
-    'On Progress': {
-      backgroundColor: '#fff4e0',
-      color: '#d68a00'
-    },
+const totalOnProgress = computed(() =>
+  daftarKeluhan.value.filter(
+    item => normalizeStatus(item.status) === 'on progress'
+  ).length
+)
 
-    Close: {
-      backgroundColor: '#e3f9e5',
-      color: '#1e9e3a'
-    },
 
-    Cancel: {
-      backgroundColor: '#fdecea',
-      color: '#e74c3c'
-    }
-  }
+const totalClose = computed(() =>
+  daftarKeluhan.value.filter(
+    item => normalizeStatus(item.status) === 'close'
+  ).length
+)
 
-  return styles[actualStatus] || {
-    backgroundColor: '#f1f5f9',
-    color: '#64748b'
-  }
-}
+
+const totalCancel = computed(() =>
+  daftarKeluhan.value.filter(
+    item => normalizeStatus(item.status) === 'cancel'
+  ).length
+)
+
 
 /* =========================
    SEARCH
 ========================= */
 
 const filteredKeluhan = computed(() => {
-  const q = searchQuery.value
+  const keyword = searchQuery.value
     .trim()
     .toLowerCase()
 
-  if (!q) {
+  if (!keyword) {
     return daftarKeluhan.value
   }
 
-  return daftarKeluhan.value.filter((keluhan) => {
+  return daftarKeluhan.value.filter(item => {
 
-    const nomorKendaraan =
-      keluhan.nomorKendaraan?.toLowerCase() || ''
+    const searchableText = [
+      item.nomorKendaraan,
+      item.pengaduan,
+      item.username,
+      item.namaLengkap,
+      item.namaPengaju,
+      item.uid,
+      item.up3,
+      item.unit,
+      item.status,
+      item.tindakLanjut,
+      item.tanggal,
+      item.tanggalTindakLanjut
+    ]
+      .filter(
+        value =>
+          value !== null &&
+          value !== undefined
+      )
+      .join(' ')
+      .toLowerCase()
 
-    const pengaduan =
-      keluhan.pengaduan?.toLowerCase() || ''
-
-    const username =
-      keluhan.username?.toLowerCase() || ''
-
-    const namaLengkap =
-      keluhan.namaLengkap?.toLowerCase() || ''
-
-    const uid =
-      keluhan.uid?.toLowerCase() || ''
-
-    const up3 =
-      keluhan.up3?.toLowerCase() || ''
-
-    const unit =
-      keluhan.unit?.toLowerCase() || ''
-
-    const status =
-      keluhan.status?.toLowerCase() || ''
-
-    const tindakLanjut =
-      keluhan.tindakLanjut?.toLowerCase() || ''
-
-    return (
-      nomorKendaraan.includes(q) ||
-      pengaduan.includes(q) ||
-      username.includes(q) ||
-      namaLengkap.includes(q) ||
-      uid.includes(q) ||
-      up3.includes(q) ||
-      unit.includes(q) ||
-      status.includes(q) ||
-      tindakLanjut.includes(q)
-    )
+    return searchableText.includes(keyword)
   })
 })
 
+
 /* =========================
-   FORMAT TANGGAL
+   UPDATE STATUS
+========================= */
+
+const updateStatus = async (item) => {
+
+  if (!canUpdateStatus.value) {
+    return
+  }
+
+  try {
+
+    await api.put(`/keluhan/${item.id}`, {
+      nomorKendaraan: item.nomorKendaraan,
+      pengaduan: item.pengaduan,
+      photoBase64: item.photoBase64,
+      tanggal: item.tanggal,
+      username: item.username,
+      status: item.status
+    })
+
+    await ambilData()
+
+  } catch (error) {
+
+    console.error(error)
+
+    alert(
+      error?.response?.data?.message ||
+      'Status keluhan gagal diperbarui.'
+    )
+
+    await ambilData()
+  }
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+const normalizeStatus = (status) => {
+  return String(status || 'Open')
+    .trim()
+    .toLowerCase()
+}
+
+
+const getStatusClass = (status) => {
+
+  const normalized = normalizeStatus(status)
+
+  if (normalized === 'open') {
+    return 'status-open'
+  }
+
+  if (normalized === 'on progress') {
+    return 'status-progress'
+  }
+
+  if (normalized === 'close') {
+    return 'status-close'
+  }
+
+  if (normalized === 'cancel') {
+    return 'status-cancel'
+  }
+
+  return 'status-open'
+}
+
+
+/* =========================
+   REQUESTER
+========================= */
+
+const getNamaPengaju = (item) => {
+  return (
+    item.namaLengkap ||
+    item.namaPengaju ||
+    item.username ||
+    '-'
+  )
+}
+
+
+const getUid = (item) => {
+  return item.uid || ''
+}
+
+
+const getUp3 = (item) => {
+  return item.up3 || ''
+}
+
+
+const getUnit = (item) => {
+  return item.unit || ''
+}
+
+
+/* =========================
+   PHOTO
+========================= */
+
+const getPhotos = (item) => {
+
+  const photos = []
+
+  const addPhoto = (photo) => {
+
+    if (!photo) {
+      return
+    }
+
+    let value = photo
+
+
+    if (typeof value === 'string') {
+
+      value = value.trim()
+
+      if (!value) {
+        return
+      }
+
+
+      /* JSON */
+      if (
+        (value.startsWith('[') &&
+          value.endsWith(']')) ||
+        (value.startsWith('"') &&
+          value.endsWith('"'))
+      ) {
+
+        try {
+
+          const parsed = JSON.parse(value)
+
+          if (Array.isArray(parsed)) {
+            parsed.forEach(addPhoto)
+            return
+          }
+
+          if (typeof parsed === 'string') {
+            addPhoto(parsed)
+            return
+          }
+
+        } catch {
+          // lanjut
+        }
+      }
+
+
+      /* DATA URI */
+      if (value.startsWith('data:image/')) {
+        photos.push(value)
+        return
+      }
+
+
+      /* BASE64 */
+      if (
+        !value.startsWith('http://') &&
+        !value.startsWith('https://') &&
+        value.length > 100
+      ) {
+
+        photos.push(
+          `data:image/jpeg;base64,${value}`
+        )
+
+        return
+      }
+
+
+      /* URL */
+      if (
+        value.startsWith('http://') ||
+        value.startsWith('https://')
+      ) {
+
+        photos.push(value)
+      }
+
+      return
+    }
+
+
+    if (typeof value === 'object') {
+
+      if (Array.isArray(value)) {
+        value.forEach(addPhoto)
+        return
+      }
+
+
+      if (value.base64) {
+        addPhoto(value.base64)
+        return
+      }
+
+
+      if (value.photoBase64) {
+        addPhoto(value.photoBase64)
+        return
+      }
+
+
+      if (value.url) {
+        addPhoto(value.url)
+      }
+    }
+  }
+
+
+  if (item.fotoList) {
+    addPhoto(item.fotoList)
+  }
+
+
+  if (item.photoBase64Json) {
+    addPhoto(item.photoBase64Json)
+  }
+
+
+  if (item.photoBase64) {
+    addPhoto(item.photoBase64)
+  }
+
+
+  return [...new Set(photos)]
+}
+
+
+const openPhoto = (photo) => {
+  selectedPhoto.value = photo
+}
+
+
+/* =========================
+   DATE
 ========================= */
 
 const formatTanggal = (tanggal) => {
+
   if (!tanggal) {
     return '-'
   }
@@ -185,457 +942,246 @@ const formatTanggal = (tanggal) => {
 
   return date.toLocaleDateString('id-ID', {
     day: '2-digit',
-    month: '2-digit',
+    month: 'short',
     year: 'numeric'
   })
 }
 
-/* =========================
-   INDIKATOR DEADLINE
-========================= */
-
-const getDeadlineInfo = (tanggal, status) => {
-  const actualStatus = getActualStatus(status)
-
-  if (
-    actualStatus === 'Close' ||
-    actualStatus === 'Cancel'
-  ) {
-    return {
-      class: '',
-      text: ''
-    }
-  }
-
-  if (!tanggal) {
-    return {
-      class: '',
-      text: ''
-    }
-  }
-
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const tanggalKeluhan = new Date(tanggal)
-  tanggalKeluhan.setHours(0, 0, 0, 0)
-
-  if (Number.isNaN(tanggalKeluhan.getTime())) {
-    return {
-      class: '',
-      text: ''
-    }
-  }
-
-  const selisihMs =
-    today.getTime() -
-    tanggalKeluhan.getTime()
-
-  const selisihHari = Math.floor(
-    selisihMs /
-      (1000 * 60 * 60 * 24)
-  )
-
-  /* Hari ini */
-  if (selisihHari <= 0) {
-    return {
-      class: '',
-      text: 'Hari ini'
-    }
-  }
-
-  /* 1 - 3 hari */
-  if (selisihHari <= 3) {
-    return {
-      class: '',
-      text: `${selisihHari} hari`
-    }
-  }
-
-  /* 4 - 5 hari */
-  if (selisihHari <= 5) {
-    return {
-      class: 'deadline-warning',
-      text: `${selisihHari} hari`
-    }
-  }
-
-  /* Lebih dari 5 hari */
-  return {
-    class: 'deadline-danger',
-    text: `Terlambat ${selisihHari - 5} hari`
-  }
-}
 
 /* =========================
-   PARSE FOTO
-========================= */
-
-const parsePhotos = (rawPhotos) => {
-
-  if (!rawPhotos) {
-    return []
-  }
-
-  let photoArray = []
-
-  /* =========================
-     ARRAY
-  ========================= */
-
-  if (Array.isArray(rawPhotos)) {
-
-    photoArray = rawPhotos
-  }
-
-  /* =========================
-     STRING
-  ========================= */
-
-  else if (typeof rawPhotos === 'string') {
-
-    let strData = rawPhotos.trim()
-
-    if (!strData) {
-      return []
-    }
-
-    try {
-
-      const parsed = JSON.parse(strData)
-
-      /*
-       * Contoh:
-       * ["data:image/png;base64,..."]
-       */
-      if (Array.isArray(parsed)) {
-
-        photoArray = parsed
-      }
-
-      /*
-       * Kalau hasil parse masih string
-       */
-      else if (typeof parsed === 'string') {
-
-        try {
-
-          const parsedAgain =
-            JSON.parse(parsed)
-
-          photoArray =
-            Array.isArray(parsedAgain)
-              ? parsedAgain
-              : [parsedAgain]
-
-        } catch {
-
-          photoArray = [parsed]
-        }
-
-      }
-
-      else {
-
-        photoArray = [parsed]
-      }
-
-    } catch {
-
-      /*
-       * Kalau bukan JSON,
-       * cari data:image
-       */
-      if (strData.includes('data:image')) {
-
-        photoArray =
-          strData.split(
-            /(?=data:image)/g
-          )
-
-      } else {
-
-        /*
-         * Anggap Base64 mentah.
-         */
-        photoArray = [strData]
-      }
-    }
-  }
-
-  /* =========================
-     CLEANING
-  ========================= */
-
-  return photoArray
-
-    .filter(photo => {
-      return (
-        typeof photo === 'string' &&
-        photo.trim() !== ''
-      )
-    })
-
-    .map(photo => {
-
-      let cleanBase64 =
-        photo.trim()
-
-      /*
-       * Bersihkan karakter tambahan.
-       */
-      cleanBase64 =
-        cleanBase64
-          .replace(/\\"/g, '"')
-          .replace(/\\'/g, "'")
-          .replace(/^\[+/g, '')
-          .replace(/\]+$/g, '')
-          .replace(/^"+|"+$/g, '')
-          .replace(/^'+|'+$/g, '')
-          .replace(/^,|,$/g, '')
-          .trim()
-
-      /*
-       * Ambil mulai dari data:image
-       */
-      if (
-        cleanBase64.includes('data:image')
-      ) {
-
-        const index =
-          cleanBase64.indexOf(
-            'data:image'
-          )
-
-        cleanBase64 =
-          cleanBase64.substring(index)
-      }
-
-      /*
-       * Sudah Data URI.
-       */
-      if (
-        cleanBase64.startsWith(
-          'data:image'
-        )
-      ) {
-
-        return cleanBase64
-      }
-
-      /*
-       * Base64 mentah.
-       */
-      if (cleanBase64.length > 30) {
-
-        return (
-          'data:image/png;base64,' +
-          cleanBase64
-        )
-      }
-
-      return null
-    })
-
-    .filter(Boolean)
-}
-
-/* =========================
-   AMBIL FOTO DARI KELUHAN
-========================= */
-
-const getPhotos = (keluhan) => {
-
-  if (!keluhan) {
-    return []
-  }
-
-  const rawPhotos =
-    keluhan.photoBase64Json ??
-    keluhan.photo_base64_json ??
-    keluhan.photoBase64 ??
-    keluhan.photo_base64 ??
-    keluhan.fotoList ??
-    keluhan.foto_list
-
-  return parsePhotos(rawPhotos)
-}
-
-/* =========================
-   AMBIL DATA
-========================= */
-
-const ambilData = async () => {
-
-  loading.value = true
-  errorMsg.value = ''
-
-  try {
-
-    const response =
-      await api.get('/keluhan')
-
-    console.log(
-      'DATA KELUHAN:',
-      response.data
-    )
-
-    daftarKeluhan.value =
-      Array.isArray(response.data)
-        ? response.data
-        : []
-
-  } catch (error) {
-
-    console.error(
-      'Error ambil keluhan:',
-      error
-    )
-
-    errorMsg.value =
-      'Gagal mengambil data keluhan: ' +
-      (
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message
-      )
-
-  } finally {
-
-    loading.value = false
-  }
-}
-
-/* =========================
-   TAMBAH KELUHAN
-========================= */
-
-const tambahKeluhan = () => {
-  router.push('/keluhan/tambah')
-}
-
-/* =========================
-   DETAIL / TINDAK LANJUT
+   DEADLINE
+   SAMA SEPERTI JADWAL SERVICE
 ========================= */
 
 /*
- * Tombol Detail hanya digunakan
- * untuk membuka halaman detail.
+ * Deadline sekarang dihitung berdasarkan:
  *
- * Admin menggunakan halaman ini
- * untuk mengisi / mengedit tindak lanjut.
+ * tanggalTindakLanjut
+ *
+ * BUKAN tanggal pengajuan.
+ *
+ * Contoh:
+ *
+ * tanggal tindak lanjut = 08 Sep 2026
+ * hari ini               = 09 Sep 2026
+ *
+ * hasil:
+ * Terlambat 1 hari
+ *
+ * Jika:
+ * tanggal tindak lanjut = 09 Sep
+ *
+ * hasil:
+ * Hari ini
+ *
+ * Jika:
+ * tanggal tindak lanjut = 10 Sep
+ *
+ * hasil:
+ * 1 hari lagi
  */
-const lihatDetail = (id) => {
 
-  router.push(
-    `/keluhan/edit/${id}`
+
+const getDeadlineDifference = (item) => {
+
+  const status = normalizeStatus(item.status)
+
+  /*
+   * Close dan Cancel tidak perlu deadline
+   */
+  if (
+    status === 'close' ||
+    status === 'cancel'
+  ) {
+    return null
+  }
+
+
+  /*
+   * Belum ada tanggal tindak lanjut
+   */
+  if (!item.tanggalTindakLanjut) {
+    return null
+  }
+
+
+  const deadline = new Date(
+    item.tanggalTindakLanjut
   )
 
+  if (Number.isNaN(deadline.getTime())) {
+    return null
+  }
+
+
+  const today = new Date()
+
+  /*
+   * Normalisasi jam supaya
+   * perhitungan hanya berdasarkan tanggal.
+   */
+  today.setHours(0, 0, 0, 0)
+  deadline.setHours(0, 0, 0, 0)
+
+
+  const diffTime =
+    deadline.getTime() - today.getTime()
+
+
+  return Math.round(
+    diffTime / (1000 * 60 * 60 * 24)
+  )
 }
 
 
 /* =========================
-   UPDATE STATUS
+   DEADLINE TEXT
 ========================= */
 
-const updateStatus = async (
-  keluhan,
-  statusBaru
-) => {
+const getDeadlineText = (item) => {
 
-  if (!canManageStatus.value) {
-    return
+  const difference =
+    getDeadlineDifference(item)
+
+
+  if (difference === null) {
+    return ''
   }
 
-  const statusLama =
-    getActualStatus(
-      keluhan.status
-    )
 
-  if (statusBaru === statusLama) {
-    return
+  /*
+   * Sudah lewat deadline
+   */
+  if (difference < 0) {
+
+    const terlambat =
+      Math.abs(difference)
+
+    return `Terlambat ${terlambat} hari`
   }
 
-  updatingId.value =
-    keluhan.id
 
-  errorMsg.value = ''
-
-  try {
-
-    await api.put(
-      `/keluhan/${keluhan.id}`,
-      {
-        nomorKendaraan:
-          keluhan.nomorKendaraan,
-
-        pengaduan:
-          keluhan.pengaduan,
-
-        photoBase64:
-          keluhan.photoBase64,
-
-        tanggal:
-          keluhan.tanggal,
-
-        username:
-          keluhan.username,
-
-        status:
-          statusBaru
-      }
-    )
-
-    keluhan.status =
-      statusBaru
-
-    showToast(
-      'Status keluhan berhasil diperbarui!'
-    )
-
-  } catch (error) {
-
-    console.error(
-      'Error update status:',
-      error
-    )
-
-    errorMsg.value =
-      'Gagal memperbarui status keluhan: ' +
-      (
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message
-      )
-
-    keluhan.status =
-      statusLama
-
-  } finally {
-
-    updatingId.value = null
+  /*
+   * Deadline hari ini
+   */
+  if (difference === 0) {
+    return 'Hari ini'
   }
+
+
+  /*
+   * Deadline masih akan datang
+   */
+  return `${difference} hari lagi`
 }
+
 
 /* =========================
-   FOTO
+   DEADLINE CLASS
 ========================= */
 
-const lihatFoto = (foto) => {
+const getDeadlineClass = (item) => {
 
-  if (!foto) {
-    return
+  const difference =
+    getDeadlineDifference(item)
+
+
+  if (difference === null) {
+    return ''
   }
 
-  fotoDipilih.value = foto
-  showFoto.value = true
+
+  /*
+   * Terlambat
+   */
+  if (difference < 0) {
+    return 'deadline-danger'
+  }
+
+
+  /*
+   * Hari ini
+   */
+  if (difference === 0) {
+    return 'deadline-warning'
+  }
+
+
+  /*
+   * Masih ada waktu
+   */
+  return 'deadline-normal'
 }
 
-const tutupFoto = () => {
 
-  showFoto.value = false
-  fotoDipilih.value = ''
+/* =========================
+   DEADLINE DATE STYLE
+========================= */
+
+const isDeadlineOverdue = (item) => {
+
+  const difference =
+    getDeadlineDifference(item)
+
+  return (
+    difference !== null &&
+    difference < 0
+  )
 }
+
+
+const isDeadlineToday = (item) => {
+
+  const difference =
+    getDeadlineDifference(item)
+
+  return (
+    difference !== null &&
+    difference === 0
+  )
+}
+
+
+const isDeadlineUpcoming = (item) => {
+
+  const difference =
+    getDeadlineDifference(item)
+
+  return (
+    difference !== null &&
+    difference > 0
+  )
+}
+
+
+/* =========================
+   ROW STYLE
+========================= */
+
+const getRowClass = (item) => {
+
+  const status =
+    normalizeStatus(item.status)
+
+
+  if (status === 'close') {
+    return 'row-close'
+  }
+
+
+  if (status === 'cancel') {
+    return 'row-cancel'
+  }
+
+
+  if (status === 'on progress') {
+    return 'row-progress'
+  }
+
+
+  return ''
+}
+
 
 /* =========================
    INIT
@@ -647,659 +1193,6 @@ onMounted(() => {
 </script>
 
 
-<template>
-
-  <div class="keluhan-page">
-
-    <!-- =========================
-         HEADER
-    ========================= -->
-
-    <div class="header-row">
-
-      <div>
-
-        <h2>
-          Daftar Keluhan
-        </h2>
-
-        <p class="subtitle">
-          Data keluhan kendaraan
-        </p>
-
-      </div>
-
-      <!-- KHUSUS DRIVER -->
-
-      <button
-        v-if="isDriver"
-        class="btn-primary"
-        @click="tambahKeluhan"
-      >
-        + Lapor Keluhan
-      </button>
-
-    </div>
-
-
-    <!-- =========================
-         SEARCH
-    ========================= -->
-
-    <SearchInput
-      v-model="searchQuery"
-      placeholder="Cari kendaraan, pengaju, UID, UP3, keluhan, status..."
-    />
-
-
-    <!-- =========================
-         LOADING
-    ========================= -->
-
-    <p
-      v-if="loading"
-      class="loading-text"
-    >
-      Loading data keluhan...
-    </p>
-
-
-    <!-- =========================
-         ERROR
-    ========================= -->
-
-    <p
-      v-else-if="errorMsg"
-      class="error-text"
-    >
-      {{ errorMsg }}
-    </p>
-
-
-    <!-- =========================
-         EMPTY
-    ========================= -->
-
-    <EmptyState
-      v-else-if="
-        filteredKeluhan.length === 0
-      "
-      :message="
-        searchQuery
-          ? 'Tidak ada hasil ditemukan'
-          : 'Belum ada data keluhan'
-      "
-      :subtext="
-        searchQuery
-          ? 'Coba gunakan kata kunci lain'
-          : isDriver
-            ? 'Klik tombol Lapor Keluhan untuk membuat laporan'
-            : 'Belum ada keluhan yang tersedia'
-      "
-    />
-
-
-    <!-- =========================
-         TABLE
-    ========================= -->
-
-    <div
-      v-else
-      class="table-wrapper"
-    >
-
-      <table class="data-table">
-
-        <colgroup>
-          <col class="col-kendaraan">
-
-          <col class="col-pengaduan">
-
-          <col class="col-foto">
-
-          <col class="col-tanggal">
-
-          <col class="col-pengaju">
-
-          <col class="col-status">
-
-          <col class="col-tindak-lanjut">
-
-          <col class="col-tanggal-tindak-lanjut">
-
-        </colgroup>
-
-
-        <thead>
-
-          <tr>
-
-            <th>
-              No Kendaraan
-            </th>
-
-            <th>
-              Pengaduan
-            </th>
-
-            <th>
-              Foto
-            </th>
-
-            <th>
-              Tanggal Pengajuan
-            </th>
-
-            <th>
-              Tanggal <br />
-              Tindak Lanjut
-            </th>
-
-            <th>
-              Pengaju
-            </th>
-
-            <th>
-              Status
-            </th>
-
-            <th>
-              Tindak Lanjut
-            </th>
-
-          </tr>
-
-        </thead>
-
-
-        <tbody>
-
-          <tr
-            v-for="keluhan in filteredKeluhan"
-            :key="keluhan.id"
-            :class="{
-              'row-deadline-danger':
-                getDeadlineInfo(
-                  keluhan.tanggal,
-                  keluhan.status
-                ).class === 'deadline-danger',
-
-              'row-deadline-warning':
-                getDeadlineInfo(
-                  keluhan.tanggal,
-                  keluhan.status
-                ).class === 'deadline-warning'
-            }"
-          >
-
-
-            <!-- =========================
-                 NOMOR KENDARAAN
-            ========================= -->
-
-            <td>
-
-              <strong>
-                {{
-                  keluhan.nomorKendaraan ||
-                  '-'
-                }}
-              </strong>
-
-            </td>
-
-
-            <!-- =========================
-                 PENGADUAN
-            ========================= -->
-
-            <td class="pengaduan-cell">
-
-              {{
-                keluhan.pengaduan ||
-                '-'
-              }}
-
-            </td>
-
-
-            <!-- =========================
-                 FOTO
-            ========================= -->
-
-            <td class="foto-cell">
-
-              <div
-                v-if="
-                  getPhotos(keluhan).length > 0
-                "
-                class="photo-wrapper"
-              >
-
-                <button
-                  v-for="(
-                    photo,
-                    index
-                  ) in getPhotos(keluhan)"
-                  :key="index"
-                  type="button"
-                  class="photo-button"
-                  @click="
-                    lihatFoto(photo)
-                  "
-                  :title="
-                    `Lihat foto ${index + 1}`
-                  "
-                >
-
-                  <img
-                    :src="photo"
-                    :alt="
-                      `Foto keluhan ${
-                        index + 1
-                      }`
-                    "
-                    class="keluhan-photo"
-                  />
-
-                </button>
-
-              </div>
-
-
-              <span
-                v-else
-                class="no-photo"
-              >
-                Tidak ada
-              </span>
-
-            </td>
-
-
-            <!-- =========================
-                 TANGGAL
-            ========================= -->
-
-            <td class="tanggal-cell">
-
-              <div
-                :class="[
-                  'tanggal-wrapper',
-
-                  getDeadlineInfo(
-                    keluhan.tanggal,
-                    keluhan.status
-                  ).class
-                ]"
-              >
-
-                <strong>
-                  {{
-                    formatTanggal(
-                      keluhan.tanggal
-                    )
-                  }}
-                </strong>
-
-
-                <span
-                  v-if="
-                    getDeadlineInfo(
-                      keluhan.tanggal,
-                      keluhan.status
-                    ).text
-                  "
-                  class="deadline-label"
-                  :class="
-                    getDeadlineInfo(
-                      keluhan.tanggal,
-                      keluhan.status
-                    ).class
-                  "
-                >
-
-                  {{
-                    getDeadlineInfo(
-                      keluhan.tanggal,
-                      keluhan.status
-                    ).text
-                  }}
-
-                </span>
-
-              </div>
-
-            </td>
-
-            <!-- =========================
-                 TANGGAL TINDAK LANJUT
-            ========================= -->
-
-            <td class="tanggal-tindak-lanjut-cell">
-
-              <span
-                v-if="keluhan.tanggalTindakLanjut"
-                class="tanggal-tindak-lanjut"
-              >
-
-                {{
-                  formatTanggal(
-                    keluhan.tanggalTindakLanjut
-                  )
-                }}
-
-              </span>
-
-
-              <span
-                v-else
-                class="no-tanggal-tindak-lanjut"
-              >
-
-                Belum ada
-
-              </span>
-
-            </td>
-
-
-            <!-- =========================
-                 PENGAJU
-            ========================= -->
-
-            <td class="pengaju-cell">
-
-              <div class="pengaju-wrapper">
-
-                <!-- NAMA LENGKAP -->
-
-                <strong class="pengaju-nama">
-
-                  {{
-                    keluhan.namaLengkap ||
-                    keluhan.username ||
-                    '-'
-                  }}
-
-                </strong>
-
-
-                <!-- USERNAME -->
-
-                <span
-                  v-if="keluhan.username"
-                  class="pengaju-username"
-                >
-
-                  {{ keluhan.username }}
-
-                </span>
-
-
-                <!-- UID + UP3 -->
-
-                <span
-                  v-if="
-                    keluhan.uid ||
-                    keluhan.up3
-                  "
-                  class="pengaju-wilayah"
-                >
-
-                  {{ keluhan.uid || '-' }}
-
-                  <span
-                    v-if="
-                      keluhan.uid &&
-                      keluhan.up3
-                    "
-                  >
-                    •
-                  </span>
-
-                  {{ keluhan.up3 || '-' }}
-
-                </span>
-
-
-                <!-- UNIT -->
-
-                <span
-                  v-if="keluhan.unit"
-                  class="pengaju-unit"
-                >
-
-                  {{ keluhan.unit }}
-
-                </span>
-
-              </div>
-
-            </td>
-
-
-            <!-- =========================
-                 STATUS
-            ========================= -->
-
-            <td class="status-cell">
-
-              <!-- ADMIN / UID -->
-
-              <select
-                v-if="canManageStatus"
-                class="status-select"
-                :value="
-                  getActualStatus(
-                    keluhan.status
-                  )
-                "
-                :disabled="
-                  updatingId ===
-                  keluhan.id
-                "
-                @change="
-                  updateStatus(
-                    keluhan,
-                    $event.target.value
-                  )
-                "
-                :style="
-                  getStatusStyle(
-                    keluhan.status
-                  )
-                "
-              >
-
-                <option
-                  v-for="
-                    status in daftarStatus
-                  "
-                  :key="status"
-                  :value="status"
-                >
-
-                  {{ status }}
-
-                </option>
-
-              </select>
-
-
-              <!-- DRIVER -->
-
-              <span
-                v-else
-                class="status-badge"
-                :style="
-                  getStatusStyle(
-                    keluhan.status
-                  )
-                "
-              >
-
-                <span
-                  class="status-dot"
-                ></span>
-
-                {{
-                  getActualStatus(
-                    keluhan.status
-                  )
-                }}
-
-              </span>
-
-            </td>
-
-
-            <!-- =========================
-                 TINDAK LANJUT
-            ========================= -->
-
-            <td class="tindak-lanjut-cell">
-
-              <!--
-                BELUM ADA TINDAK LANJUT
-              -->
-
-              <template
-                v-if="
-                  !keluhan.tindakLanjut ||
-                  !keluhan.tindakLanjut.trim()
-                "
-              >
-
-                <!--
-                  ADMIN:
-                  tombol Detail untuk
-                  mengisi tindak lanjut
-                -->
-
-                <button
-                  v-if="isAdmin"
-                  type="button"
-                  class="btn-detail"
-                  @click="
-                    lihatDetail(
-                      keluhan.id
-                    )
-                  "
-                >
-
-                  Detail
-
-                </button>
-
-
-                <!--
-                  UID / DRIVER:
-                  hanya melihat status
-                  tindak lanjut
-                -->
-
-                <span
-                  v-else
-                  class="no-tindak-lanjut"
-                >
-
-                  Belum ada
-
-                </span>
-
-              </template>
-
-
-              <!--
-                SUDAH ADA TINDAK LANJUT
-              -->
-
-              <template v-else>
-
-                <div class="tindak-lanjut-wrapper">
-
-                  <span class="tindak-lanjut-text">
-
-                    {{ keluhan.tindakLanjut }}
-
-                  </span>
-
-
-                  <!--
-                    PENSIL HANYA ADMIN
-                  -->
-
-                  <button
-                    v-if="isAdmin"
-                    type="button"
-                    class="btn-edit-tindak"
-                    title="Edit tindak lanjut"
-                    @click="
-                      lihatDetail(
-                        keluhan.id
-                      )
-                    "
-                  >
-
-                    <span class="edit-icon">
-                      ✎
-                    </span>
-
-                  </button>
-
-                </div>
-
-              </template>
-
-            </td>
-
-          </tr>
-
-        </tbody>
-
-      </table>
-
-    </div>
-
-
-    <!-- =========================
-         PHOTO MODAL
-    ========================= -->
-
-    <div
-      v-if="showFoto"
-      class="foto-modal"
-      @click.self="tutupFoto"
-    >
-
-      <div class="foto-modal-content">
-
-        <button
-          type="button"
-          class="foto-close"
-          @click="tutupFoto"
-          title="Tutup"
-        >
-          ×
-        </button>
-
-        <img
-          v-if="fotoDipilih"
-          :src="fotoDipilih"
-          alt="Foto keluhan"
-          class="foto-large"
-        />
-
-      </div>
-
-    </div>
-
-  </div>
-
-</template>
-
-
 <style scoped>
 
 /* =========================
@@ -1309,7 +1202,10 @@ onMounted(() => {
 .keluhan-page {
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+
+  padding: 32px 36px 48px;
+
+  box-sizing: border-box;
 }
 
 
@@ -1317,62 +1213,296 @@ onMounted(() => {
    HEADER
 ========================= */
 
-.header-row {
+.page-header {
   display: flex;
+  align-items: flex-end;
   justify-content: space-between;
-  align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+
+  gap: 24px;
+
+  margin-bottom: 28px;
 }
 
-h2 {
+
+.page-eyebrow {
+  margin: 0 0 6px;
+
+  color: #2563eb;
+
+  font-size: 12px;
+  font-weight: 750;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+
+.page-header h1 {
   margin: 0;
-  font-size: 24px;
-  color: #1f2937;
+
+  color: #172033;
+
+  font-size: 30px;
+  line-height: 1.2;
+
+  font-weight: 750;
 }
 
-.subtitle {
-  margin: 5px 0 0;
-  color: #6b7280;
+
+.page-description {
+  margin: 8px 0 0;
+
+  color: #64748b;
+
+  font-size: 15px;
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 9px;
+
+  padding: 11px 17px;
+
   font-size: 14px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+
+.btn-secondary {
+  background: #eef2f7;
+  color: #374151;
+}
+
+
+.btn-secondary:hover {
+  background: #e2e8f0;
 }
 
 
 /* =========================
-   LOADING
+   STATISTICS
 ========================= */
 
-.loading-text {
-  text-align: center;
-  color: #6b7280;
-  padding: 30px;
+.stats-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(5, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 24px;
+}
+
+
+.stat-card {
+  min-height: 90px;
+
+  padding: 18px 20px;
+
+  box-sizing: border-box;
+
+  background: white;
+
+  border: 1px solid #e5eaf1;
+
+  border-radius: 12px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.035);
+}
+
+
+.stat-label {
+  margin-bottom: 7px;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+
+.stat-value {
+  color: #172033;
+
+  font-size: 25px;
+  line-height: 1;
+
+  font-weight: 750;
 }
 
 
 /* =========================
-   ERROR
+   STAT COLOR ACCENTS
 ========================= */
 
-.error-text {
-  color: #dc2626;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  padding: 12px 15px;
-  border-radius: 8px;
-  font-size: 14px;
+.stat-open {
+  border-top: 3px solid #3b82f6;
+}
+
+
+.stat-progress {
+  border-top: 3px solid #f59e0b;
+}
+
+
+.stat-close {
+  border-top: 3px solid #22c55e;
+}
+
+
+.stat-cancel {
+  border-top: 3px solid #ef4444;
 }
 
 
 /* =========================
-   TABLE WRAPPER
+   TOOLBAR
 ========================= */
 
-.table-wrapper {
+.toolbar {
+  margin-bottom: 24px;
+}
+
+
+.search-box {
+  position: relative;
+
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
+}
+
+
+.search-box input {
+  width: 100%;
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
   border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 80px 0 16px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.search-box input::placeholder {
+  color: #94a3b8;
+}
+
+
+.search-box input:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.clear-search {
+  position: absolute;
+
+  top: 50%;
+  right: 12px;
+
+  transform: translateY(-50%);
+
+  border: none;
+
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+}
+
+
+.clear-search:hover {
+  color: #2563eb;
+}
+
+
+/* =========================
+   DATA SECTION
+========================= */
+
+.data-section {
+  background: white;
+
+  border: 1px solid #e5eaf1;
+
+  border-radius: 14px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 2px 10px rgba(15, 23, 42, 0.035);
+}
+
+
+.section-header {
+  padding: 22px 24px 18px;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+
+.section-header h2 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 19px;
+  font-weight: 720;
+}
+
+
+.section-header p {
+  margin: 5px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
 }
 
 
@@ -1380,104 +1510,160 @@ h2 {
    TABLE
 ========================= */
 
-table {
+.table-container {
   width: 100%;
-  max-width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 10px;
-  overflow: hidden;
-}
 
+  overflow-x: auto;
+  overflow-y: hidden;
+}
 
 
 .data-table {
-  width: max-content;
-  min-width: 1100px;
+  width: 100%;
+
   border-collapse: collapse;
-  background: white;
+
+  table-layout: fixed;
 }
 
 
-/* =========================
-   COLUMN WIDTH
-========================= */
-
-.col-id {
-  width: 4%;
-}
+/* COLUMN */
 
 .col-kendaraan {
+  width: 12%;
+}
+
+
+.col-pengaduan {
+  width: 16%;
+}
+
+
+.col-foto {
   width: 11%;
 }
 
-.col-pengaduan {
-  width: 18%;
-}
-
-.col-foto {
-  width: 7%;
-}
 
 .col-tanggal {
   width: 11%;
 }
 
-.col-pengaju {
-  width: 16%;
-}
 
-.col-status {
-  width: 10%;
-}
-
-.col-tindak-lanjut {
+.col-tindak-tanggal {
   width: 12%;
 }
 
-.col-tanggal-tindak-lanjut {
+
+.col-pengaju {
+  width: 15%;
+}
+
+
+.col-status {
   width: 11%;
 }
 
 
+.col-tindak-lanjut {
+  width: 13%;
+}
+
+
 /* =========================
-   HEADER
+   TABLE HEADER
 ========================= */
 
-th {
-  padding: 12px 10px;
-  background: #eaf4ff;
-  color: #2b7cd3;
-  border-bottom: 1px solid #dbeafe;
-  text-align: left;
+.data-table thead th {
+  padding: 15px 13px;
+
+  background: #f8fafc;
+
+  border-bottom: 1px solid #e2e8f0;
+
+  color: #64748b;
+
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 750;
+
   text-transform: uppercase;
-  letter-spacing: 0.02em;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+
+  letter-spacing: 0.04em;
+
+  text-align: left;
+
+  vertical-align: middle;
 }
 
 
 /* =========================
-   BODY
+   TABLE BODY
 ========================= */
 
-td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #e5e7eb;
-  text-align: left;
-  vertical-align: middle;
+.data-table tbody td {
+  padding: 15px 13px;
+
+  border-bottom: 1px solid #edf0f4;
+
+  color: #374151;
+
   font-size: 13px;
-  color: #4b5563;
-  word-break: break-word;
+
+  vertical-align: middle;
+
   overflow-wrap: anywhere;
-  min-width: 0;
-  box-sizing: border-box;
+  word-break: break-word;
 }
 
-tbody tr:hover td {
-  background: #f9fbfd;
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+
+.data-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+
+.data-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+
+.data-table tbody tr.row-close {
+  background: #fbfefc;
+}
+
+
+.data-table tbody tr.row-cancel {
+  background: #fffafa;
+}
+
+
+.data-table tbody tr.row-progress {
+  background: #fffdf7;
+}
+
+
+/* =========================
+   VEHICLE
+========================= */
+
+.vehicle-cell {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+
+.vehicle-number {
+  color: #27364a;
+
+  font-size: 13px;
+  font-weight: 720;
+
+  line-height: 1.35;
 }
 
 
@@ -1485,185 +1671,195 @@ tbody tr:hover td {
    DEADLINE
 ========================= */
 
-tbody tr.row-deadline-danger td {
-  background-color: #fff5f4;
+.deadline-text {
+  width: fit-content;
+
+  padding: 4px 7px;
+
+  border-radius: 5px;
+
+  font-size: 10px;
+  font-weight: 700;
 }
 
-tbody tr.row-deadline-danger:hover td {
-  background-color: #fde2df;
+
+.deadline-normal {
+  color: #2563eb;
+
+  background: #eff6ff;
 }
 
-tbody tr.row-deadline-warning td {
-  background-color: #fffaf0;
+
+.deadline-warning {
+  color: #b45309;
+
+  background: #fff7ed;
 }
 
-tbody tr.row-deadline-warning:hover td {
-  background-color: #fff0d2;
+
+.deadline-danger {
+  color: #b91c1c;
+
+  background: #fee2e2;
 }
 
 
 /* =========================
-   PENGADUAN
+   COMPLAINT
 ========================= */
 
-.pengaduan-cell {
-  line-height: 1.45;
+.complaint-text {
+  color: #334155;
+
+  line-height: 1.55;
+
   white-space: normal;
 }
 
 
 /* =========================
-   PENGAJU
+   PHOTO
 ========================= */
 
-.pengaju-cell {
-  vertical-align: middle;
-}
-
-.pengaju-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.pengaju-nama {
-  color: #1f2937;
-  font-size: 12px;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-
-.pengaju-username {
-  color: #6b7280;
-  font-size: 10px;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-
-.pengaju-wilayah {
-  color: #2b7cd3;
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-
-.pengaju-unit {
-  color: #6b7280;
-  font-size: 10px;
-  line-height: 1.3;
-  overflow-wrap: anywhere;
-}
-
-
-/* =========================
-   TANGGAL
-========================= */
-
-.tanggal-cell {
-  vertical-align: middle;
-}
-
-.tanggal-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 5px;
-  min-width: 0;
-}
-
-.tanggal-wrapper strong {
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-
-/* =========================
-   DEADLINE LABEL
-========================= */
-
-.deadline-label {
-  display: inline-block;
-  max-width: 100%;
-  padding: 3px 7px;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.tanggal-wrapper:not(
-  .deadline-warning
-):not(
-  .deadline-danger
-) {
-  color: #384454;
-}
-
-.tanggal-wrapper.deadline-warning {
-  color: #d68a00;
-}
-
-.deadline-label.deadline-warning {
-  background-color: #fff3cd;
-  color: #d68910;
-}
-
-.tanggal-wrapper.deadline-danger {
-  color: #e74c3c;
-}
-
-.deadline-label.deadline-danger {
-  background-color: #fdecea;
-  color: #e74c3c;
-}
-
-
-/* =========================
-   FOTO
-========================= */
-
-.foto-cell {
-  text-align: center;
-}
-
-.photo-wrapper {
+.photo-list {
   display: flex;
   align-items: center;
-  justify-content: center;
+
   gap: 5px;
+
   flex-wrap: wrap;
 }
 
-.photo-button {
-  display: block;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  border: 1px solid #e5e7eb;
+
+.photo-thumbnail {
+  width: 42px;
+  height: 42px;
+
   border-radius: 7px;
-  background: #f8fafc;
-  overflow: hidden;
+
+  object-fit: cover;
+
+  border: 1px solid #e2e8f0;
+
   cursor: pointer;
-  box-sizing: border-box;
+
+  transition: transform 0.15s ease;
 }
 
-.photo-button:hover {
-  border-color: #2563eb;
+
+.photo-thumbnail:hover {
   transform: scale(1.05);
 }
 
-.keluhan-photo {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+
+.photo-more {
+  min-width: 25px;
+  height: 25px;
+
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 5px;
+
+  background: #f1f5f9;
+
+  color: #475569;
+
+  font-size: 10px;
+  font-weight: 700;
 }
 
+
 .no-photo {
-  color: #9ca3af;
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+
+/* =========================
+   DATE
+========================= */
+
+.date-text,
+.follow-date {
+  display: inline-block;
+
+  color: #475569;
+
+  font-size: 12px;
+
+  line-height: 1.45;
+}
+
+
+.follow-date {
+  font-weight: 650;
+}
+
+
+/* DEADLINE DATE COLORS */
+
+.follow-date-overdue {
+  color: #b91c1c;
+
+  font-weight: 700;
+}
+
+
+.follow-date-today {
+  color: #b45309;
+
+  font-weight: 700;
+}
+
+
+.follow-date-upcoming {
+  color: #2563eb;
+
+  font-weight: 650;
+}
+
+
+.empty-text {
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+
+/* =========================
+   REQUESTER
+========================= */
+
+.requester-cell {
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+
+.requester-cell strong {
+  color: #172033;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  line-height: 1.4;
+}
+
+
+.requester-cell span {
+  color: #475569;
+
   font-size: 11px;
+  font-weight: 500;
+
+  line-height: 1.4;
 }
 
 
@@ -1671,263 +1867,220 @@ tbody tr.row-deadline-warning:hover td {
    STATUS
 ========================= */
 
-.status-cell {
-  padding-left: 8px;
-  padding-right: 8px;
-  overflow: hidden;
-}
-
-
-/* =========================
-   STATUS BADGE
-========================= */
-
+.status-select,
 .status-badge {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  padding: 6px 8px;
-  border-radius: 18px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-
-/* =========================
-   STATUS SELECT
-========================= */
-
-.status-select {
-  display: block;
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 6px 22px 6px 8px;
-  border: 1px solid currentColor;
-  border-radius: 18px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  outline: none;
-  appearance: auto;
-}
-
-.status-select:focus {
-  box-shadow:
-    0 0 0 2px
-    rgba(43, 124, 211, 0.15);
-}
-
-.status-select:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-
-/* =========================
-   TINDAK LANJUT
-========================= */
-
-.tindak-lanjut-cell {
-  vertical-align: middle;
-}
-
-.tindak-lanjut-wrapper {
-  display: flex;
-  align-items: flex-start;
-  gap: 7px;
-  min-width: 0;
-}
-
-.tindak-lanjut-text {
-  flex: 1;
-  min-width: 0;
-  color: #475569;
-  font-size: 11px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.no-tindak-lanjut {
-  color: #9ca3af;
-  font-size: 11px;
-  font-style: italic;
-}
-
-.data-table th:nth-child(6),
-.data-table td:nth-child(6) {
-  min-width: 180px;
-}
-
-.data-table th:nth-child(8),
-.data-table td:nth-child(8) {
-  min-width: 200px;
-}
-
-.data-table td:nth-child(8) {
-  font-size: 14px;
-}
-
-.data-table th:nth-child(2),
-.data-table td:nth-child(2) {
-  font-size: 12px;
-}
-
-.data-table th:nth-child(1),
-.data-table td:nth-child(1) {
-  font-size: 12px;
-}
-
-/* =========================
-   TANGGAL TINDAK LANJUT
-========================= */
-
-.tanggal-tindak-lanjut-cell {
-  vertical-align: middle
-;
-}
-
-.tanggal-tindak-lanjut {
-  display: inline-block;
-  font-size: 13px;
-  font-weight: 600;
-  color: #475569;
-  line-height: 1.4;
-}
-
-.no-tanggal-tindak-lanjut {
-  color: #9ca3af;
-  font-size: 13px;
-  font-style: italic;
-}
-
-
-/* =========================
-   DETAIL BUTTON
-========================= */
-
-.btn-detail {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
 
-  padding: 7px 12px;
+  min-height: 34px;
 
-  border: none;
-  border-radius: 7px;
+  box-sizing: border-box;
 
-  background: #eaf3ff;
-  color: #2563eb;
+  border-radius: 8px;
 
-  font-family: inherit;
-  font-size: 12px;
-  font-weight: 600;
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s,
-    transform 0.1s;
-}
-
-.btn-detail:hover {
-  background: #dbeafe;
-  color: #1d4ed8;
-}
-
-.btn-detail:active {
-  transform: scale(0.97);
-}
-
-
-/* =========================
-   EDIT ICON
-========================= */
-
-.btn-edit-tindak {
-  flex-shrink: 0;
-
-  width: 28px;
-  height: 28px;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 0;
-
-  border: 1px solid #bfdbfe;
-  border-radius: 7px;
-
-  background: #eff6ff;
-  color: #2563eb;
-
-  cursor: pointer;
-
-  transition:
-    background 0.2s,
-    border-color 0.2s,
-    transform 0.1s;
-}
-
-.btn-edit-tindak:hover {
-  background: #dbeafe;
-  border-color: #93c5fd;
-  color: #1d4ed8;
-}
-
-.btn-edit-tindak:active {
-  transform: scale(0.94);
-}
-
-.edit-icon {
-  font-size: 16px;
-  line-height: 1;
+  font-size: 11px;
   font-weight: 700;
 }
 
 
-/* =========================
-   BUTTON
-=========================
- */
+.status-select {
+  width: 100%;
+  max-width: 130px;
 
-.btn-primary {
-  background: #2563eb;
-  color: white;
-  padding: 9px 14px;
-  border: none;
-  border-radius: 7px;
+  padding: 0 10px;
+
+  border: 1px solid transparent;
+
+  outline: none;
+
   cursor: pointer;
+}
+
+
+.status-badge {
+  padding: 7px 10px;
+}
+
+
+/* =========================
+   OPEN = BLUE
+========================= */
+
+.status-open {
+  color: #1d4ed8;
+
+  background: #eff6ff;
+
+  border-color: #bfdbfe;
+}
+
+
+/* =========================
+   ON PROGRESS = ORANGE
+========================= */
+
+.status-progress {
+  color: #c2410c;
+
+  background: #fff7ed;
+
+  border-color: #fed7aa;
+}
+
+
+/* =========================
+   CLOSE = GREEN
+========================= */
+
+.status-close {
+  color: #15803d;
+
+  background: #f0fdf4;
+
+  border-color: #bbf7d0;
+}
+
+
+/* =========================
+   CANCEL = RED
+========================= */
+
+.status-cancel {
+  color: #b91c1c;
+
+  background: #fef2f2;
+
+  border-color: #fecaca;
+}
+
+
+/* =========================
+   FOLLOW UP
+========================= */
+
+.follow-up-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  gap: 8px;
+}
+
+
+.follow-up-text {
+  margin: 0;
+
+  color: #475569;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+}
+
+
+.detail-button {
+  padding: 6px 9px;
+
+  border: 1px solid #bfdbfe;
+
+  border-radius: 6px;
+
+  background: #eff6ff;
+
+  color: #2563eb;
+
+  font-size: 10px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+
+.detail-button:hover {
+  background: #dbeafe;
+}
+
+
+/* =========================
+   STATES
+========================= */
+
+.state-card {
+  padding: 50px 24px;
+
+  text-align: center;
+}
+
+
+.state-card h3 {
+  margin: 0 0 8px;
+
+  color: #334155;
+
+  font-size: 16px;
+}
+
+
+.state-card p {
+  margin: 0 0 18px;
+
+  color: #94a3b8;
+
   font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  transition:
-    background 0.2s,
-    transform 0.1s;
 }
 
-.btn-primary:hover {
-  background: #1d4ed8;
+
+.error-state h3 {
+  color: #b91c1c;
 }
 
-.btn-primary:active {
-  transform: scale(0.98);
+
+.loading-line {
+  width: 180px;
+  height: 14px;
+
+  margin: 0 auto 10px;
+
+  border-radius: 5px;
+
+  background: #edf2f7;
+
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+
+.loading-line.short {
+  width: 110px;
+}
+
+
+.loading-table {
+  width: 90%;
+  height: 180px;
+
+  margin: 28px auto 0;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
 }
 
 
@@ -1935,278 +2088,168 @@ tbody tr.row-deadline-warning:hover td {
    PHOTO MODAL
 ========================= */
 
-.foto-modal {
+.photo-modal {
   position: fixed;
+
   inset: 0;
-  z-index: 9999;
-  background: rgba(0, 0, 0, 0.75);
+
+  z-index: 1000;
+
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
+
+  padding: 30px;
+
+  background: rgba(15, 23, 42, 0.7);
 }
 
-.foto-modal-content {
+
+.photo-modal-content {
   position: relative;
-  max-width: 90vw;
+
+  max-width: min(900px, 90vw);
   max-height: 90vh;
-}
 
-.foto-large {
-  display: block;
-  max-width: 90vw;
-  max-height: 85vh;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 8px;
+  padding: 14px;
+
+  border-radius: 12px;
+
   background: white;
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
-.foto-close {
-  position: absolute;
-  top: -40px;
-  right: 0;
+
+.photo-modal-content img {
+  display: block;
+
+  max-width: 100%;
+  max-height: 80vh;
+
+  border-radius: 7px;
+
+  object-fit: contain;
+}
+
+
+.photo-close {
+  display: block;
+
+  margin-left: auto;
+  margin-bottom: 10px;
+
   border: none;
+
   background: transparent;
-  color: white;
-  font-size: 32px;
+
+  color: #475569;
+
+  font-size: 12px;
+  font-weight: 650;
+
   cursor: pointer;
-  line-height: 1;
+}
+
+
+.photo-close:hover {
+  color: #2563eb;
 }
 
 
 /* =========================
-   TABLET
+   RESPONSIVE
 ========================= */
 
-@media (max-width: 1100px) {
+@media (max-width: 1200px) {
 
-  th,
-  td {
-    padding: 9px 7px;
+  .keluhan-page {
+    padding: 28px 26px 40px;
   }
 
-  th {
-    font-size: 10px;
+
+  .stats-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
   }
 
-  td {
-    font-size: 12px;
-  }
 
-  .keluhan-photo {
-    width: 42px;
-    height: 42px;
-  }
-
-  .status-select,
-  .status-badge {
-    font-size: 10px;
-  }
-
-  .pengaju-nama {
-    font-size: 11px;
-  }
-
-  .pengaju-username,
-  .pengaju-wilayah,
-  .pengaju-unit {
-    font-size: 9px;
-  }
-
-  .tindak-lanjut-text {
-    font-size: 13px;
-  }
-
-  .tanggal-tindak-lanjut {
-    font-size: 13px;
-  }
-
-  .no-tanggal-tindak-lanjut {
-    font-size: 10px;
-  }
-
-  .btn-detail {
-    font-size: 12px;
-    padding: 6px 9px;
-  }
-
-  .btn-edit-tindak {
-    width: 26px;
-    height: 26px;
+  .data-table {
+    min-width: 1050px;
   }
 
 }
 
 
-/* =========================
-   MOBILE
-========================= */
+@media (max-width: 768px) {
 
-@media (max-width: 700px) {
+  .keluhan-page {
+    padding: 20px 16px 32px;
+  }
 
-  .header-row {
+
+  .page-header {
     align-items: flex-start;
+
+    flex-direction: column;
+
+    margin-bottom: 22px;
   }
 
-  h2 {
-    font-size: 20px;
+
+  .page-header h1 {
+    font-size: 26px;
   }
 
-  .subtitle {
-    font-size: 12px;
-  }
 
   .btn-primary {
     width: 100%;
   }
 
-  th,
-  td {
-    padding: 8px 5px;
+
+  .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
   }
 
-  th {
-    font-size: 9px;
+
+  .stat-card {
+    min-height: 80px;
+
+    padding: 15px;
   }
 
-  td {
-    font-size: 11px;
+
+  .stat-value {
+    font-size: 22px;
   }
 
-  .status-select {
-    padding: 5px 3px;
-    font-size: 9px;
+
+  .data-table {
+    min-width: 1050px;
   }
 
-  .status-badge {
-    padding: 5px 3px;
-    font-size: 9px;
-  }
 
-  .status-dot {
-    display: none;
-  }
-
-  .keluhan-photo {
-    width: 38px;
-    height: 38px;
-  }
-
-  .deadline-label {
-    font-size: 9px;
-    padding: 2px 5px;
-  }
-
-  .pengaju-nama {
-    font-size: 10px;
-  }
-
-  .pengaju-username,
-  .pengaju-wilayah,
-  .pengaju-unit {
-    font-size: 8px;
-  }
-
-  .tindak-lanjut-text {
-    font-size: 9px;
-  }
-
-  .no-tindak-lanjut {
-    font-size: 9px;
-  }
-
-  .tanggal-tindak-lanjut {
-    font-size: 9px;
-  }
-
-  .no-tanggal-tindak-lanjut {
-    font-size: 9px;
-  }
-
-  .btn-detail {
-    font-size: 13px;
-    padding: 5px 8px;
-  }
-
-  .btn-edit-tindak {
-    width: 24px;
-    height: 24px;
-  }
-
-  .edit-icon {
-    font-size: 14px;
+  .section-header {
+    padding: 18px;
   }
 
 }
 
 
-/* =========================
-   VERY SMALL
-========================= */
+@media (max-width: 480px) {
 
-@media (max-width: 500px) {
-
-  th,
-  td {
-    padding: 7px 4px;
+  .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 
-  .keluhan-photo {
-    width: 32px;
-    height: 32px;
-  }
 
-  .status-select {
-    padding: 4px 2px;
-    font-size: 8px;
-  }
-
-  .status-badge {
-    padding: 4px 2px;
-    font-size: 8px;
-  }
-
-  .pengaju-nama {
-    font-size: 9px;
-  }
-
-  .pengaju-username,
-  .pengaju-wilayah,
-  .pengaju-unit {
-    font-size: 7px;
-  }
-
-  .tindak-lanjut-text {
-    font-size: 8px;
-  }
-
-  .no-tindak-lanjut {
-    font-size: 8px;
-  }
-
-  .tanggal-tindak-lanjut {
-    font-size: 8px;
-  }
-
-  .no-tanggal-tindak-lanjut {
-    font-size: 8px;
-  }
-
-  .btn-detail {
-    font-size: 8px;
-    padding: 4px 6px;
-  }
-
-  .btn-edit-tindak {
-    width: 22px;
-    height: 22px;
-  }
-
-  .edit-icon {
-    font-size: 13px;
+  .stat-card:last-child {
+    grid-column: span 2;
   }
 
 }

@@ -72,24 +72,24 @@ onMounted(() => {
 })
 </script>
 
-
 <template>
   <div class="users-page">
 
-    <!-- =========================
-         HEADER
-    ========================= -->
+    <!-- PAGE HEADER -->
+    <div class="page-header">
 
-    <div class="header-row">
+      <div class="header-content">
 
-      <div>
+        <div class="breadcrumb">
+          DATA USERS
+        </div>
 
-        <h2>
+        <h1>
           Daftar Users
-        </h2>
+        </h1>
 
-        <p class="subtitle">
-          Data pengguna sistem
+        <p>
+          Data pengguna yang terdaftar dalam sistem.
         </p>
 
       </div>
@@ -97,44 +97,68 @@ onMounted(() => {
     </div>
 
 
-    <!-- =========================
-         SEARCH
-    ========================= -->
+    <!-- TOOLBAR -->
+    <div class="toolbar">
 
-    <SearchInput
-      v-model="searchQuery"
-      placeholder="Cari username, nama, email, unit, UID, UP3, atau kendaraan..."
-    />
+      <div class="search-container">
+
+        <SearchInput
+          v-model="searchQuery"
+          placeholder="Cari username, nama, email, unit, UID, UP3, atau kendaraan..."
+        />
+
+      </div>
+
+      <div class="total-info">
+
+        <span class="total-label">
+          Total
+        </span>
+
+        <span class="total-value">
+          {{ filteredUsers.length }}
+        </span>
+
+      </div>
+
+    </div>
 
 
-    <!-- =========================
-         LOADING
-    ========================= -->
-
-    <p
+    <!-- LOADING -->
+    <div
       v-if="loading"
-      class="loading-text"
+      class="state-card"
     >
-      Loading data users...
-    </p>
+
+      <div class="state-title">
+        Memuat data users
+      </div>
+
+      <div class="state-text">
+        Silakan tunggu sebentar.
+      </div>
+
+    </div>
 
 
-    <!-- =========================
-         ERROR
-    ========================= -->
-
-    <p
+    <!-- ERROR -->
+    <div
       v-else-if="errorMsg"
-      class="error-text"
+      class="error-card"
     >
-      {{ errorMsg }}
-    </p>
+
+      <div class="error-title">
+        Data tidak dapat dimuat
+      </div>
+
+      <div class="error-message">
+        {{ errorMsg }}
+      </div>
+
+    </div>
 
 
-    <!-- =========================
-         EMPTY
-    ========================= -->
-
+    <!-- EMPTY -->
     <EmptyState
       v-else-if="filteredUsers.length === 0"
       :message="
@@ -150,223 +174,355 @@ onMounted(() => {
     />
 
 
-    <!-- =========================
-         TABLE
-    ========================= -->
-
-    <div
+    <!-- TABLE CARD -->
+    <section
       v-else
-      class="table-wrapper"
+      class="table-card"
     >
 
-      <table>
+      <div class="table-header">
 
-        <thead>
+        <div>
+          <h2>
+            Data Pengguna
+          </h2>
 
-          <tr>
+          <p>
+            Menampilkan {{ filteredUsers.length }} pengguna.
+          </p>
+        </div>
 
-            <th class="col-id">
-              ID
-            </th>
-
-            <th class="col-username">
-              Username
-            </th>
-
-            <th class="col-nama">
-              Nama Lengkap
-            </th>
-
-            <th class="col-email">
-              Email
-            </th>
-
-            <th class="col-unit">
-              Unit
-            </th>
-
-            <th class="col-uid">
-              UID
-            </th>
-
-            <th class="col-up3">
-              UP3
-            </th>
-
-            <th class="col-kendaraan">
-              No. Kendaraan
-            </th>
-
-            <th class="col-status">
-              Status
-            </th>
-
-          </tr>
-
-        </thead>
+      </div>
 
 
-        <tbody>
+      <div class="table-wrapper">
 
-          <tr
-            v-for="user in filteredUsers"
-            :key="user.id"
-          >
+        <table class="data-table">
 
-            <!-- ID -->
-
-            <td class="text-center">
-              {{ user.id }}
-            </td>
-
-
-            <!-- USERNAME -->
-
-            <td>
-              <strong>
-                {{ user.username || '-' }}
-              </strong>
-            </td>
+          <colgroup>
+            <col class="col-id" />
+            <col class="col-username" />
+            <col class="col-nama" />
+            <col class="col-email" />
+            <col class="col-unit" />
+            <col class="col-uid" />
+            <col class="col-up3" />
+            <col class="col-kendaraan" />
+            <col class="col-status" />
+          </colgroup>
 
 
-            <!-- NAMA -->
+          <thead>
 
-            <td>
-              {{ user.namaLengkap || '-' }}
-            </td>
+            <tr>
 
+              <th class="center">
+                ID
+              </th>
 
-            <!-- EMAIL -->
+              <th>
+                Username
+              </th>
 
-            <td class="email-cell">
-              {{ user.email || '-' }}
-            </td>
+              <th>
+                Nama Lengkap
+              </th>
 
+              <th>
+                Email
+              </th>
 
-            <!-- UNIT -->
+              <th>
+                Unit
+              </th>
 
-            <td>
-              {{ user.unit || '-' }}
-            </td>
+              <th>
+                UID
+              </th>
 
+              <th>
+                UP3
+              </th>
 
-            <!-- UID -->
+              <th>
+                No. Kendaraan
+              </th>
 
-            <td>
-              {{ user.uid || '-' }}
-            </td>
+              <th class="center">
+                Status
+              </th>
 
+            </tr>
 
-            <!-- UP3 -->
-
-            <td>
-              {{ user.up3 || '-' }}
-            </td>
-
-
-            <!-- KENDARAAN -->
-
-            <td>
-              <strong
-                v-if="user.noKendaraan"
-                class="kendaraan-text"
-              >
-                {{ user.noKendaraan }}
-              </strong>
-
-              <span v-else>
-                -
-              </span>
-            </td>
+          </thead>
 
 
-            <!-- STATUS -->
+          <tbody>
 
-            <td class="text-center">
+            <tr
+              v-for="user in filteredUsers"
+              :key="user.id"
+            >
 
-              <span
-                class="status-badge"
-                :class="
-                  user.active
-                    ? 'active'
-                    : 'inactive'
-                "
-              >
+              <!-- ID -->
+              <td class="center">
 
-                <span class="status-dot"></span>
+                <span class="id-text">
+                  {{ user.id }}
+                </span>
 
-                {{ user.active ? 'Aktif' : 'Nonaktif' }}
+              </td>
 
-              </span>
 
-            </td>
+              <!-- USERNAME -->
+              <td>
 
-          </tr>
+                <span class="primary-text">
+                  {{ user.username || '-' }}
+                </span>
 
-        </tbody>
+              </td>
 
-      </table>
 
-    </div>
+              <!-- NAMA -->
+              <td>
+
+                <span class="normal-text">
+                  {{ user.namaLengkap || '-' }}
+                </span>
+
+              </td>
+
+
+              <!-- EMAIL -->
+              <td>
+
+                <span
+                  class="email-text"
+                  :title="user.email || ''"
+                >
+                  {{ user.email || '-' }}
+                </span>
+
+              </td>
+
+
+              <!-- UNIT -->
+              <td>
+
+                <span class="normal-text">
+                  {{ user.unit || '-' }}
+                </span>
+
+              </td>
+
+
+              <!-- UID -->
+              <td>
+
+                <span
+                  v-if="user.uid"
+                  class="code-text"
+                >
+                  {{ user.uid }}
+                </span>
+
+                <span
+                  v-else
+                  class="muted-text"
+                >
+                  -
+                </span>
+
+              </td>
+
+
+              <!-- UP3 -->
+              <td>
+
+                <span class="normal-text">
+                  {{ user.up3 || '-' }}
+                </span>
+
+              </td>
+
+
+              <!-- KENDARAAN -->
+              <td>
+
+                <span
+                  v-if="user.noKendaraan"
+                  class="vehicle-text"
+                >
+                  {{ user.noKendaraan }}
+                </span>
+
+                <span
+                  v-else
+                  class="muted-text"
+                >
+                  -
+                </span>
+
+              </td>
+
+
+              <!-- STATUS -->
+              <td class="center">
+
+                <span
+                  class="status-badge"
+                  :class="
+                    user.active
+                      ? 'active'
+                      : 'inactive'
+                  "
+                >
+
+                  <span class="status-dot"></span>
+
+                  {{ user.active ? 'Aktif' : 'Nonaktif' }}
+
+                </span>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
 
   </div>
 </template>
 
 
 <style scoped>
-
 /* =========================
    PAGE
 ========================= */
 
 .users-page {
   width: 100%;
+  max-width: 100%;
+  padding: 0 0 32px;
+  box-sizing: border-box;
 }
 
 
 /* =========================
-   HEADER
+   PAGE HEADER
 ========================= */
 
-.header-row {
-  display: flex;
-
-  justify-content: space-between;
-
-  align-items: center;
-
-  margin-bottom: 16px;
+.page-header {
+  margin-bottom: 22px;
 }
 
-h2 {
+.header-content {
+  min-width: 0;
+}
+
+.breadcrumb {
+  margin-bottom: 7px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.page-header h1 {
   margin: 0;
-
-  color: #2b7cd3;
-
-  font-size: 22px;
-
+  color: #0f172a;
+  font-size: 28px;
+  line-height: 1.25;
   font-weight: 700;
 }
 
-.subtitle {
-  margin: 4px 0 0;
-
-  color: #718096;
-
-  font-size: 13px;
+.page-header p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 
 /* =========================
-   LOADING
+   TOOLBAR
 ========================= */
 
-.loading-text {
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.search-container {
+  flex: 1;
+  min-width: 0;
+}
+
+.total-info {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-shrink: 0;
+  height: 42px;
+  padding: 0 13px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.total-label {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.total-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+
+/* =========================
+   STATE
+========================= */
+
+.state-card {
+  padding: 44px 24px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
   text-align: center;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
 
-  color: #718096;
+.state-title {
+  color: #334155;
+  font-size: 15px;
+  font-weight: 600;
+}
 
-  padding: 30px;
+.state-text {
+  margin-top: 6px;
+  color: #64748b;
+  font-size: 14px;
 }
 
 
@@ -374,18 +530,59 @@ h2 {
    ERROR
 ========================= */
 
-.error-text {
-  color: #e74c3c;
+.error-card {
+  padding: 16px 18px;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  border-radius: 10px;
+  background: #fffafa;
+}
 
-  background: #fdecea;
-
-  border: 1px solid #f5c6c2;
-
-  padding: 10px 14px;
-
-  border-radius: 8px;
-
+.error-title {
+  margin-bottom: 4px;
+  color: #b91c1c;
   font-size: 14px;
+  font-weight: 700;
+}
+
+.error-message {
+  color: #7f1d1d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+
+/* =========================
+   TABLE CARD
+========================= */
+
+.table-card {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.table-header p {
+  margin: 5px 0 0;
+  color: #64748b;
+  font-size: 13px;
 }
 
 
@@ -395,28 +592,17 @@ h2 {
 
 .table-wrapper {
   width: 100%;
-
-  overflow: hidden;
-
-  margin-top: 15px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
-table {
+.data-table {
   width: 100%;
-
+  min-width: 1050px;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
-
-  border-collapse: collapse;
-
-  background: white;
-
-  border-radius: 12px;
-
-  overflow: hidden;
-
-  box-shadow:
-    0 2px 12px
-    rgba(58, 141, 222, 0.08);
 }
 
 
@@ -425,93 +611,84 @@ table {
 ========================= */
 
 .col-id {
-  width: 5%;
+  width: 55px;
 }
 
 .col-username {
-  width: 10%;
+  width: 115px;
 }
 
 .col-nama {
-  width: 14%;
+  width: 155px;
 }
 
 .col-email {
-  width: 17%;
+  width: 190px;
 }
 
 .col-unit {
-  width: 10%;
+  width: 115px;
 }
 
 .col-uid {
-  width: 11%;
+  width: 105px;
 }
 
 .col-up3 {
-  width: 11%;
+  width: 110px;
 }
 
 .col-kendaraan {
-  width: 12%;
+  width: 125px;
 }
 
 .col-status {
-  width: 10%;
+  width: 100px;
 }
 
 
 /* =========================
-   HEADER TABLE
+   TABLE HEADER
 ========================= */
 
-th {
-  background-color: #eaf4ff;
-
-  color: #2b7cd3;
-
-  padding: 12px 8px;
-
-  text-align: left;
-
-  font-size: 11px;
-
-  font-weight: 700;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.02em;
-
-  line-height: 1.25;
-
-  word-break: break-word;
-}
-
-
-/* =========================
-   DATA
-========================= */
-
-td {
-  padding: 12px 8px;
-
-  border-top: 1px solid #eef4fa;
-
+.data-table th {
+  height: 52px;
+  padding: 0 14px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
   font-size: 12px;
-
-  color: #384454;
-
+  font-weight: 700;
+  text-align: left;
   vertical-align: middle;
-
-  line-height: 1.4;
-
-  word-break: break-word;
-
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
-tbody tr:hover td {
-  background-color: #f7fbff;
+.data-table th.center {
+  text-align: center;
+}
+
+
+/* =========================
+   TABLE DATA
+========================= */
+
+.data-table td {
+  height: 58px;
+  padding: 10px 14px;
+  border-bottom: 1px solid #eef2f7;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover td {
+  background: #f8fbff;
 }
 
 
@@ -519,18 +696,67 @@ tbody tr:hover td {
    TEXT
 ========================= */
 
-.text-center {
-  text-align: center;
+.center {
+  text-align: center !important;
 }
 
-.email-cell {
-  word-break: break-all;
-
-  font-size: 11px;
+.id-text {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.kendaraan-text {
+.primary-text {
+  display: block;
+  overflow: hidden;
+  color: #0f172a;
+  font-weight: 600;
+  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.normal-text {
+  display: block;
+  overflow: hidden;
+  color: #334155;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.email-text {
+  display: block;
+  overflow: hidden;
+  color: #475569;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.code-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 4px 7px;
+  border: 1px solid #e2e8f0;
+  border-radius: 5px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.vehicle-text {
+  display: inline-block;
+  color: #0f172a;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.muted-text {
+  color: #94a3b8;
 }
 
 
@@ -540,44 +766,33 @@ tbody tr:hover td {
 
 .status-badge {
   display: inline-flex;
-
   align-items: center;
-
   justify-content: center;
-
-  gap: 5px;
-
-  padding: 5px 8px;
-
-  border-radius: 12px;
-
-  font-size: 10px;
-
+  gap: 6px;
+  min-width: 72px;
+  padding: 5px 9px;
+  border-radius: 6px;
+  font-size: 11px;
   font-weight: 600;
-
   white-space: nowrap;
+  box-sizing: border-box;
 }
 
 .status-dot {
   width: 6px;
-
   height: 6px;
-
   border-radius: 50%;
-
   background: currentColor;
 }
 
 .status-badge.active {
-  background: #e5f7ed;
-
-  color: #219653;
+  background: #ecfdf3;
+  color: #15803d;
 }
 
 .status-badge.inactive {
-  background: #fdecea;
-
-  color: #e74c3c;
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 
@@ -585,30 +800,18 @@ tbody tr:hover td {
    TABLET
 ========================= */
 
-@media (max-width: 1200px) {
-
-  th {
-    padding: 10px 6px;
-
-    font-size: 10px;
+@media (max-width: 900px) {
+  .toolbar {
+    align-items: stretch;
   }
 
-  td {
-    padding: 10px 6px;
-
-    font-size: 11px;
+  .total-info {
+    height: 40px;
   }
 
-  .email-cell {
-    font-size: 10px;
+  .table-header {
+    padding: 18px;
   }
-
-  .status-badge {
-    font-size: 9px;
-
-    padding: 4px 6px;
-  }
-
 }
 
 
@@ -616,40 +819,47 @@ tbody tr:hover td {
    MOBILE
 ========================= */
 
-@media (max-width: 700px) {
+@media (max-width: 650px) {
+  .page-header {
+    margin-bottom: 18px;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .page-header p {
+    font-size: 14px;
+  }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .total-info {
+    align-self: flex-start;
+  }
+
+  .table-card {
+    border-radius: 10px;
+  }
+
+  .table-header {
+    padding: 17px 16px;
+  }
+
+  .table-header h2 {
+    font-size: 17px;
+  }
 
   .table-wrapper {
-    overflow: hidden;
+    overflow-x: auto;
   }
 
-  table {
-    font-size: 10px;
+  .data-table {
+    min-width: 1050px;
   }
-
-  th {
-    padding: 8px 4px;
-
-    font-size: 9px;
-  }
-
-  td {
-    padding: 8px 4px;
-
-    font-size: 10px;
-  }
-
-  .status-badge {
-    font-size: 8px;
-
-    padding: 4px 5px;
-  }
-
-  .status-dot {
-    width: 5px;
-
-    height: 5px;
-  }
-
 }
-
 </style>
