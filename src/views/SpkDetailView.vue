@@ -278,9 +278,7 @@ onMounted(() => {
 
       <div class="header-content">
 
-        <div class="breadcrumb">
-          DATA SPK
-        </div>
+        <span class="page-eyebrow">DATA SPK</span>
 
         <h1>
           Detail Surat Perintah Kerja
@@ -318,15 +316,10 @@ onMounted(() => {
     <!-- LOADING -->
     <div
       v-if="loading"
-      class="state-card"
+      class="loading-container"
     >
-      <div class="state-title">
-        Memuat data SPK
-      </div>
-
-      <div class="state-text">
-        Silakan tunggu sebentar.
-      </div>
+      <div class="loading-spinner"></div>
+      <p>Memuat data SPK...</p>
     </div>
 
     <!-- ERROR -->
@@ -582,7 +575,6 @@ onMounted(() => {
 .spk-detail-page {
   width: 100%;
   max-width: 100%;
-  padding: 0 0 32px;
   box-sizing: border-box;
 }
 
@@ -594,7 +586,7 @@ onMounted(() => {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 24px;
+  gap: 20px;
   margin-bottom: 24px;
 }
 
@@ -602,33 +594,35 @@ onMounted(() => {
   min-width: 0;
 }
 
-.breadcrumb {
-  margin-bottom: 7px;
+.page-eyebrow {
+  display: block;
+  margin-bottom: 5px;
   color: #2563eb;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
 }
 
 .page-header h1 {
   margin: 0;
-  color: #0f172a;
-  font-size: 30px;
-  line-height: 1.25;
+  color: #1e293b;
+  font-size: 25px;
   font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
 }
 
 .page-header p {
-  margin: 8px 0 0;
+  margin: 5px 0 0;
   color: #64748b;
-  font-size: 30px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -638,46 +632,48 @@ onMounted(() => {
 
 .btn-download,
 .btn-back {
-  height: 44px;
-  padding: 0 17px;
+  height: 40px;
+  padding: 0 15px;
   border-radius: 8px;
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
   transition:
-    background 0.15s ease,
+    background-color 0.15s ease,
     border-color 0.15s ease,
     box-shadow 0.15s ease,
     transform 0.15s ease;
 }
 
 .btn-download {
-  border: 1px solid #2563eb;
+  border: none;
   background: #2563eb;
   color: #ffffff;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.16);
 }
 
 .btn-download:hover:not(:disabled) {
-  border-color: #1d4ed8;
   background: #1d4ed8;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(37, 99, 235, 0.2);
 }
 
 .btn-back {
-  border: 1px solid #cbd5e1;
+  border: 1px solid #e2e8f0;
   background: #ffffff;
-  color: #334155;
+  color: #475569;
 }
 
 .btn-back:hover:not(:disabled) {
-  border-color: #94a3b8;
-  background: #f8fafc;
+  border-color: #bfdbfe;
+  background: #f8fbff;
+  color: #2563eb;
 }
 
 .btn-download:active:not(:disabled),
 .btn-back:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 
 .btn-download:disabled {
@@ -686,45 +682,79 @@ onMounted(() => {
 }
 
 /* =========================
-   STATE
+   LOADING
+========================= */
+
+.loading-container {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+}
+
+.loading-container p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 10px;
+  border: 3px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================
+   STATE (ERROR)
 ========================= */
 
 .state-card {
-  padding: 44px 24px;
+  padding: 36px 24px;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 11px;
   background: #ffffff;
   text-align: center;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 
 .state-title {
   color: #334155;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .state-text {
-  margin-top: 6px;
+  margin-top: 5px;
   color: #64748b;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .error-card {
   border-color: #fecaca;
-  background: #fffafa;
+  background: #fef2f2;
 }
 
 .error-card .state-title {
-  color: #b91c1c;
+  color: #991b1b;
 }
 
 .error-card .state-text {
-  color: #7f1d1d;
+  color: #b91c1c;
 }
 
 .state-button {
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
 /* =========================
@@ -733,29 +763,29 @@ onMounted(() => {
 
 .content-card {
   margin-bottom: 20px;
-  padding: 26px 28px;
+  padding: 22px 24px;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 11px;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 
 .section-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .section-header h2 {
   margin: 0;
-  color: #0f172a;
-  font-size: 20px;
+  color: #1e293b;
+  font-size: 16px;
   line-height: 1.3;
   font-weight: 700;
 }
 
 .section-header p {
-  margin: 7px 0 0;
+  margin: 5px 0 0;
   color: #64748b;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -768,13 +798,13 @@ onMounted(() => {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 9px;
   overflow: hidden;
 }
 
 .info-item {
   min-width: 0;
-  padding: 18px 20px;
+  padding: 15px 18px;
   border-right: 1px solid #e2e8f0;
   border-bottom: 1px solid #e2e8f0;
   background: #ffffff;
@@ -790,18 +820,18 @@ onMounted(() => {
 
 .info-label {
   display: block;
-  margin-bottom: 7px;
+  margin-bottom: 5px;
   color: #64748b;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 500;
 }
 
 .info-value {
   display: block;
   overflow-wrap: anywhere;
-  color: #0f172a;
-  font-size: 15px;
-  font-weight: 600;
+  color: #1e293b;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 /* =========================
@@ -812,33 +842,32 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 16px;
 }
 
 .work-count {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   flex-shrink: 0;
 }
 
 .count-label {
   color: #64748b;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .count-value {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 9px;
-  border: 1px solid #dbe4ef;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
-  font-size: 14px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
   font-weight: 700;
   box-sizing: border-box;
 }
@@ -852,20 +881,34 @@ onMounted(() => {
   overflow-x: auto;
   overflow-y: hidden;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 9px;
   scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
 .data-table {
   width: 100%;
-  min-width: 760px;
+  min-width: 740px;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
 }
 
 .col-no {
-  width: 70px;
+  width: 60px;
 }
 
 .col-deskripsi {
@@ -881,24 +924,25 @@ onMounted(() => {
 }
 
 .data-table th {
-  height: 58px;
-  padding: 0 18px;
+  padding: 12px 14px;
   border-bottom: 1px solid #e2e8f0;
   background: #f8fafc;
-  color: #334155;
-  font-size: 14px;
+  color: #475569;
+  font-size: 10px;
   font-weight: 700;
   text-align: left;
-  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
 }
 
 .data-table td {
-  padding: 18px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 14px;
+  border-bottom: 1px solid #edf2f7;
   background: #ffffff;
   color: #334155;
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 12px;
+  line-height: 1.5;
   vertical-align: middle;
 }
 
@@ -907,7 +951,7 @@ onMounted(() => {
 }
 
 .data-table tbody tr:hover td {
-  background: #fcfdff;
+  background: #f8fbff;
 }
 
 .center {
@@ -922,14 +966,13 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #dbe4ef;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
-  font-size: 13px;
-  font-weight: 600;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .deskripsi {
@@ -937,14 +980,20 @@ onMounted(() => {
 }
 
 .main-text {
-  color: #0f172a;
+  color: #1e293b;
   font-weight: 600;
   overflow-wrap: anywhere;
 }
 
 .category-text {
-  color: #334155;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
   overflow-wrap: anywhere;
 }
 
@@ -959,11 +1008,14 @@ onMounted(() => {
 
 .muted-text {
   color: #94a3b8;
+  font-size: 11px;
+  font-style: italic;
 }
 
 .empty-row {
-  padding: 40px 20px !important;
-  color: #64748b !important;
+  padding: 32px 20px !important;
+  color: #94a3b8 !important;
+  font-size: 12px;
   text-align: center !important;
 }
 
@@ -1020,7 +1072,7 @@ onMounted(() => {
 
 @media (max-width: 700px) {
   .content-card {
-    padding: 22px 18px;
+    padding: 18px 16px;
   }
 
   .info-grid {
@@ -1039,19 +1091,19 @@ onMounted(() => {
   }
 
   .page-header h1 {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .page-header p {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .section-header h2 {
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .data-table {
-    min-width: 720px;
+    min-width: 700px;
   }
 }
 
@@ -1066,7 +1118,7 @@ onMounted(() => {
   }
 
   .content-card {
-    padding: 18px 14px;
+    padding: 16px 14px;
     border-radius: 10px;
   }
 

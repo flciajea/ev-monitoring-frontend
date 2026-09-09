@@ -20,7 +20,28 @@
         class="btn-add"
         @click="tambahSpk"
       >
-        <span class="btn-add-plus">+</span>
+        <svg
+          class="icon"
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 5V19"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+          />
+          <path
+            d="M5 12H19"
+            stroke="currentColor"
+            stroke-width="2.2"
+            stroke-linecap="round"
+          />
+        </svg>
+
         Tambah SPK
       </button>
     </div>
@@ -40,6 +61,55 @@
         v-if="!loading && !errorMsg"
         class="total-data"
       >
+        <svg
+          class="icon"
+          width="13"
+          height="13"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect
+            x="4"
+            y="4"
+            width="7"
+            height="7"
+            rx="1.5"
+            stroke="currentColor"
+            stroke-width="1.8"
+          />
+
+          <rect
+            x="13"
+            y="4"
+            width="7"
+            height="7"
+            rx="1.5"
+            stroke="currentColor"
+            stroke-width="1.8"
+          />
+
+          <rect
+            x="4"
+            y="13"
+            width="7"
+            height="7"
+            rx="1.5"
+            stroke="currentColor"
+            stroke-width="1.8"
+          />
+
+          <rect
+            x="13"
+            y="13"
+            width="7"
+            height="7"
+            rx="1.5"
+            stroke="currentColor"
+            stroke-width="1.8"
+          />
+        </svg>
+
         <span>Total Data</span>
 
         <strong>
@@ -56,11 +126,15 @@
       class="error-message"
     >
       <div class="error-content">
-        <strong>Data tidak dapat dimuat</strong>
+
+        <strong>
+          Data tidak dapat dimuat
+        </strong>
 
         <span>
           {{ errorMsg }}
         </span>
+
       </div>
 
       <button
@@ -107,6 +181,7 @@
       v-else
       class="table-card"
     >
+
       <div class="table-wrapper">
 
         <table class="data-table">
@@ -119,9 +194,9 @@
             <col class="col-bengkel">
             <col class="col-polisi">
             <col class="col-pekerjaan">
-            <col class="col-pembuat">
             <col class="col-aksi">
           </colgroup>
+
 
           <thead>
             <tr>
@@ -132,12 +207,15 @@
               <th>Bengkel</th>
               <th>No Polisi</th>
               <th>Perintah Kerja</th>
-              <th>Dibuat Oleh</th>
-              <th class="text-center">Aksi</th>
+              <th class="text-center">
+                Aksi
+              </th>
             </tr>
           </thead>
 
+
           <tbody>
+
             <tr
               v-for="(item, index) in daftarSpkFiltered"
               :key="item.id"
@@ -145,15 +223,19 @@
 
               <!-- NO -->
               <td class="no-cell">
+
                 <span class="number-badge">
                   {{ index + 1 }}
                 </span>
+
               </td>
 
 
               <!-- NOMOR SPK -->
               <td class="nomor-spk-cell">
+
                 <div class="nomor-spk">
+
                   <strong>
                     {{ item.nomorSpk || '-' }}
                   </strong>
@@ -161,12 +243,15 @@
                   <span>
                     Surat Perintah Kerja
                   </span>
+
                 </div>
+
               </td>
 
 
               <!-- TANGGAL -->
               <td>
+
                 <span
                   v-if="item.tanggal"
                   class="date-text"
@@ -180,11 +265,13 @@
                 >
                   Belum ditentukan
                 </span>
+
               </td>
 
 
               <!-- UID -->
               <td>
+
                 <span
                   v-if="item.uid"
                   class="uid-text"
@@ -198,19 +285,23 @@
                 >
                   -
                 </span>
+
               </td>
 
 
               <!-- BENGKEL -->
               <td>
+
                 <span class="primary-text">
                   {{ item.bengkel || '-' }}
                 </span>
+
               </td>
 
 
               <!-- NO POLISI -->
               <td>
+
                 <span
                   v-if="item.noPolisi"
                   class="polisi-badge"
@@ -224,6 +315,7 @@
                 >
                   -
                 </span>
+
               </td>
 
 
@@ -241,8 +333,14 @@
                   <div class="pekerjaan-list">
 
                     <div
-                      v-for="(detailItem, detailIndex) in item.detail"
-                      :key="detailItem.id || detailIndex"
+                      v-for="(
+                        detailItem,
+                        detailIndex
+                      ) in item.detail.slice(0, 3)"
+                      :key="
+                        detailItem.id ||
+                        detailIndex
+                      "
                       class="pekerjaan-item"
                     >
 
@@ -250,14 +348,22 @@
                         {{ detailIndex + 1 }}
                       </span>
 
+
                       <div class="pekerjaan-content">
 
-                        <span class="pekerjaan-description">
+                        <span
+                          class="pekerjaan-description"
+                          :title="
+                            detailItem.deskripsi ||
+                            'Tidak ada deskripsi'
+                          "
+                        >
                           {{
                             detailItem.deskripsi ||
                             'Tidak ada deskripsi'
                           }}
                         </span>
+
 
                         <span
                           v-if="detailItem.kategori"
@@ -272,14 +378,17 @@
 
                   </div>
 
+
                   <span
                     v-if="item.detail.length > 1"
                     class="jumlah-pekerjaan"
                   >
-                    {{ item.detail.length }} pekerjaan
+                    {{ item.detail.length }}
+                    pekerjaan
                   </span>
 
                 </div>
+
 
                 <span
                   v-else
@@ -291,42 +400,81 @@
               </td>
 
 
-              <!-- DIBUAT OLEH -->
-              <td class="pembuat-cell">
-                <div class="pembuat-info">
-
-                  <strong>
-                    {{ item.createdBy || '-' }}
-                  </strong>
-
-                  <span>
-                    Pembuat SPK
-                  </span>
-
-                </div>
-              </td>
-
-
               <!-- AKSI -->
               <td class="action-cell">
 
                 <div class="action-buttons">
 
+                  <!-- DETAIL -->
                   <button
                     type="button"
                     class="btn-detail"
+                    title="Lihat detail SPK"
+                    aria-label="Lihat detail SPK"
                     @click="lihatDetail(item.id)"
                   >
+
+                    <svg
+                      class="icon"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M2 12C3.6 7.5 7.5 4.7 12 4.7C16.5 4.7 20.4 7.5 22 12C20.4 16.5 16.5 19.3 12 19.3C7.5 19.3 3.6 16.5 2 12Z"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                      />
+
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="3"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                      />
+                    </svg>
+
                     Detail
+
                   </button>
 
+
+                  <!-- EDIT -->
                   <button
                     type="button"
                     class="btn-edit"
-                    @click="editSpk(item.id)"
                     title="Edit SPK"
+                    aria-label="Edit SPK"
+                    @click="editSpk(item.id)"
                   >
+
+                    <svg
+                      class="icon"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M4 20L4.6 16.7C4.7 16.1 5 15.6 5.4 15.1L15.4 5.1C16.3 4.2 17.7 4.2 18.6 5.1L18.9 5.4C19.8 6.3 19.8 7.7 18.9 8.6L8.9 18.6C8.4 19 7.9 19.3 7.3 19.4L4 20Z"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                        stroke-linejoin="round"
+                      />
+
+                      <path
+                        d="M13.5 6.9L17.1 10.5"
+                        stroke="currentColor"
+                        stroke-width="1.7"
+                      />
+                    </svg>
+
                     Edit
+
                   </button>
 
                 </div>
@@ -334,11 +482,13 @@
               </td>
 
             </tr>
+
           </tbody>
 
         </table>
 
       </div>
+
     </div>
 
   </div>
@@ -359,36 +509,43 @@ import {
 
 import api from '../api'
 
-import SearchInput from '../components/SearchInput.vue'
-import EmptyState from '../components/EmptyState.vue'
+import SearchInput
+  from '../components/SearchInput.vue'
+
+import EmptyState
+  from '../components/EmptyState.vue'
 
 
-/* =========================
+/* =====================================================
    ROUTER
-========================= */
+===================================================== */
 
 const router = useRouter()
 
 
-/* =========================
+/* =====================================================
    DATA
-========================= */
+===================================================== */
 
 const daftarSpk = ref([])
+
 const loading = ref(true)
+
 const errorMsg = ref('')
+
 const search = ref('')
 
 
-/* =========================
+/* =====================================================
    AMBIL DATA
-========================= */
+===================================================== */
 
 const ambilData = async () => {
 
   try {
 
     loading.value = true
+
     errorMsg.value = ''
 
     const response =
@@ -418,9 +575,9 @@ const ambilData = async () => {
 }
 
 
-/* =========================
+/* =====================================================
    SEARCH
-========================= */
+===================================================== */
 
 const daftarSpkFiltered = computed(() => {
 
@@ -494,9 +651,9 @@ const daftarSpkFiltered = computed(() => {
 })
 
 
-/* =========================
+/* =====================================================
    FORMAT TANGGAL
-========================= */
+===================================================== */
 
 const formatTanggal = (tanggal) => {
 
@@ -527,9 +684,9 @@ const formatTanggal = (tanggal) => {
 }
 
 
-/* =========================
+/* =====================================================
    DETAIL
-========================= */
+===================================================== */
 
 const lihatDetail = (id) => {
 
@@ -540,9 +697,9 @@ const lihatDetail = (id) => {
 }
 
 
-/* =========================
+/* =====================================================
    EDIT
-========================= */
+===================================================== */
 
 const editSpk = (id) => {
 
@@ -553,9 +710,9 @@ const editSpk = (id) => {
 }
 
 
-/* =========================
+/* =====================================================
    TAMBAH
-========================= */
+===================================================== */
 
 const tambahSpk = () => {
 
@@ -566,9 +723,9 @@ const tambahSpk = () => {
 }
 
 
-/* =========================
+/* =====================================================
    MOUNTED
-========================= */
+===================================================== */
 
 onMounted(() => {
 
@@ -588,6 +745,7 @@ onMounted(() => {
 .spk-page {
   width: 100%;
   max-width: 100%;
+
   box-sizing: border-box;
 }
 
@@ -656,14 +814,14 @@ onMounted(() => {
 
   flex-shrink: 0;
 
-  padding: 10px 15px;
+  padding: 10px 16px;
 
   border: none;
   border-radius: 8px;
 
   background: #2563eb;
 
-  color: white;
+  color: #ffffff;
 
   font-family: inherit;
 
@@ -690,11 +848,14 @@ onMounted(() => {
     0 5px 12px rgba(37, 99, 235, 0.2);
 }
 
-.btn-add-plus {
-  font-size: 17px;
-  font-weight: 400;
+.btn-add:active {
+  transform: translateY(0);
+}
 
-  line-height: 1;
+.icon {
+  flex-shrink: 0;
+
+  display: block;
 }
 
 
@@ -715,20 +876,34 @@ onMounted(() => {
 .search-container {
   width: 100%;
   max-width: 540px;
+
+  border-radius: 8px;
+
+  transition:
+    box-shadow 0.15s ease;
+}
+
+.search-container:focus-within {
+  box-shadow:
+    0 0 0 3px rgba(37, 99, 235, 0.12);
+
+  border-radius: 8px;
 }
 
 .total-data {
   display: flex;
   align-items: center;
 
-  gap: 9px;
+  gap: 7px;
 
-  padding: 8px 12px;
+  padding: 8px 13px;
 
   border: 1px solid #e2e8f0;
   border-radius: 8px;
 
   background: #ffffff;
+
+  color: #94a3b8;
 
   white-space: nowrap;
 }
@@ -811,11 +986,14 @@ onMounted(() => {
   cursor: pointer;
 
   transition:
-    background-color 0.15s ease;
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .btn-retry-small:hover {
   background: #fff7f7;
+
+  border-color: #fca5a5;
 }
 
 
@@ -848,17 +1026,21 @@ onMounted(() => {
   margin-bottom: 10px;
 
   border: 3px solid #dbeafe;
+
   border-top-color: #2563eb;
 
   border-radius: 50%;
 
-  animation: spin 0.8s linear infinite;
+  animation:
+    spin 0.8s linear infinite;
 }
 
 @keyframes spin {
+
   to {
     transform: rotate(360deg);
   }
+
 }
 
 
@@ -892,7 +1074,10 @@ onMounted(() => {
   overflow-y: hidden;
 
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+
+  scrollbar-color:
+    #cbd5e1
+    transparent;
 }
 
 .table-wrapper::-webkit-scrollbar {
@@ -919,9 +1104,11 @@ onMounted(() => {
 ===================================================== */
 
 .data-table {
-  width: max-content;
+  width: 100%;
 
-  min-width: 1180px;
+  min-width: 0;
+
+  table-layout: fixed;
 
   border-collapse: separate;
   border-spacing: 0;
@@ -935,39 +1122,40 @@ onMounted(() => {
 ===================================================== */
 
 .col-no {
-  width: 58px;
+  width: 55px;
 }
 
 .col-nomor {
-  width: 155px;
+  width: 145px;
 }
 
 .col-tanggal {
-  width: 120px;
+  width: 105px;
 }
 
 .col-uid {
-  width: 120px;
+  width: 125px;
 }
 
 .col-bengkel {
-  width: 170px;
+  width: 165px;
 }
 
 .col-polisi {
-  width: 120px;
+  width: 115px;
 }
 
 .col-pekerjaan {
-  width: 350px;
+  width: auto;
 }
 
-.col-pembuat {
-  width: 155px;
-}
 
+/*
+  Aksi dibuat tetap kecil.
+  Tidak akan mengambil ruang kosong besar.
+*/
 .col-aksi {
-  width: 135px;
+  width: 125px;
 }
 
 
@@ -976,7 +1164,7 @@ onMounted(() => {
 ===================================================== */
 
 .data-table th {
-  padding: 12px 11px;
+  padding: 12px 10px;
 
   background: #f8fafc;
 
@@ -984,7 +1172,7 @@ onMounted(() => {
 
   border-bottom: 1px solid #e2e8f0;
 
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 
   text-align: left;
@@ -994,6 +1182,8 @@ onMounted(() => {
   letter-spacing: 0.035em;
 
   white-space: nowrap;
+
+  box-sizing: border-box;
 }
 
 .data-table th:first-child {
@@ -1010,7 +1200,7 @@ onMounted(() => {
 ===================================================== */
 
 .data-table td {
-  padding: 13px 11px;
+  padding: 13px 10px;
 
   border-bottom: 1px solid #edf2f7;
 
@@ -1029,13 +1219,17 @@ onMounted(() => {
   border-bottom: none;
 }
 
+.data-table tbody tr:nth-child(even) td {
+  background: #fbfcfe;
+}
+
 .data-table tbody tr {
   transition:
     background-color 0.15s ease;
 }
 
 .data-table tbody tr:hover td {
-  background: #f8fbff;
+  background: #f4f9ff;
 }
 
 
@@ -1061,7 +1255,7 @@ onMounted(() => {
 
   color: #64748b;
 
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -1071,7 +1265,7 @@ onMounted(() => {
 ===================================================== */
 
 .nomor-spk-cell {
-  min-width: 155px;
+  min-width: 0;
 }
 
 .nomor-spk {
@@ -1084,20 +1278,24 @@ onMounted(() => {
 }
 
 .nomor-spk strong {
+  display: block;
+
+  max-width: 100%;
+
   color: #1e293b;
 
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 
   line-height: 1.35;
 
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .nomor-spk span {
   color: #94a3b8;
 
-  font-size: 9px;
+  font-size: 10px;
 
   line-height: 1.3;
 }
@@ -1110,7 +1308,7 @@ onMounted(() => {
 .date-text {
   color: #334155;
 
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 
   white-space: nowrap;
@@ -1119,7 +1317,7 @@ onMounted(() => {
 .empty-value {
   color: #94a3b8;
 
-  font-size: 10px;
+  font-size: 11px;
 
   font-style: italic;
 }
@@ -1130,12 +1328,16 @@ onMounted(() => {
 ===================================================== */
 
 .uid-text {
+  display: block;
+
   color: #2563eb;
 
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
 
-  white-space: nowrap;
+  line-height: 1.4;
+
+  overflow-wrap: anywhere;
 }
 
 
@@ -1144,12 +1346,16 @@ onMounted(() => {
 ===================================================== */
 
 .primary-text {
+  display: block;
+
   color: #334155;
 
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 
   line-height: 1.4;
+
+  overflow-wrap: anywhere;
 }
 
 
@@ -1162,16 +1368,18 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
 
+  max-width: 100%;
+
   padding: 5px 8px;
 
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbeafe;
   border-radius: 6px;
 
-  background: #f8fafc;
+  background: #eff6ff;
 
-  color: #334155;
+  color: #1d4ed8;
 
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 
   white-space: nowrap;
@@ -1183,7 +1391,9 @@ onMounted(() => {
 ===================================================== */
 
 .pekerjaan-cell {
-  min-width: 350px;
+  min-width: 0;
+
+  width: auto;
 }
 
 .pekerjaan-wrapper {
@@ -1191,6 +1401,8 @@ onMounted(() => {
   flex-direction: column;
 
   gap: 6px;
+
+  width: 100%;
 
   min-width: 0;
 }
@@ -1200,6 +1412,10 @@ onMounted(() => {
   flex-direction: column;
 
   gap: 6px;
+
+  width: 100%;
+
+  min-width: 0;
 }
 
 .pekerjaan-item {
@@ -1207,6 +1423,8 @@ onMounted(() => {
   align-items: flex-start;
 
   gap: 7px;
+
+  width: 100%;
 
   min-width: 0;
 }
@@ -1229,7 +1447,7 @@ onMounted(() => {
 
   color: #2563eb;
 
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
 }
 
@@ -1242,12 +1460,23 @@ onMounted(() => {
   flex-wrap: wrap;
 
   min-width: 0;
+
+  max-width: calc(100% - 25px);
 }
 
 .pekerjaan-description {
+  display: -webkit-box;
+
+  max-width: 100%;
+
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+
+  overflow: hidden;
+
   color: #334155;
 
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 
   line-height: 1.4;
@@ -1259,6 +1488,8 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
 
+  flex-shrink: 0;
+
   padding: 2px 6px;
 
   border-radius: 5px;
@@ -1267,7 +1498,7 @@ onMounted(() => {
 
   color: #64748b;
 
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
 
   white-space: nowrap;
@@ -1284,43 +1515,8 @@ onMounted(() => {
 
   color: #94a3b8;
 
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 600;
-}
-
-
-/* =====================================================
-   PEMBUAT
-===================================================== */
-
-.pembuat-cell {
-  min-width: 155px;
-}
-
-.pembuat-info {
-  display: flex;
-  flex-direction: column;
-
-  gap: 3px;
-
-  min-width: 0;
-}
-
-.pembuat-info strong {
-  color: #334155;
-
-  font-size: 11px;
-  font-weight: 700;
-
-  line-height: 1.35;
-
-  overflow-wrap: anywhere;
-}
-
-.pembuat-info span {
-  color: #94a3b8;
-
-  font-size: 8px;
 }
 
 
@@ -1329,7 +1525,14 @@ onMounted(() => {
 ===================================================== */
 
 .action-cell {
+  width: 125px;
+
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+
   text-align: center;
+
+  white-space: nowrap;
 }
 
 .action-buttons {
@@ -1337,29 +1540,53 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
 
-  gap: 6px;
+  gap: 4px;
+
+  width: 100%;
 }
 
-.btn-detail {
-  padding: 7px 10px;
+.btn-detail,
+.btn-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-  border: 1px solid #bfdbfe;
+  gap: 3px;
+
+  flex-shrink: 0;
+
+  padding: 6px 7px;
+
   border-radius: 6px;
-
-  background: #eff6ff;
-
-  color: #2563eb;
 
   font-family: inherit;
 
   font-size: 10px;
   font-weight: 700;
 
+  line-height: 1;
+
+  white-space: nowrap;
+
   cursor: pointer;
 
   transition:
     background-color 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+
+/* =====================================================
+   DETAIL BUTTON
+===================================================== */
+
+.btn-detail {
+  border: 1px solid #bfdbfe;
+
+  background: #eff6ff;
+
+  color: #2563eb;
 }
 
 .btn-detail:hover {
@@ -1368,27 +1595,17 @@ onMounted(() => {
   border-color: #93c5fd;
 }
 
-.btn-edit {
-  padding: 7px 10px;
 
+/* =====================================================
+   EDIT BUTTON
+===================================================== */
+
+.btn-edit {
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
 
   background: #ffffff;
 
   color: #475569;
-
-  font-family: inherit;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
 }
 
 .btn-edit:hover {
@@ -1410,13 +1627,25 @@ onMounted(() => {
     font-size: 22px;
   }
 
+  .data-table {
+    min-width: 900px;
+  }
+
   .data-table th,
   .data-table td {
     padding: 10px 8px;
   }
 
   .pekerjaan-cell {
-    min-width: 320px;
+    min-width: 300px;
+  }
+
+  .col-aksi {
+    width: 120px;
+  }
+
+  .action-cell {
+    width: 120px;
   }
 
 }
@@ -1448,7 +1677,10 @@ onMounted(() => {
 
   .btn-add {
     width: 100%;
+
+    justify-content: center;
   }
+
 
   .toolbar {
     align-items: stretch;
@@ -1466,8 +1698,10 @@ onMounted(() => {
     width: fit-content;
   }
 
+
   .error-message {
     align-items: flex-start;
+
     flex-wrap: wrap;
   }
 
@@ -1475,13 +1709,25 @@ onMounted(() => {
     margin-left: auto;
   }
 
+
   .table-card {
     border-radius: 9px;
   }
 
+
+  /*
+    Mobile memang boleh scroll horizontal
+    karena 8 kolom tidak mungkin dipaksa
+    terlalu kecil.
+  */
   .data-table {
-    min-width: 1120px;
+    width: 100%;
+
+    min-width: 900px;
+
+    table-layout: fixed;
   }
+
 
   .data-table th {
     padding: 9px 7px;
@@ -1495,12 +1741,14 @@ onMounted(() => {
     font-size: 10px;
   }
 
+
   .number-badge {
     width: 24px;
     height: 24px;
 
     font-size: 9px;
   }
+
 
   .nomor-spk strong {
     font-size: 10px;
@@ -1510,39 +1758,46 @@ onMounted(() => {
     font-size: 8px;
   }
 
+
   .date-text {
     font-size: 10px;
   }
+
 
   .uid-text {
     font-size: 10px;
   }
 
+
   .primary-text {
     font-size: 10px;
   }
+
 
   .polisi-badge {
     font-size: 9px;
   }
 
+
   .pekerjaan-description {
     font-size: 10px;
   }
 
-  .pembuat-info strong {
-    font-size: 9px;
+
+  .col-aksi {
+    width: 115px;
   }
 
-  .pembuat-info span {
-    font-size: 7px;
+  .action-cell {
+    width: 115px;
   }
+
 
   .btn-detail,
   .btn-edit {
-    padding: 6px 8px;
+    padding: 5px 6px;
 
-    font-size: 8px;
+    font-size: 9px;
   }
 
 }
@@ -1562,22 +1817,35 @@ onMounted(() => {
     font-size: 11px;
   }
 
+
   .data-table {
-    min-width: 1080px;
+    min-width: 860px;
   }
+
 
   .data-table th,
   .data-table td {
     padding: 7px 5px;
   }
 
+
   .pekerjaan-cell {
-    min-width: 290px;
+    min-width: 270px;
   }
+
+
+  .col-aksi {
+    width: 108px;
+  }
+
+  .action-cell {
+    width: 108px;
+  }
+
 
   .btn-detail,
   .btn-edit {
-    padding: 5px 7px;
+    padding: 5px 5px;
 
     font-size: 8px;
   }

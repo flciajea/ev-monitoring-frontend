@@ -3,283 +3,223 @@
 
     <!-- =========================
          HEADER
-    ========================= -->
+    ========================== -->
+    <section class="page-header">
+      <div class="header-content">
+        <p class="page-eyebrow">Monitoring</p>
 
-    <div class="page-header">
+        <h1>Daftar Ganti Sparepart</h1>
 
-      <div class="header-eyebrow">
-        MONITORING
+        <p class="page-description">
+          Monitoring penggantian sparepart fast moving kendaraan
+        </p>
       </div>
-
-      <h1>
-        Daftar Ganti Sparepart
-      </h1>
-
-      <p>
-        Monitoring penggantian sparepart fast moving kendaraan
-      </p>
-
-    </div>
+    </section>
 
 
     <!-- =========================
          STATISTICS
-    ========================= -->
+    ========================== -->
+    <section class="stats-grid">
 
-    <div class="stats-grid">
-
-      <!-- TOTAL -->
       <div class="stat-card">
-
-        <div class="stat-label">
+        <span class="stat-label">
           Total Sparepart
-        </div>
+        </span>
 
-        <div class="stat-value total">
+        <strong class="stat-value">
           {{ totalData }}
-        </div>
-
+        </strong>
       </div>
 
 
-      <!-- OPEN -->
       <div class="stat-card stat-open">
-
-        <div class="stat-label">
+        <span class="stat-label">
           Open
-        </div>
+        </span>
 
-        <div class="stat-value open">
+        <strong class="stat-value">
           {{ jumlahStatus('Open') }}
-        </div>
-
+        </strong>
       </div>
 
 
-      <!-- ON PROGRESS -->
       <div class="stat-card stat-progress">
-
-        <div class="stat-label">
+        <span class="stat-label">
           On Progress
-        </div>
+        </span>
 
-        <div class="stat-value progress">
+        <strong class="stat-value">
           {{ jumlahStatus('On Progress') }}
-        </div>
-
+        </strong>
       </div>
 
 
-      <!-- CLOSE -->
       <div class="stat-card stat-close">
-
-        <div class="stat-label">
+        <span class="stat-label">
           Close
-        </div>
+        </span>
 
-        <div class="stat-value close">
+        <strong class="stat-value">
           {{ jumlahStatus('Close') }}
-        </div>
-
+        </strong>
       </div>
 
 
-      <!-- CANCEL -->
       <div class="stat-card stat-cancel">
-
-        <div class="stat-label">
+        <span class="stat-label">
           Cancel
-        </div>
+        </span>
 
-        <div class="stat-value cancel">
+        <strong class="stat-value">
           {{ jumlahStatus('Cancel') }}
-        </div>
-
+        </strong>
       </div>
 
-    </div>
+    </section>
 
 
     <!-- =========================
          SEARCH
-    ========================= -->
+    ========================== -->
+    <section class="toolbar">
 
-    <div class="search-card">
+      <div class="search-box">
 
-      <SearchInput
-        v-model="searchQuery"
-        placeholder="Cari kendaraan, sparepart, pengaju, UID, UP3, unit, status..."
-      />
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Cari kendaraan, sparepart, pengaju, UID, UP3, unit, status..."
+        />
 
-    </div>
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="clear-search"
+          @click="searchQuery = ''"
+        >
+          Clear
+        </button>
 
+      </div>
 
-    <!-- =========================
-         ERROR
-    ========================= -->
-
-    <div
-      v-if="errorMsg"
-      class="error-message"
-    >
-
-      <span class="error-icon">
-        !
-      </span>
-
-      <span>
-        {{ errorMsg }}
-      </span>
-
-    </div>
+    </section>
 
 
     <!-- =========================
-         LOADING
-    ========================= -->
+         DATA SECTION
+    ========================== -->
+    <section class="data-section">
 
-    <div
-      v-if="loading"
-      class="loading-container"
-    >
-
-      <div class="loading-spinner"></div>
-
-      <p>
-        Memuat data ganti sparepart...
-      </p>
-
-    </div>
-
-
-    <!-- =========================
-         EMPTY
-    ========================= -->
-
-    <EmptyState
-      v-else-if="filteredData.length === 0"
-      :message="
-        searchQuery
-          ? 'Tidak ada hasil ditemukan'
-          : 'Belum ada data ganti sparepart'
-      "
-      :subtext="
-        searchQuery
-          ? 'Coba gunakan kata kunci lain'
-          : 'Belum ada data penggantian sparepart'
-      "
-    />
-
-
-    <!-- =========================
-         TABLE CARD
-    ========================= -->
-
-    <div
-      v-else
-      class="table-card"
-    >
-
-      <!-- TABLE HEADER -->
-      <div class="table-card-header">
+      <div class="section-header">
 
         <div>
+          <h2>Data Ganti Sparepart</h2>
 
-          <h2>
-            Data Ganti Sparepart
-          </h2>
-
-          <span>
+          <p>
             {{ filteredData.length }} data ditemukan
-          </span>
-
+          </p>
         </div>
 
       </div>
 
 
-      <!-- TABLE -->
-      <div class="table-wrapper">
+      <!-- =========================
+           LOADING
+      ========================== -->
+      <div
+        v-if="loading"
+        class="state-card"
+      >
+        <div class="loading-line"></div>
+        <div class="loading-line short"></div>
+        <div class="loading-table"></div>
+      </div>
+
+
+      <!-- =========================
+           ERROR
+      ========================== -->
+      <div
+        v-else-if="errorMsg"
+        class="state-card error-state"
+      >
+        <h3>Data tidak dapat dimuat</h3>
+
+        <p>
+          {{ errorMsg }}
+        </p>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          @click="ambilData"
+        >
+          Coba Lagi
+        </button>
+      </div>
+
+
+      <!-- =========================
+           EMPTY
+      ========================== -->
+      <div
+        v-else-if="filteredData.length === 0"
+        class="state-card empty-state"
+      >
+        <h3>Tidak ada data ganti sparepart</h3>
+
+        <p v-if="searchQuery">
+          Tidak ditemukan data yang sesuai dengan pencarian.
+        </p>
+
+        <p v-else>
+          Belum ada data penggantian sparepart.
+        </p>
+      </div>
+
+
+      <!-- =========================
+           TABLE
+      ========================== -->
+      <div
+        v-else
+        class="table-container"
+      >
 
         <table class="data-table">
 
           <colgroup>
-
-            <col class="col-id">
-            <col class="col-kendaraan">
-            <col class="col-sparepart">
-            <col class="col-biaya">
-            <col class="col-tanggal">
-            <col class="col-tanggal-tindak-lanjut">
-            <col class="col-foto">
-            <col class="col-status">
-            <col class="col-keterangan">
-            <col class="col-pengaju">
-            <col class="col-tindak-lanjut">
-
+            <col class="col-id" />
+            <col class="col-kendaraan" />
+            <col class="col-sparepart" />
+            <col class="col-biaya" />
+            <col class="col-tanggal" />
+            <col class="col-tindak-tanggal" />
+            <col class="col-foto" />
+            <col class="col-status" />
+            <col class="col-keterangan" />
+            <col class="col-pengaju" />
+            <col class="col-tindak-lanjut" />
           </colgroup>
 
 
-          <!-- =========================
-               HEADER
-          ========================= -->
-
           <thead>
-
             <tr>
-
-              <th>
-                ID
-              </th>
-
-              <th>
-                Kendaraan
-              </th>
-
-              <th>
-                Sparepart
-              </th>
-
-              <th>
-                Biaya
-              </th>
-
-              <th>
-                Rencana
-              </th>
-
-              <th>
-                Tanggal Tindak Lanjut
-              </th>
-
-              <th class="text-center">
-                Foto
-              </th>
-
-              <th>
-                Status
-              </th>
-
-              <th>
-                Keterangan
-              </th>
-
-              <th>
-                Pengaju
-              </th>
-
-              <th>
-                Tindak Lanjut
-              </th>
-
+              <th>ID</th>
+              <th>Kendaraan</th>
+              <th>Sparepart</th>
+              <th>Biaya</th>
+              <th>Rencana</th>
+              <th>Tanggal Tindak Lanjut</th>
+              <th>Foto</th>
+              <th>Status</th>
+              <th>Keterangan</th>
+              <th>Pengaju</th>
+              <th>Tindak Lanjut</th>
             </tr>
-
           </thead>
 
-
-          <!-- =========================
-               BODY
-          ========================= -->
 
           <tbody>
 
@@ -289,88 +229,85 @@
               :class="getRowClass(item)"
             >
 
-              <!-- ID -->
+              <!-- =========================
+                   ID
+              ========================== -->
               <td>
 
-                <span class="id-badge">
+                <span class="id-number">
                   #{{ item.id }}
                 </span>
 
               </td>
 
 
-              <!-- KENDARAAN -->
-              <td class="vehicle-cell">
-
-                <strong class="vehicle-number">
-                  {{ item.nomorKendaraan || '-' }}
-                </strong>
-
-              </td>
-
-
-              <!-- SPAREPART -->
-              <td class="sparepart-cell">
-
-                <strong class="sparepart-name">
-                  {{ item.sparepart || '-' }}
-                </strong>
-
-              </td>
-
-
-              <!-- BIAYA -->
+              <!-- =========================
+                   KENDARAAN
+              ========================== -->
               <td>
 
-                <span class="biaya-value">
+                <div class="vehicle-cell">
+
+                  <span class="vehicle-number">
+                    {{ item.nomorKendaraan || '-' }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   SPAREPART
+              ========================== -->
+              <td>
+
+                <div class="complaint-text">
+                  {{ item.sparepart || '-' }}
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   BIAYA
+              ========================== -->
+              <td>
+
+                <span class="date-text">
                   {{ formatRupiah(item.biaya) }}
                 </span>
 
               </td>
 
 
-              <!-- RENCANA -->
+              <!-- =========================
+                   RENCANA
+              ========================== -->
               <td>
 
                 <div
                   v-if="item.tanggal"
-                  class="tanggal-wrapper"
+                  class="vehicle-cell"
                 >
 
-                  <span class="tanggal-text">
+                  <span class="date-text">
                     {{ formatTanggal(item.tanggal) }}
                   </span>
 
                   <span
-                    v-if="
-                      getStatusTanggal(
-                        item.tanggal,
-                        item.status
-                      ).text
-                    "
-                    :class="[
-                      'deadline-text',
-                      getStatusTanggal(
-                        item.tanggal,
-                        item.status
-                      ).class
-                    ]"
+                    v-if="getStatusTanggal(item.tanggal, item.status).text"
+                    class="deadline-text"
+                    :class="getStatusTanggal(item.tanggal, item.status).class"
                   >
-
-                    {{
-                      getStatusTanggal(
-                        item.tanggal,
-                        item.status
-                      ).text
-                    }}
-
+                    {{ getStatusTanggal(item.tanggal, item.status).text }}
                   </span>
 
                 </div>
 
                 <span
                   v-else
-                  class="empty-value"
+                  class="empty-text"
                 >
                   Belum ditentukan
                 </span>
@@ -378,21 +315,21 @@
               </td>
 
 
-              <!-- TANGGAL TINDAK LANJUT -->
-              <td class="tanggal-tindak-lanjut-cell">
+              <!-- =========================
+                   TANGGAL TINDAK LANJUT
+              ========================== -->
+              <td>
 
                 <span
                   v-if="item.tanggalTindakLanjut"
-                  class="tanggal-tindak-lanjut"
+                  class="follow-date"
                 >
-
                   {{ formatTanggal(item.tanggalTindakLanjut) }}
-
                 </span>
 
                 <span
                   v-else
-                  class="no-tanggal-tindak-lanjut"
+                  class="empty-text"
                 >
                   Belum ada
                 </span>
@@ -400,69 +337,56 @@
               </td>
 
 
-              <!-- FOTO -->
-              <td class="foto-cell">
+              <!-- =========================
+                   FOTO
+              ========================== -->
+              <td>
 
                 <div
                   v-if="getPhotos(item).length > 0"
-                  class="photo-preview-list"
+                  class="photo-list"
                 >
 
-                  <button
-                    v-for="(photo, index) in getPhotos(item)"
+                  <img
+                    v-for="(photo, index) in getPhotos(item).slice(0, 3)"
                     :key="index"
-                    type="button"
-                    class="photo-button"
+                    :src="photo"
+                    alt="Foto bukti sparepart"
+                    class="photo-thumbnail"
                     @click="bukaFoto(photo)"
-                    :title="`Lihat foto ${index + 1}`"
+                  />
+
+                  <span
+                    v-if="getPhotos(item).length > 3"
+                    class="photo-more"
                   >
-
-                    <img
-                      :src="photo"
-                      :alt="`Foto bukti sparepart ${index + 1}`"
-                      class="photo-thumbnail"
-                    />
-
-                  </button>
+                    +{{ getPhotos(item).length - 3 }}
+                  </span>
 
                 </div>
 
-                <div
+
+                <span
                   v-else
                   class="no-photo"
                 >
-
-                  <span class="no-photo-icon">
-                    📷
-                  </span>
-
-                  <span>
-                    Tidak ada
-                  </span>
-
-                </div>
+                  Tidak ada foto
+                </span>
 
               </td>
 
 
-              <!-- STATUS -->
-              <td class="status-cell">
+              <!-- =========================
+                   STATUS
+              ========================== -->
+              <td>
 
                 <select
                   v-if="canManage"
                   :value="item.status || 'Open'"
                   class="status-select"
-                  :style="
-                    getStatusStyle(
-                      item.status || 'Open'
-                    )
-                  "
-                  @change="
-                    ubahStatus(
-                      item,
-                      $event.target.value
-                    )
-                  "
+                  :class="getStatusClass(item.status)"
+                  @change="ubahStatus(item, $event.target.value)"
                 >
 
                   <option
@@ -479,191 +403,117 @@
                 <span
                   v-else
                   class="status-badge"
-                  :style="
-                    getStatusStyle(
-                      item.status || 'Open'
-                    )
-                  "
+                  :class="getStatusClass(item.status)"
                 >
-
-                  <span class="status-dot"></span>
-
                   {{ item.status || 'Open' }}
-
                 </span>
 
               </td>
 
 
-              <!-- KETERANGAN -->
-              <td class="keterangan-cell">
+              <!-- =========================
+                   KETERANGAN
+              ========================== -->
+              <td>
 
-                <span
-                  v-if="item.keterangan"
-                  class="keterangan-text"
-                >
-                  {{ item.keterangan }}
-                </span>
-
-                <span
-                  v-else
-                  class="empty-value"
-                >
-                  Tidak ada keterangan
-                </span>
+                <div class="complaint-text">
+                  {{ item.keterangan || '-' }}
+                </div>
 
               </td>
 
 
-              <!-- PENGAJU -->
-              <td class="pengaju-cell">
+              <!-- =========================
+                   PENGAJU
+              ========================== -->
+              <td>
 
-                <div class="pengaju-wrapper">
+                <div class="requester-cell">
 
-                  <div class="pengaju-main">
+                  <strong>
+                    {{ item.namaLengkap || item.username || '-' }}
+                  </strong>
 
-                    <span class="avatar">
-                      {{
-                        (
-                          item.namaLengkap ||
-                          item.username ||
-                          '?'
-                        )
-                        .charAt(0)
-                        .toUpperCase()
-                      }}
-                    </span>
+                  <span v-if="item.uid">
+                    UID: {{ item.uid }}
+                  </span>
 
-                    <div class="pengaju-info">
+                  <span v-if="item.up3">
+                    {{ item.up3 }}
+                  </span>
 
-                      <strong class="pengaju-nama">
-                        {{
-                          item.namaLengkap ||
-                          item.username ||
-                          '-'
-                        }}
-                      </strong>
-
-                      <span
-                        v-if="item.username"
-                        class="pengaju-username"
-                      >
-                        {{ item.username }}
-                      </span>
-
-                    </div>
-
-                  </div>
-
-
-                  <div
-                    v-if="
-                      item.uid ||
-                      item.up3 ||
-                      item.unit
-                    "
-                    class="pengaju-location"
-                  >
-
-                    <span
-                      v-if="item.uid"
-                      class="location-item"
-                    >
-                      {{ item.uid }}
-                    </span>
-
-                    <span
-                      v-if="item.uid && item.up3"
-                      class="location-separator"
-                    >
-                      •
-                    </span>
-
-                    <span
-                      v-if="item.up3"
-                      class="location-item"
-                    >
-                      {{ item.up3 }}
-                    </span>
-
-                    <span
-                      v-if="
-                        (item.uid || item.up3) &&
-                        item.unit
-                      "
-                      class="location-separator"
-                    >
-                      •
-                    </span>
-
-                    <span
-                      v-if="item.unit"
-                      class="location-item unit"
-                    >
-                      {{ item.unit }}
-                    </span>
-
-                  </div>
+                  <span v-if="item.unit">
+                    {{ item.unit }}
+                  </span>
 
                 </div>
 
               </td>
 
 
-              <!-- TINDAK LANJUT -->
-              <td class="tindak-lanjut-cell">
+              <!-- =========================
+                   TINDAK LANJUT
+              ========================== -->
+              <td>
 
-                <div
-                  v-if="item.tindakLanjut"
-                  class="tindak-lanjut-wrapper"
-                >
+                <div class="follow-up-cell">
 
-                  <div class="tindak-lanjut-content">
-
-                    <span class="tindak-lanjut-label">
-                      Tindak lanjut
-                    </span>
-
-                    <span class="tindak-lanjut-text">
-                      {{ item.tindakLanjut }}
-                    </span>
-
-                  </div>
-
-
-                  <button
-                    v-if="isAdmin"
-                    type="button"
-                    class="btn-edit"
-                    @click="lihatDetail(item.id)"
-                    title="Edit tindak lanjut"
+                  <p
+                    v-if="item.tindakLanjut"
+                    class="follow-up-text"
                   >
-                    ✎
-                  </button>
-
-                </div>
-
-
-                <div
-                  v-else
-                  class="tindak-lanjut-empty"
-                >
-
-                  <button
-                    v-if="isAdmin"
-                    type="button"
-                    class="btn-detail"
-                    @click="lihatDetail(item.id)"
-                  >
-                    Tambah Detail
-                  </button>
+                    {{ item.tindakLanjut }}
+                  </p>
 
                   <span
                     v-else
-                    class="belum-ada"
+                    class="empty-text"
                   >
                     Belum ada tindak lanjut
                   </span>
+
+
+                  <!-- EDIT DETAIL -->
+                  <button
+                    v-if="isAdmin"
+                    type="button"
+                    class="detail-button"
+                    :title="
+                      item.tindakLanjut
+                        ? 'Lihat detail sparepart'
+                        : 'Isi detail sparepart'
+                    "
+                    :aria-label="
+                      item.tindakLanjut
+                        ? 'Lihat detail sparepart'
+                        : 'Isi detail sparepart'
+                    "
+                    @click="lihatDetail(item.id)"
+                  >
+                    <svg
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M12 20H21"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+
+                      <path
+                        d="M16.5 3.5C16.8978 3.10218 17.4374 2.87868 18 2.87868C18.5626 2.87868 19.1022 3.10218 19.5 3.5C19.8978 3.89782 20.1213 4.43739 20.1213 5C20.1213 5.56261 19.8978 6.10218 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
 
                 </div>
 
@@ -677,15 +527,14 @@
 
       </div>
 
-    </div>
+    </section>
 
 
     <!-- =========================
-         FOTO MODAL
-    ========================= -->
-
+         PHOTO MODAL
+    ========================== -->
     <div
-      v-if="showFotoModal"
+      v-if="fotoDipilih"
       class="photo-modal"
       @click.self="tutupFoto"
     >
@@ -696,16 +545,13 @@
           type="button"
           class="photo-close"
           @click="tutupFoto"
-          aria-label="Tutup foto"
         >
-          ×
+          Tutup
         </button>
 
         <img
-          v-if="fotoDipilih"
           :src="fotoDipilih"
-          alt="Foto bukti sparepart"
-          class="photo-full"
+          alt="Preview foto sparepart"
         />
 
       </div>
@@ -730,9 +576,6 @@ import {
 
 import api from '../api'
 
-import EmptyState from '../components/EmptyState.vue'
-import SearchInput from '../components/SearchInput.vue'
-
 import {
   useToast
 } from '../composables/useToast'
@@ -755,13 +598,14 @@ const router = useRouter()
 
 
 /* =========================
-   DATA
+   STATE
 ========================= */
 
 const daftarData = ref([])
 const loading = ref(true)
 const errorMsg = ref('')
 const searchQuery = ref('')
+const fotoDipilih = ref('')
 
 
 /* =========================
@@ -777,94 +621,98 @@ const daftarStatus = [
 
 
 /* =========================
-   USER
+   CURRENT USER
 ========================= */
 
-const currentUser = computed(() => {
+const currentUser = ref(null)
 
-  const userData =
-    localStorage.getItem('user')
+try {
+  const user = localStorage.getItem('user')
 
-  if (!userData) {
-    return null
+  if (user) {
+    currentUser.value = JSON.parse(user)
   }
-
-  try {
-    return JSON.parse(userData)
-  } catch {
-    return null
-  }
-
-})
+} catch (error) {
+  currentUser.value = null
+}
 
 
-/* =========================
-   ROLE
-========================= */
-
-const role = computed(() => {
-
-  return (
-    currentUser.value?.role
-      ?.toLowerCase() || ''
-  )
-
-})
+const role = computed(() =>
+  String(currentUser.value?.role || '').toLowerCase()
+)
 
 
-/* =========================
-   PERMISSION
-========================= */
-
-const canManage = computed(() => {
-
-  return [
-    'admin',
-    'uid'
-  ].includes(role.value)
-
-})
+const isAdmin = computed(() =>
+  role.value === 'admin'
+)
 
 
-const isAdmin = computed(() => {
+const isUid = computed(() =>
+  role.value === 'uid'
+)
 
-  return role.value === 'admin'
 
-})
+const canManage = computed(() =>
+  isAdmin.value || isUid.value
+)
 
 
 /* =========================
-   TOTAL DATA
+   STATISTICS
 ========================= */
 
-const totalData = computed(() => {
+const totalData = computed(() =>
+  daftarData.value.length
+)
 
-  return daftarData.value.length
-
-})
-
-
-/* =========================
-   JUMLAH STATUS
-========================= */
 
 const jumlahStatus = (status) => {
 
   return daftarData.value.filter(
-    item =>
-      (item.status || 'Open') === status
+    item => (item.status || 'Open') === status
   ).length
+}
 
+
+/* =========================
+   STATUS CLASS
+========================= */
+
+const normalizeStatus = (status) => {
+
+  return String(status || 'Open')
+    .trim()
+    .toLowerCase()
+}
+
+
+const getStatusClass = (status) => {
+
+  const normalized = normalizeStatus(status)
+
+  if (normalized === 'open') {
+    return 'status-open'
+  }
+
+  if (normalized === 'on progress') {
+    return 'status-progress'
+  }
+
+  if (normalized === 'close') {
+    return 'status-close'
+  }
+
+  if (normalized === 'cancel') {
+    return 'status-cancel'
+  }
+
+  return 'status-open'
 }
 
 
 /* =========================
    FOTO MODAL
 ========================= */
-
-const showFotoModal = ref(false)
-const fotoDipilih = ref('')
-
 
 const bukaFoto = (foto) => {
 
@@ -873,16 +721,11 @@ const bukaFoto = (foto) => {
   }
 
   fotoDipilih.value = foto
-  showFotoModal.value = true
-
 }
 
 
 const tutupFoto = () => {
-
-  showFotoModal.value = false
   fotoDipilih.value = ''
-
 }
 
 
@@ -902,12 +745,9 @@ const parsePhotos = (rawPhotos) => {
 
     photoArray = rawPhotos
 
-  } else if (
-    typeof rawPhotos === 'string'
-  ) {
+  } else if (typeof rawPhotos === 'string') {
 
-    const strData =
-      rawPhotos.trim()
+    const strData = rawPhotos.trim()
 
     if (!strData) {
       return []
@@ -915,71 +755,48 @@ const parsePhotos = (rawPhotos) => {
 
     try {
 
-      const parsed =
-        JSON.parse(strData)
+      const parsed = JSON.parse(strData)
 
       if (Array.isArray(parsed)) {
 
         photoArray = parsed
 
-      } else if (
-        typeof parsed === 'string'
-      ) {
+      } else if (typeof parsed === 'string') {
 
         try {
 
-          const parsedAgain =
-            JSON.parse(parsed)
+          const parsedAgain = JSON.parse(parsed)
 
-          if (
-            Array.isArray(
-              parsedAgain
-            )
-          ) {
+          if (Array.isArray(parsedAgain)) {
 
-            photoArray =
-              parsedAgain
+            photoArray = parsedAgain
 
           } else {
 
-            photoArray =
-              [parsedAgain]
-
+            photoArray = [parsedAgain]
           }
 
         } catch {
 
           photoArray = [parsed]
-
         }
 
       } else {
 
         photoArray = [parsed]
-
       }
 
     } catch {
 
-      if (
-        strData.includes(
-          'data:image'
-        )
-      ) {
+      if (strData.includes('data:image')) {
 
-        photoArray =
-          strData.split(
-            /(?=data:image)/g
-          )
+        photoArray = strData.split(/(?=data:image)/g)
 
       } else {
 
         photoArray = [strData]
-
       }
-
     }
-
   }
 
   return photoArray
@@ -990,62 +807,38 @@ const parsePhotos = (rawPhotos) => {
     )
     .map(photo => {
 
-      let cleanBase64 =
-        photo.trim()
+      let cleanBase64 = photo.trim()
 
-      cleanBase64 =
-        cleanBase64
-          .replace(/\\"/g, '"')
-          .replace(/\\'/g, "'")
-          .replace(/^\[+/g, '')
-          .replace(/\]+$/g, '')
-          .replace(/^"+|"+$/g, '')
-          .replace(/^'+|'+$/g, '')
-          .replace(/^,|,$/g, '')
-          .trim()
+      cleanBase64 = cleanBase64
+        .replace(/\\"/g, '"')
+        .replace(/\\'/g, "'")
+        .replace(/^\[+/g, '')
+        .replace(/\]+$/g, '')
+        .replace(/^"+|"+$/g, '')
+        .replace(/^'+|'+$/g, '')
+        .replace(/^,|,$/g, '')
+        .trim()
 
-      if (
-        cleanBase64.includes(
-          'data:image'
-        )
-      ) {
+      if (cleanBase64.includes('data:image')) {
 
-        const index =
-          cleanBase64.indexOf(
-            'data:image'
-          )
+        const index = cleanBase64.indexOf('data:image')
 
-        cleanBase64 =
-          cleanBase64.substring(index)
-
+        cleanBase64 = cleanBase64.substring(index)
       }
 
-      if (
-        cleanBase64.startsWith(
-          'data:image'
-        )
-      ) {
+      if (cleanBase64.startsWith('data:image')) {
 
         return cleanBase64
-
       }
 
-      if (
-        cleanBase64.length > 30
-      ) {
+      if (cleanBase64.length > 30) {
 
-        return (
-          'data:image/png;base64,' +
-          cleanBase64
-        )
-
+        return 'data:image/png;base64,' + cleanBase64
       }
 
       return null
-
     })
     .filter(Boolean)
-
 }
 
 
@@ -1068,7 +861,6 @@ const getPhotos = (item) => {
     item.photo_base64
 
   return parsePhotos(rawPhotos)
-
 }
 
 
@@ -1078,72 +870,39 @@ const getPhotos = (item) => {
 
 const filteredData = computed(() => {
 
-  const query =
-    searchQuery.value
-      .trim()
-      .toLowerCase()
+  const keyword = searchQuery.value
+    .trim()
+    .toLowerCase()
 
-  if (!query) {
+  if (!keyword) {
     return daftarData.value
   }
 
   return daftarData.value.filter(item => {
 
-    const nomorKendaraan =
-      item.nomorKendaraan
-        ?.toLowerCase() || ''
-
-    const sparepart =
-      item.sparepart
-        ?.toLowerCase() || ''
-
-    const username =
-      item.username
-        ?.toLowerCase() || ''
-
-    const namaLengkap =
-      item.namaLengkap
-        ?.toLowerCase() || ''
-
-    const uid =
-      item.uid
-        ?.toLowerCase() || ''
-
-    const up3 =
-      item.up3
-        ?.toLowerCase() || ''
-
-    const unit =
-      item.unit
-        ?.toLowerCase() || ''
-
-    const keterangan =
-      item.keterangan
-        ?.toLowerCase() || ''
-
-    const tindakLanjut =
-      item.tindakLanjut
-        ?.toLowerCase() || ''
-
-    const status =
+    const searchableText = [
+      item.id,
+      item.nomorKendaraan,
+      item.sparepart,
+      item.username,
+      item.namaLengkap,
+      item.uid,
+      item.up3,
+      item.unit,
+      item.keterangan,
+      item.tindakLanjut,
       item.status
-        ?.toLowerCase() || ''
+    ]
+      .filter(
+        value =>
+          value !== null &&
+          value !== undefined
+      )
+      .join(' ')
+      .toLowerCase()
 
-    return (
-      nomorKendaraan.includes(query) ||
-      sparepart.includes(query) ||
-      username.includes(query) ||
-      namaLengkap.includes(query) ||
-      uid.includes(query) ||
-      up3.includes(query) ||
-      unit.includes(query) ||
-      keterangan.includes(query) ||
-      tindakLanjut.includes(query) ||
-      status.includes(query)
-    )
-
+    return searchableText.includes(keyword)
   })
-
 })
 
 
@@ -1152,11 +911,7 @@ const filteredData = computed(() => {
 ========================= */
 
 const lihatDetail = (id) => {
-
-  router.push(
-    `/ganti-sparepart/edit/${id}`
-  )
-
+  router.push(`/ganti-sparepart/edit/${id}`)
 }
 
 
@@ -1170,346 +925,17 @@ const formatTanggal = (tanggal) => {
     return '-'
   }
 
-  const date =
-    new Date(tanggal)
+  const date = new Date(tanggal)
 
-  if (
-    Number.isNaN(
-      date.getTime()
-    )
-  ) {
+  if (Number.isNaN(date.getTime())) {
     return tanggal
   }
 
-  return date.toLocaleDateString(
-    'id-ID',
-    {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }
-  )
-
-}
-
-
-/* =========================
-   AMBIL DATA
-========================= */
-
-const ambilData = async () => {
-
-  loading.value = true
-  errorMsg.value = ''
-
-  try {
-
-    const response =
-      await api.get(
-        '/ganti-sparepart'
-      )
-
-    daftarData.value =
-      Array.isArray(
-        response.data
-      )
-        ? response.data
-        : []
-
-  } catch (error) {
-
-    console.error(
-      'ERROR GANTI SPAREPART:',
-      error
-    )
-
-    errorMsg.value =
-      'Gagal ambil data: ' +
-      (
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message
-      )
-
-  } finally {
-
-    loading.value = false
-
-  }
-
-}
-
-
-/* =========================
-   UBAH STATUS
-========================= */
-
-const ubahStatus = async (
-  item,
-  statusBaru
-) => {
-
-  if (!canManage.value) {
-    return
-  }
-
-  const statusLama =
-    item.status || 'Open'
-
-  if (
-    statusBaru === statusLama
-  ) {
-    return
-  }
-
-  try {
-
-    await api.put(
-      `/ganti-sparepart/${item.id}`,
-      {
-        status: statusBaru
-      }
-    )
-
-    item.status = statusBaru
-
-    showToast(
-      `Status berhasil diubah menjadi ${statusBaru}`
-    )
-
-  } catch (error) {
-
-    console.error(
-      'Gagal mengubah status:',
-      error
-    )
-
-    errorMsg.value =
-      'Gagal mengubah status: ' +
-      (
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message
-      )
-
-    item.status = statusLama
-
-  }
-
-}
-
-
-/* =========================
-   STATUS STYLE
-========================= */
-
-const getStatusStyle = (status) => {
-
-  const styles = {
-
-    Open: {
-      backgroundColor: '#eff6ff',
-      color: '#2563eb'
-    },
-
-    'On Progress': {
-      backgroundColor: '#fff7ed',
-      color: '#ea580c'
-    },
-
-    Close: {
-      backgroundColor: '#f0fdf4',
-      color: '#16a34a'
-    },
-
-    Cancel: {
-      backgroundColor: '#fef2f2',
-      color: '#dc2626'
-    }
-
-  }
-
-  return (
-    styles[status] || {
-      backgroundColor: '#f8fafc',
-      color: '#64748b'
-    }
-  )
-
-}
-
-
-/* =========================
-   DEADLINE
-========================= */
-
-const getStatusTanggal = (
-  tanggal,
-  status
-) => {
-
-  if (
-    status === 'Close' ||
-    status === 'Cancel'
-  ) {
-
-    return {
-      class: '',
-      text: ''
-    }
-
-  }
-
-  if (!tanggal) {
-
-    return {
-      class: '',
-      text: ''
-    }
-
-  }
-
-  const today = new Date()
-
-  today.setHours(
-    0,
-    0,
-    0,
-    0
-  )
-
-  const target =
-    new Date(tanggal)
-
-  target.setHours(
-    0,
-    0,
-    0,
-    0
-  )
-
-  if (
-    Number.isNaN(
-      target.getTime()
-    )
-  ) {
-
-    return {
-      class: '',
-      text: ''
-    }
-
-  }
-
-  const selisihMs =
-    target.getTime() -
-    today.getTime()
-
-  const selisihHari =
-    Math.ceil(
-      selisihMs /
-      (
-        1000 *
-        60 *
-        60 *
-        24
-      )
-    )
-
-
-  if (
-    selisihHari === 0
-  ) {
-
-    return {
-      class: '',
-      text: 'Hari ini'
-    }
-
-  }
-
-
-  if (
-    selisihHari > 0 &&
-    selisihHari <= 3
-  ) {
-
-    return {
-      class: '',
-      text: `${selisihHari} hari`
-    }
-
-  }
-
-
-  if (
-    selisihHari >= 4 &&
-    selisihHari <= 5
-  ) {
-
-    return {
-      class: 'deadline-warning',
-      text: `${selisihHari} hari`
-    }
-
-  }
-
-
-  if (
-    selisihHari < 0
-  ) {
-
-    const terlambat =
-      Math.abs(selisihHari)
-
-    return {
-      class: 'deadline-danger',
-      text: `Terlambat ${terlambat} hari`
-    }
-
-  }
-
-
-  return {
-    class: '',
-    text: `${selisihHari} hari`
-  }
-
-}
-
-
-/* =========================
-   ROW CLASS
-========================= */
-
-const getRowClass = (item) => {
-
-  const deadline =
-    getStatusTanggal(
-      item.tanggal,
-      item.status
-    )
-
-  if (
-    deadline.class ===
-    'deadline-danger'
-  ) {
-
-    return 'row-danger'
-
-  }
-
-  if (
-    deadline.class ===
-    'deadline-warning'
-  ) {
-
-    return 'row-warning'
-
-  }
-
-  return ''
-
+  return date.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  })
 }
 
 
@@ -1527,27 +953,191 @@ const formatRupiah = (angka) => {
     return '-'
   }
 
-  const nilai =
-    Number(angka)
+  const nilai = Number(angka)
 
-  if (
-    Number.isNaN(nilai)
-  ) {
+  if (Number.isNaN(nilai)) {
     return '-'
   }
 
-  return (
-    'Rp ' +
-    nilai.toLocaleString(
-      'id-ID'
-    )
-  )
-
+  return 'Rp ' + nilai.toLocaleString('id-ID')
 }
 
 
 /* =========================
-   MOUNTED
+   AMBIL DATA
+========================= */
+
+const ambilData = async () => {
+  loading.value = true
+  errorMsg.value = ''
+
+  try {
+
+    const response = await api.get('/ganti-sparepart')
+
+    daftarData.value = Array.isArray(response.data)
+      ? response.data
+      : []
+
+  } catch (error) {
+
+    console.error('ERROR GANTI SPAREPART:', error)
+
+    errorMsg.value =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      'Terjadi kesalahan saat mengambil data ganti sparepart.'
+
+  } finally {
+
+    loading.value = false
+  }
+}
+
+
+/* =========================
+   UBAH STATUS
+========================= */
+
+const ubahStatus = async (item, statusBaru) => {
+
+  if (!canManage.value) {
+    return
+  }
+
+  const statusLama = item.status || 'Open'
+
+  if (statusBaru === statusLama) {
+    return
+  }
+
+  try {
+
+    await api.put(
+      `/ganti-sparepart/${item.id}`,
+      { status: statusBaru }
+    )
+
+    item.status = statusBaru
+
+    showToast(`Status berhasil diubah menjadi ${statusBaru}`)
+
+  } catch (error) {
+
+    console.error('Gagal mengubah status:', error)
+
+    item.status = statusLama
+
+    alert(
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      'Status ganti sparepart gagal diperbarui.'
+    )
+  }
+}
+
+
+/* =========================
+   DEADLINE
+========================= */
+
+const getStatusTanggal = (tanggal, status) => {
+
+  if (
+    status === 'Close' ||
+    status === 'Cancel'
+  ) {
+    return { class: '', text: '' }
+  }
+
+  if (!tanggal) {
+    return { class: '', text: '' }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const target = new Date(tanggal)
+  target.setHours(0, 0, 0, 0)
+
+  if (Number.isNaN(target.getTime())) {
+    return { class: '', text: '' }
+  }
+
+  const selisihMs = target.getTime() - today.getTime()
+
+  const selisihHari = Math.ceil(
+    selisihMs / (1000 * 60 * 60 * 24)
+  )
+
+
+  if (selisihHari === 0) {
+    return { class: 'deadline-warning', text: 'Hari ini' }
+  }
+
+
+  if (selisihHari > 0 && selisihHari <= 3) {
+    return { class: 'deadline-normal', text: `${selisihHari} hari` }
+  }
+
+
+  if (selisihHari >= 4 && selisihHari <= 5) {
+    return { class: 'deadline-warning', text: `${selisihHari} hari` }
+  }
+
+
+  if (selisihHari < 0) {
+
+    const terlambat = Math.abs(selisihHari)
+
+    return { class: 'deadline-danger', text: `Terlambat ${terlambat} hari` }
+  }
+
+
+  return { class: 'deadline-normal', text: `${selisihHari} hari` }
+}
+
+
+/* =========================
+   ROW STYLE
+========================= */
+
+const getRowClass = (item) => {
+
+  const status = normalizeStatus(item.status)
+
+
+  if (status === 'close') {
+    return 'row-close'
+  }
+
+
+  if (status === 'cancel') {
+    return 'row-cancel'
+  }
+
+
+  if (status === 'on progress') {
+    return 'row-progress'
+  }
+
+
+  const deadline = getStatusTanggal(item.tanggal, item.status)
+
+  if (deadline.class === 'deadline-danger') {
+    return 'row-danger'
+  }
+
+  if (deadline.class === 'deadline-warning') {
+    return 'row-warning'
+  }
+
+  return ''
+}
+
+
+/* =========================
+   INIT
 ========================= */
 
 onMounted(() => {
@@ -1566,6 +1156,9 @@ onMounted(() => {
 .ganti-sparepart-page {
   width: 100%;
   max-width: 100%;
+
+  padding: 32px 36px 48px;
+
   box-sizing: border-box;
 }
 
@@ -1575,39 +1168,89 @@ onMounted(() => {
 ========================= */
 
 .page-header {
-  margin-bottom: 34px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  margin-bottom: 28px;
 }
 
-.header-eyebrow {
-  margin-bottom: 8px;
+
+.page-eyebrow {
+  margin: 0 0 6px;
 
   color: #2563eb;
 
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 750;
 
-  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
+
 
 .page-header h1 {
   margin: 0;
 
-  color: #0f2747;
+  color: #172033;
 
   font-size: 30px;
-  font-weight: 700;
+  line-height: 1.2;
 
-  line-height: 1.15;
-  letter-spacing: -0.025em;
+  font-weight: 750;
 }
 
-.page-header p {
-  margin: 10px 0 0;
+
+.page-description {
+  margin: 8px 0 0;
 
   color: #64748b;
 
-  font-size: 17px;
-  line-height: 1.5;
+  font-size: 15px;
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 9px;
+
+  padding: 11px 17px;
+
+  font-size: 14px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+
+.btn-secondary {
+  background: #eef2f7;
+  color: #374151;
+}
+
+
+.btn-secondary:hover {
+  background: #e2e8f0;
 }
 
 
@@ -1621,289 +1264,199 @@ onMounted(() => {
   grid-template-columns:
     repeat(5, minmax(0, 1fr));
 
-  gap: 18px;
+  gap: 14px;
 
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
+
 
 .stat-card {
-  min-height: 106px;
+  min-height: 90px;
 
-  padding: 25px 28px;
-
-  box-sizing: border-box;
-
-  border: 1px solid #e2e8f0;
-  border-top: 4px solid transparent;
-
-  border-radius: 15px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 3px 12px
-    rgba(15, 23, 42, 0.045);
-
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-
-  box-shadow:
-    0 7px 18px
-    rgba(15, 23, 42, 0.07);
-}
-
-.stat-label {
-  color: #64748b;
-
-  font-size: 15px;
-  font-weight: 600;
-
-  line-height: 1.3;
-}
-
-.stat-value {
-  margin-top: 7px;
-
-  color: #0f172a;
-
-  font-size: 31px;
-  font-weight: 700;
-
-  line-height: 1;
-}
-
-.stat-value.open {
-  color: #2563eb;
-}
-
-.stat-value.progress {
-  color: #ea580c;
-}
-
-.stat-value.close {
-  color: #16a34a;
-}
-
-.stat-value.cancel {
-  color: #dc2626;
-}
-
-.stat-open {
-  border-top-color: #3b82f6;
-}
-
-.stat-progress {
-  border-top-color: #f59e0b;
-}
-
-.stat-close {
-  border-top-color: #22c55e;
-}
-
-.stat-cancel {
-  border-top-color: #ef4444;
-}
-
-
-/* =========================
-   SEARCH
-========================= */
-
-.search-card {
-  width: 100%;
-
-  margin-bottom: 32px;
-
-  padding: 17px 22px;
+  padding: 18px 20px;
 
   box-sizing: border-box;
 
-  border: 1px solid #dbe3ed;
-  border-radius: 14px;
+  background: white;
 
-  background: #ffffff;
+  border: 1px solid #e5eaf1;
 
-  box-shadow:
-    0 2px 8px
-    rgba(15, 23, 42, 0.035);
-}
-
-
-/* =========================
-   ERROR
-========================= */
-
-.error-message {
-  display: flex;
-  align-items: center;
-
-  gap: 10px;
-
-  margin-bottom: 20px;
-
-  padding: 12px 15px;
-
-  border: 1px solid #fecaca;
-  border-radius: 10px;
-
-  background: #fef2f2;
-
-  color: #b91c1c;
-
-  font-size: 13px;
-}
-
-.error-icon {
-  width: 22px;
-  height: 22px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #fee2e2;
-
-  font-size: 12px;
-  font-weight: 700;
-}
-
-
-/* =========================
-   LOADING
-========================= */
-
-.loading-container {
-  min-height: 260px;
+  border-radius: 12px;
 
   display: flex;
   flex-direction: column;
-
-  align-items: center;
   justify-content: center;
 
-  color: #64748b;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.035);
 }
 
-.loading-container p {
-  margin: 0;
+
+.stat-label {
+  margin-bottom: 7px;
+
+  color: #64748b;
 
   font-size: 13px;
+  font-weight: 600;
 }
 
-.loading-spinner {
-  width: 32px;
-  height: 32px;
 
-  margin-bottom: 12px;
+.stat-value {
+  color: #172033;
 
-  border: 3px solid #dbeafe;
-  border-top-color: #2563eb;
+  font-size: 25px;
+  line-height: 1;
 
-  border-radius: 50%;
-
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-
-  to {
-    transform: rotate(360deg);
-  }
-
+  font-weight: 750;
 }
 
 
 /* =========================
-   TABLE CARD
+   STAT COLOR ACCENTS
 ========================= */
 
-.table-card {
+.stat-open {
+  border-top: 3px solid #3b82f6;
+}
+
+
+.stat-progress {
+  border-top: 3px solid #f59e0b;
+}
+
+
+.stat-close {
+  border-top: 3px solid #22c55e;
+}
+
+
+.stat-cancel {
+  border-top: 3px solid #ef4444;
+}
+
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar {
+  margin-bottom: 24px;
+}
+
+
+.search-box {
+  position: relative;
+
   width: 100%;
+}
+
+
+.search-box input {
+  width: 100%;
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 80px 0 16px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.search-box input::placeholder {
+  color: #94a3b8;
+}
+
+
+.search-box input:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.clear-search {
+  position: absolute;
+
+  top: 50%;
+  right: 12px;
+
+  transform: translateY(-50%);
+
+  border: none;
+
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+}
+
+
+.clear-search:hover {
+  color: #2563eb;
+}
+
+
+/* =========================
+   DATA SECTION
+========================= */
+
+.data-section {
+  background: white;
+
+  border: 1px solid #e5eaf1;
+
+  border-radius: 14px;
 
   overflow: hidden;
 
-  border: 1px solid #e2e8f0;
-  border-radius: 15px;
-
-  background: #ffffff;
-
   box-shadow:
-    0 3px 12px
-    rgba(15, 23, 42, 0.045);
+    0 2px 10px rgba(15, 23, 42, 0.035);
 }
 
 
-/* =========================
-   TABLE CARD HEADER
-========================= */
+.section-header {
+  padding: 22px 24px 18px;
 
-.table-card-header {
-  padding: 24px 30px 20px;
-
-  border-bottom: 1px solid #edf2f7;
-
-  background: #ffffff;
+  border-bottom: 1px solid #edf0f4;
 }
 
-.table-card-header h2 {
+
+.section-header h2 {
   margin: 0;
 
-  color: #0f2747;
+  color: #172033;
 
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 19px;
+  font-weight: 720;
 }
 
-.table-card-header span {
-  display: block;
 
-  margin-top: 5px;
+.section-header p {
+  margin: 5px 0 0;
 
-  color: #94a3b8;
+  color: #64748b;
 
   font-size: 13px;
-}
-
-
-/* =========================
-   TABLE WRAPPER
-========================= */
-
-.table-wrapper {
-  width: 100%;
-
-  overflow-x: auto;
-  overflow-y: hidden;
-
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
-
-.table-wrapper::-webkit-scrollbar {
-  height: 7px;
-}
-
-.table-wrapper::-webkit-scrollbar-track {
-  background: #f8fafc;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-
-  border-radius: 10px;
-}
-
-.table-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
 
 
@@ -1911,14 +1464,62 @@ onMounted(() => {
    TABLE
 ========================= */
 
+.table-container {
+  width: 100%;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%
+  );
+}
+
+
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+
+.table-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+
+  border-radius: 10px;
+}
+
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+
 .data-table {
-  width: max-content;
+  width: 100%;
+
   min-width: 1350px;
 
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
 
-  background: #ffffff;
+  table-layout: fixed;
 }
 
 
@@ -1927,47 +1528,47 @@ onMounted(() => {
 ========================= */
 
 .col-id {
-  width: 65px;
+  width: 5%;
 }
 
 .col-kendaraan {
-  width: 145px;
+  width: 10%;
 }
 
 .col-sparepart {
-  width: 170px;
+  width: 11%;
 }
 
 .col-biaya {
-  width: 125px;
+  width: 8%;
 }
 
 .col-tanggal {
-  width: 145px;
+  width: 10%;
 }
 
-.col-tanggal-tindak-lanjut {
-  width: 155px;
+.col-tindak-tanggal {
+  width: 10%;
 }
 
 .col-foto {
-  width: 110px;
+  width: 8%;
 }
 
 .col-status {
-  width: 135px;
+  width: 9%;
 }
 
 .col-keterangan {
-  width: 205px;
+  width: 12%;
 }
 
 .col-pengaju {
-  width: 220px;
+  width: 12%;
 }
 
 .col-tindak-lanjut {
-  width: 260px;
+  width: 13%;
 }
 
 
@@ -1975,33 +1576,25 @@ onMounted(() => {
    TABLE HEADER
 ========================= */
 
-.data-table th {
-  padding: 14px 13px;
+.data-table thead th {
+  padding: 15px 13px;
 
   background: #f8fafc;
 
-  color: #64748b;
-
   border-bottom: 1px solid #e2e8f0;
 
-  font-size: 11px;
-  font-weight: 700;
+  color: #64748b;
 
-  text-align: left;
+  font-size: 11px;
+  font-weight: 750;
 
   text-transform: uppercase;
 
-  letter-spacing: 0.045em;
+  letter-spacing: 0.04em;
 
-  white-space: nowrap;
-}
+  text-align: left;
 
-.data-table th:first-child {
-  padding-left: 18px;
-}
-
-.data-table th.text-center {
-  text-align: center;
+  vertical-align: middle;
 }
 
 
@@ -2009,56 +1602,59 @@ onMounted(() => {
    TABLE BODY
 ========================= */
 
-.data-table td {
-  padding: 17px 13px;
+.data-table tbody td {
+  padding: 15px 13px;
 
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf0f4;
 
-  color: #475569;
+  color: #374151;
 
   font-size: 13px;
-
-  line-height: 1.4;
 
   vertical-align: middle;
 
   overflow-wrap: anywhere;
-
-  box-sizing: border-box;
+  word-break: break-word;
 }
+
 
 .data-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+
 .data-table tbody tr {
-  transition:
-    background-color 0.15s ease;
+  transition: background 0.15s ease;
 }
 
-.data-table tbody tr:hover td {
+
+.data-table tbody tr:hover {
   background: #f8fbff;
 }
 
 
-/* =========================
-   DEADLINE ROW
-========================= */
+.data-table tbody tr.row-close {
+  background: #fbfefc;
+}
 
-.data-table tbody tr.row-warning td {
+
+.data-table tbody tr.row-cancel {
+  background: #fffafa;
+}
+
+
+.data-table tbody tr.row-progress {
+  background: #fffdf7;
+}
+
+
+.data-table tbody tr.row-warning {
   background: #fffdf5;
 }
 
-.data-table tbody tr.row-warning:hover td {
-  background: #fff8e6;
-}
 
-.data-table tbody tr.row-danger td {
+.data-table tbody tr.row-danger {
   background: #fff8f8;
-}
-
-.data-table tbody tr.row-danger:hover td {
-  background: #fff0f0;
 }
 
 
@@ -2066,241 +1662,206 @@ onMounted(() => {
    ID
 ========================= */
 
-.id-badge {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  min-width: 39px;
-
-  padding: 5px 8px;
-
-  border-radius: 7px;
-
-  background: #f1f5f9;
-
-  color: #64748b;
-
-  font-size: 11px;
-  font-weight: 700;
-}
-
-
-/* =========================
-   VEHICLE
-========================= */
-
-.vehicle-number {
-  color: #1e293b;
-
-  font-size: 13px;
-  font-weight: 700;
-
-  white-space: nowrap;
-}
-
-
-/* =========================
-   SPAREPART
-========================= */
-
-.sparepart-name {
-  display: block;
-
-  color: #1e293b;
-
-  font-size: 13px;
-  font-weight: 600;
-
-  line-height: 1.4;
-
-  overflow-wrap: anywhere;
-}
-
-
-/* =========================
-   BIAYA
-========================= */
-
-.biaya-value {
-  color: #334155;
+.id-number {
+  color: #94a3b8;
 
   font-size: 12px;
-  font-weight: 600;
-
-  white-space: nowrap;
+  font-weight: 650;
 }
 
 
 /* =========================
-   TANGGAL
+   VEHICLE / RENCANA
 ========================= */
 
-.tanggal-wrapper {
+.vehicle-cell {
   display: flex;
   flex-direction: column;
 
-  gap: 5px;
+  gap: 7px;
 }
 
-.tanggal-text {
-  color: #334155;
 
-  font-size: 12px;
-  font-weight: 600;
+.vehicle-number {
+  color: #27364a;
 
-  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 720;
+
+  line-height: 1.35;
 }
+
+
+/* =========================
+   DEADLINE
+========================= */
 
 .deadline-text {
-  display: inline-flex;
-
   width: fit-content;
 
   padding: 4px 7px;
 
-  border-radius: 6px;
-
-  background: #f1f5f9;
-
-  color: #64748b;
-
-  font-size: 9px;
-  font-weight: 700;
-
-  white-space: nowrap;
-}
-
-.deadline-warning {
-  background: #fff3cd !important;
-  color: #d97706 !important;
-}
-
-.deadline-danger {
-  background: #fee2e2 !important;
-  color: #dc2626 !important;
-}
-
-.empty-value {
-  color: #94a3b8;
-
-  font-size: 11px;
-
-  font-style: italic;
-}
-
-
-/* =========================
-   TANGGAL TINDAK LANJUT
-========================= */
-
-.tanggal-tindak-lanjut-cell {
-  min-width: 155px;
-}
-
-.tanggal-tindak-lanjut {
-  display: inline-flex;
-
-  padding: 6px 9px;
-
-  border-radius: 7px;
-
-  background: #f8fafc;
-
-  color: #475569;
-
-  font-size: 11px;
-  font-weight: 600;
-
-  white-space: nowrap;
-}
-
-.no-tanggal-tindak-lanjut {
-  color: #94a3b8;
+  border-radius: 5px;
 
   font-size: 10px;
+  font-weight: 700;
+}
 
-  font-style: italic;
+
+.deadline-normal {
+  color: #2563eb;
+
+  background: #eff6ff;
+}
+
+
+.deadline-warning {
+  color: #b45309;
+
+  background: #fff7ed;
+}
+
+
+.deadline-danger {
+  color: #b91c1c;
+
+  background: #fee2e2;
 }
 
 
 /* =========================
-   FOTO
+   SPAREPART / KETERANGAN
 ========================= */
 
-.foto-cell {
-  text-align: center;
+.complaint-text {
+  color: #334155;
+
+  line-height: 1.55;
+
+  white-space: normal;
 }
 
-.photo-preview-list {
-  display: flex;
 
+/* =========================
+   PHOTO
+========================= */
+
+.photo-list {
+  display: flex;
   align-items: center;
-  justify-content: center;
 
   gap: 5px;
 
   flex-wrap: wrap;
 }
 
-.photo-button {
-  width: 43px;
-  height: 43px;
 
-  display: block;
+.photo-thumbnail {
+  width: 42px;
+  height: 42px;
 
-  padding: 0;
+  border-radius: 7px;
 
-  overflow: hidden;
+  object-fit: cover;
 
-  border: 1px solid #dbe3ef;
-  border-radius: 8px;
-
-  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 
   cursor: pointer;
 
-  transition:
-    transform 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
-.photo-button:hover {
-  transform: translateY(-2px);
 
-  border-color: #60a5fa;
-
-  box-shadow:
-    0 4px 10px
-    rgba(37, 99, 235, 0.15);
+.photo-thumbnail:hover {
+  transform: scale(1.05);
 }
 
-.photo-thumbnail {
-  display: block;
 
-  width: 100%;
-  height: 100%;
+.photo-more {
+  min-width: 25px;
+  height: 25px;
 
-  object-fit: cover;
+  padding: 0 5px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 5px;
+
+  background: #f1f5f9;
+
+  color: #475569;
+
+  font-size: 10px;
+  font-weight: 700;
 }
+
 
 .no-photo {
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+
+/* =========================
+   DATE
+========================= */
+
+.date-text,
+.follow-date {
+  display: inline-block;
+
+  color: #475569;
+
+  font-size: 12px;
+
+  line-height: 1.45;
+}
+
+
+.follow-date {
+  font-weight: 650;
+}
+
+
+.empty-text {
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+
+/* =========================
+   REQUESTER
+========================= */
+
+.requester-cell {
   display: flex;
   flex-direction: column;
 
-  align-items: center;
-
-  gap: 3px;
-
-  color: #94a3b8;
-
-  font-size: 9px;
+  gap: 4px;
 }
 
-.no-photo-icon {
-  font-size: 15px;
+
+.requester-cell strong {
+  color: #172033;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  line-height: 1.4;
+}
+
+
+.requester-cell span {
+  color: #475569;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  line-height: 1.4;
 }
 
 
@@ -2308,77 +1869,109 @@ onMounted(() => {
    STATUS
 ========================= */
 
-.status-cell {
-  min-width: 135px;
-}
+.status-select,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
 
-.status-select {
-  width: 124px;
-
-  padding: 8px 23px 8px 11px;
+  min-height: 34px;
 
   box-sizing: border-box;
 
-  border: 1px solid currentColor;
-  border-radius: 18px;
+  border-radius: 8px;
 
-  font-family: inherit;
-
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
+}
 
-  cursor: pointer;
+
+.status-select {
+  width: 100%;
+  max-width: 130px;
+
+  padding: 0 10px;
+
+  border: 1px solid transparent;
 
   outline: none;
+
+  cursor: pointer;
 }
 
-.status-select:focus {
-  box-shadow:
-    0 0 0 3px
-    rgba(37, 99, 235, 0.12);
-}
 
 .status-badge {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  gap: 6px;
-
-  min-width: 96px;
-
-  padding: 8px 11px;
-
-  border-radius: 18px;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  white-space: nowrap;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: currentColor;
+  padding: 7px 10px;
 }
 
 
 /* =========================
-   KETERANGAN
+   OPEN
 ========================= */
 
-.keterangan-cell {
-  line-height: 1.5;
+.status-open {
+  color: #1d4ed8;
+
+  background: #eff6ff;
+
+  border-color: #bfdbfe;
 }
 
-.keterangan-text {
+
+/* =========================
+   ON PROGRESS
+========================= */
+
+.status-progress {
+  color: #c2410c;
+
+  background: #fff7ed;
+
+  border-color: #fed7aa;
+}
+
+
+/* =========================
+   CLOSE
+========================= */
+
+.status-close {
+  color: #15803d;
+
+  background: #f0fdf4;
+
+  border-color: #bbf7d0;
+}
+
+
+/* =========================
+   CANCEL
+========================= */
+
+.status-cancel {
+  color: #b91c1c;
+
+  background: #fef2f2;
+
+  border-color: #fecaca;
+}
+
+
+/* =========================
+   FOLLOW UP
+========================= */
+
+.follow-up-cell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 8px;
+}
+
+
+.follow-up-text {
+  margin: 0;
+
   color: #475569;
 
   font-size: 12px;
@@ -2388,248 +1981,145 @@ onMounted(() => {
 
 
 /* =========================
-   PENGAJU
+   DETAIL / EDIT ICON
 ========================= */
 
-.pengaju-cell {
-  min-width: 220px;
-}
-
-.pengaju-wrapper {
-  display: flex;
-  flex-direction: column;
-
-  gap: 7px;
-
-  min-width: 0;
-}
-
-.pengaju-main {
-  display: flex;
-  align-items: center;
-
-  gap: 9px;
-}
-
-.avatar {
-  width: 31px;
-  height: 31px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  flex-shrink: 0;
-
-  border-radius: 50%;
-
-  background: #eaf4ff;
-
-  color: #2563eb;
-
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.pengaju-info {
-  display: flex;
-  flex-direction: column;
-
-  gap: 2px;
-
-  min-width: 0;
-}
-
-.pengaju-nama {
-  color: #1e293b;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  line-height: 1.3;
-
-  overflow-wrap: anywhere;
-}
-
-.pengaju-username {
-  color: #94a3b8;
-
-  font-size: 9px;
-
-  line-height: 1.3;
-
-  overflow-wrap: anywhere;
-}
-
-.pengaju-location {
-  display: flex;
-  align-items: center;
-
-  gap: 4px;
-
-  flex-wrap: wrap;
-
-  padding-left: 40px;
-}
-
-.location-item {
-  color: #2563eb;
-
-  font-size: 9px;
-  font-weight: 600;
-}
-
-.location-item.unit {
-  color: #64748b;
-}
-
-.location-separator {
-  color: #cbd5e1;
-
-  font-size: 9px;
-}
-
-
-/* =========================
-   TINDAK LANJUT
-========================= */
-
-.tindak-lanjut-cell {
-  min-width: 260px;
-}
-
-.tindak-lanjut-wrapper {
-  display: flex;
-  align-items: flex-start;
-
-  gap: 9px;
-}
-
-.tindak-lanjut-content {
-  display: flex;
-  flex-direction: column;
-
-  gap: 4px;
-
-  flex: 1;
-
-  min-width: 0;
-}
-
-.tindak-lanjut-label {
-  color: #94a3b8;
-
-  font-size: 9px;
-  font-weight: 600;
-
-  text-transform: uppercase;
-
-  letter-spacing: 0.04em;
-}
-
-.tindak-lanjut-text {
-  color: #334155;
-
-  font-size: 12px;
-
-  line-height: 1.5;
-
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.tindak-lanjut-empty {
-  display: flex;
-  align-items: center;
-}
-
-.belum-ada {
-  color: #94a3b8;
-
-  font-size: 10px;
-
-  font-style: italic;
-}
-
-
-/* =========================
-   BUTTON DETAIL
-========================= */
-
-.btn-detail {
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
-
-  padding: 7px 11px;
-
-  border: none;
-  border-radius: 7px;
-
-  background: #eff6ff;
-
-  color: #2563eb;
-
-  font-family: inherit;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition:
-    background-color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.btn-detail:hover {
-  background: #dbeafe;
-
-  transform: translateY(-1px);
-}
-
-
-/* =========================
-   EDIT
-========================= */
-
-.btn-edit {
-  width: 30px;
-  height: 30px;
-
-  display: inline-flex;
-
-  align-items: center;
-  justify-content: center;
+.detail-button {
+  width: 26px;
+  height: 26px;
 
   flex-shrink: 0;
 
   padding: 0;
 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
   border: 1px solid #bfdbfe;
-  border-radius: 7px;
+
+  border-radius: 6px;
 
   background: #eff6ff;
 
   color: #2563eb;
 
-  font-size: 15px;
-
   cursor: pointer;
 
   transition:
-    background-color 0.15s ease,
+    background 0.15s ease,
     border-color 0.15s ease,
+    color 0.15s ease,
     transform 0.15s ease;
 }
 
-.btn-edit:hover {
+
+.detail-button:hover {
   background: #dbeafe;
 
   border-color: #93c5fd;
 
+  color: #1d4ed8;
+
   transform: translateY(-1px);
+}
+
+
+.detail-button:active {
+  transform: translateY(0);
+}
+
+
+.detail-button svg {
+  display: block;
+
+  width: 13px;
+  height: 13px;
+}
+
+
+/* =========================
+   STATES
+========================= */
+
+.state-card {
+  padding: 50px 24px;
+
+  text-align: center;
+}
+
+
+.state-card h3 {
+  margin: 0 0 8px;
+
+  color: #334155;
+
+  font-size: 16px;
+}
+
+
+.state-card p {
+  margin: 0 0 18px;
+
+  color: #94a3b8;
+
+  font-size: 13px;
+}
+
+
+.error-state h3 {
+  color: #b91c1c;
+}
+
+
+/* =========================
+   LOADING
+========================= */
+
+.loading-line {
+  width: 180px;
+  height: 14px;
+
+  margin: 0 auto 10px;
+
+  border-radius: 5px;
+
+  background: #edf2f7;
+
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+
+.loading-line.short {
+  width: 110px;
+}
+
+
+.loading-table {
+  width: 90%;
+  height: 180px;
+
+  margin: 28px auto 0;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
 }
 
 
@@ -2642,102 +2132,81 @@ onMounted(() => {
 
   inset: 0;
 
-  z-index: 9999;
+  z-index: 1000;
 
   display: flex;
-
   align-items: center;
   justify-content: center;
 
-  padding: 25px;
+  padding: 30px;
 
-  box-sizing: border-box;
-
-  background:
-    rgba(15, 23, 42, 0.78);
+  background: rgba(15, 23, 42, 0.7);
 }
+
 
 .photo-modal-content {
   position: relative;
 
-  max-width: 90vw;
+  max-width: min(900px, 90vw);
   max-height: 90vh;
 
-  padding: 12px;
+  padding: 14px;
 
-  box-sizing: border-box;
+  border-radius: 12px;
 
-  border-radius: 13px;
-
-  background: #ffffff;
+  background: white;
 
   box-shadow:
-    0 20px 50px
-    rgba(0, 0, 0, 0.3);
+    0 20px 60px rgba(0, 0, 0, 0.25);
 }
 
-.photo-full {
+
+.photo-modal-content img {
   display: block;
 
-  max-width: 85vw;
-  max-height: 82vh;
+  max-width: 100%;
+  max-height: 80vh;
 
-  width: auto;
-  height: auto;
+  border-radius: 7px;
 
   object-fit: contain;
-
-  border-radius: 8px;
 }
 
+
 .photo-close {
-  position: absolute;
+  display: block;
 
-  top: -14px;
-  right: -14px;
-
-  z-index: 2;
-
-  width: 36px;
-  height: 36px;
-
-  padding: 0;
+  margin-left: auto;
+  margin-bottom: 10px;
 
   border: none;
-  border-radius: 50%;
 
-  background: #ffffff;
+  background: transparent;
 
   color: #475569;
 
-  font-size: 26px;
-  line-height: 36px;
-
-  text-align: center;
+  font-size: 12px;
+  font-weight: 650;
 
   cursor: pointer;
-
-  box-shadow:
-    0 3px 12px
-    rgba(0, 0, 0, 0.25);
 }
 
-.photo-close:hover {
-  color: #dc2626;
 
-  background: #f8fafc;
+.photo-close:hover {
+  color: #2563eb;
 }
 
 
 /* =========================
-   TABLET
+   RESPONSIVE
 ========================= */
 
 @media (max-width: 1200px) {
 
-  .page-header h1 {
-    font-size: 32px;
+  .ganti-sparepart-page {
+    padding: 28px 26px 40px;
   }
+
 
   .stats-grid {
     grid-template-columns:
@@ -2747,28 +2216,24 @@ onMounted(() => {
 }
 
 
-/* =========================
-   MOBILE
-========================= */
+@media (max-width: 768px) {
 
-@media (max-width: 700px) {
+  .ganti-sparepart-page {
+    padding: 20px 16px 32px;
+  }
+
 
   .page-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+
     margin-bottom: 22px;
   }
 
-  .header-eyebrow {
-    font-size: 12px;
-  }
 
   .page-header h1 {
-    font-size: 27px;
-  }
-
-  .page-header p {
-    margin-top: 7px;
-
-    font-size: 14px;
+    font-size: 26px;
   }
 
 
@@ -2777,188 +2242,8 @@ onMounted(() => {
       repeat(2, minmax(0, 1fr));
 
     gap: 10px;
-
-    margin-bottom: 20px;
   }
 
-  .stat-card {
-    min-height: 88px;
-
-    padding: 18px 17px;
-
-    border-radius: 12px;
-  }
-
-  .stat-label {
-    font-size: 12px;
-  }
-
-  .stat-value {
-    font-size: 25px;
-  }
-
-
-  .search-card {
-    margin-bottom: 20px;
-
-    padding: 13px 15px;
-
-    border-radius: 11px;
-  }
-
-
-  .table-card {
-    border-radius: 11px;
-  }
-
-  .table-card-header {
-    padding: 19px 20px 16px;
-  }
-
-  .table-card-header h2 {
-    font-size: 17px;
-  }
-
-  .table-card-header span {
-    font-size: 11px;
-  }
-
-
-  .data-table {
-    min-width: 1350px;
-  }
-
-  .data-table th {
-    padding: 11px 9px;
-
-    font-size: 9px;
-  }
-
-  .data-table td {
-    padding: 12px 9px;
-
-    font-size: 10px;
-  }
-
-
-  .vehicle-number {
-    font-size: 11px;
-  }
-
-  .sparepart-name {
-    font-size: 11px;
-  }
-
-  .biaya-value {
-    font-size: 10px;
-  }
-
-  .tanggal-text {
-    font-size: 10px;
-  }
-
-  .deadline-text {
-    font-size: 8px;
-  }
-
-  .tanggal-tindak-lanjut {
-    font-size: 9px;
-  }
-
-  .no-tanggal-tindak-lanjut {
-    font-size: 8px;
-  }
-
-
-  .photo-button {
-    width: 35px;
-    height: 35px;
-  }
-
-
-  .status-select {
-    width: 108px;
-
-    padding: 6px 8px;
-
-    font-size: 8px;
-  }
-
-  .status-badge {
-    min-width: 82px;
-
-    padding: 6px 8px;
-
-    font-size: 8px;
-  }
-
-
-  .keterangan-text {
-    font-size: 10px;
-  }
-
-
-  .avatar {
-    width: 26px;
-    height: 26px;
-
-    font-size: 9px;
-  }
-
-  .pengaju-nama {
-    font-size: 9px;
-  }
-
-  .pengaju-username,
-  .location-item,
-  .location-separator {
-    font-size: 8px;
-  }
-
-  .pengaju-location {
-    padding-left: 34px;
-  }
-
-
-  .tindak-lanjut-text {
-    font-size: 10px;
-  }
-
-  .btn-detail {
-    padding: 6px 8px;
-
-    font-size: 8px;
-  }
-
-  .btn-edit {
-    width: 26px;
-    height: 26px;
-
-    font-size: 13px;
-  }
-
-}
-
-
-/* =========================
-   VERY SMALL
-========================= */
-
-@media (max-width: 500px) {
-
-  .page-header h1 {
-    font-size: 24px;
-  }
-
-  .page-header p {
-    font-size: 12px;
-  }
-
-
-  .stats-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
-  }
 
   .stat-card {
     min-height: 80px;
@@ -2966,45 +2251,29 @@ onMounted(() => {
     padding: 15px;
   }
 
-  .stat-label {
-    font-size: 11px;
-  }
 
   .stat-value {
-    font-size: 23px;
+    font-size: 22px;
   }
 
 
-  .data-table th,
-  .data-table td {
-    padding: 9px 7px;
+  .section-header {
+    padding: 18px;
+  }
+
+}
+
+
+@media (max-width: 480px) {
+
+  .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 
 
-  .photo-button {
-    width: 31px;
-    height: 31px;
-  }
-
-
-  .photo-modal {
-    padding: 15px;
-  }
-
-  .photo-full {
-    max-width: 88vw;
-    max-height: 82vh;
-  }
-
-  .photo-close {
-    top: -10px;
-    right: -10px;
-
-    width: 32px;
-    height: 32px;
-
-    font-size: 23px;
-    line-height: 32px;
+  .stat-card:last-child {
+    grid-column: span 2;
   }
 
 }

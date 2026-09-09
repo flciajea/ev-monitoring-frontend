@@ -457,6 +457,48 @@ onMounted(() => {
 
 
 /* =========================
+   BUTTON
+========================= */
+
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 9px;
+
+  padding: 11px 17px;
+
+  font-size: 14px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+
+.btn-secondary {
+  background: #eef2f7;
+  color: #374151;
+}
+
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+
+/* =========================
    STATISTICS
 ========================= */
 
@@ -494,21 +536,6 @@ onMounted(() => {
 }
 
 
-.stat-card:first-child {
-  border-top: 3px solid #3b82f6;
-}
-
-
-.stat-used {
-  border-top: 3px solid #22c55e;
-}
-
-
-.stat-unused {
-  border-top: 3px solid #94a3b8;
-}
-
-
 .stat-label {
   margin-bottom: 7px;
 
@@ -526,6 +553,20 @@ onMounted(() => {
   line-height: 1;
 
   font-weight: 750;
+}
+
+
+/* =========================
+   STAT COLOR ACCENTS
+========================= */
+
+.stat-used {
+  border-top: 3px solid #22c55e;
+}
+
+
+.stat-unused {
+  border-top: 3px solid #94a3b8;
 }
 
 
@@ -552,7 +593,6 @@ onMounted(() => {
   box-sizing: border-box;
 
   border: 1px solid #dbe2ea;
-
   border-radius: 10px;
 
   background: white;
@@ -695,7 +735,7 @@ onMounted(() => {
 ========================= */
 
 .data-table thead th {
-  padding: 15px 18px;
+  padding: 15px 13px;
 
   background: #f8fafc;
 
@@ -721,7 +761,7 @@ onMounted(() => {
 ========================= */
 
 .data-table tbody td {
-  padding: 17px 18px;
+  padding: 15px 13px;
 
   border-bottom: 1px solid #edf0f4;
 
@@ -760,7 +800,7 @@ onMounted(() => {
 
   font-size: 12px;
 
-  font-weight: 600;
+  font-weight: 650;
 }
 
 
@@ -790,7 +830,7 @@ onMounted(() => {
 
   min-height: 32px;
 
-  padding: 6px 10px;
+  padding: 7px 10px;
 
   box-sizing: border-box;
 
@@ -859,36 +899,6 @@ onMounted(() => {
 
 
 /* =========================
-   BUTTON
-========================= */
-
-.btn-secondary {
-  border: none;
-
-  border-radius: 9px;
-
-  padding: 10px 16px;
-
-  background: #eef2f7;
-
-  color: #374151;
-
-  font-size: 13px;
-
-  font-weight: 650;
-
-  cursor: pointer;
-
-  transition: 0.2s ease;
-}
-
-
-.btn-secondary:hover {
-  background: #e2e8f0;
-}
-
-
-/* =========================
    LOADING
 ========================= */
 
@@ -902,8 +912,7 @@ onMounted(() => {
 
   background: #edf2f7;
 
-  animation:
-    pulse 1.4s infinite ease-in-out;
+  animation: pulse 1.4s infinite ease-in-out;
 }
 
 
@@ -922,8 +931,7 @@ onMounted(() => {
 
   background: #f8fafc;
 
-  animation:
-    pulse 1.4s infinite ease-in-out;
+  animation: pulse 1.4s infinite ease-in-out;
 }
 
 
@@ -945,7 +953,7 @@ onMounted(() => {
    RESPONSIVE
 ========================= */
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
 
   .sparepart-page {
     padding: 28px 26px 40px;
@@ -1002,7 +1010,7 @@ onMounted(() => {
 
 
   .data-table {
-    min-width: 650px;
+    min-width: 560px;
   }
 
 

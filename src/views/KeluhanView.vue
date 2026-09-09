@@ -453,19 +453,48 @@
                   </span>
 
 
+                  <!-- EDIT DETAIL -->
                   <button
                     v-if="isAdmin"
                     type="button"
                     class="detail-button"
+                    :title="
+                      item.tindakLanjut
+                        ? 'Lihat detail keluhan'
+                        : 'Isi detail keluhan'
+                    "
+                    :aria-label="
+                      item.tindakLanjut
+                        ? 'Lihat detail keluhan'
+                        : 'Isi detail keluhan'
+                    "
                     @click="
                       router.push(`/keluhan/edit/${item.id}`)
                     "
                   >
-                    {{
-                      item.tindakLanjut
-                        ? 'Lihat Detail'
-                        : 'Isi Detail'
-                    }}
+                    <svg
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M12 20H21"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+
+                      <path
+                        d="M16.5 3.5C16.8978 3.10218 17.4374 2.87868 18 2.87868C18.5626 2.87868 19.1022 3.10218 19.5 3.5C19.8978 3.89782 20.1213 4.43739 20.1213 5C20.1213 5.56261 19.8978 6.10218 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
                   </button>
 
                 </div>
@@ -646,6 +675,7 @@ const totalCancel = computed(() =>
 ========================= */
 
 const filteredKeluhan = computed(() => {
+
   const keyword = searchQuery.value
     .trim()
     .toLowerCase()
@@ -725,6 +755,7 @@ const updateStatus = async (item) => {
 ========================= */
 
 const normalizeStatus = (status) => {
+
   return String(status || 'Open')
     .trim()
     .toLowerCase()
@@ -760,6 +791,7 @@ const getStatusClass = (status) => {
 ========================= */
 
 const getNamaPengaju = (item) => {
+
   return (
     item.namaLengkap ||
     item.namaPengaju ||
@@ -950,41 +982,12 @@ const formatTanggal = (tanggal) => {
 
 /* =========================
    DEADLINE
-   SAMA SEPERTI JADWAL SERVICE
 ========================= */
-
-/*
- * Deadline sekarang dihitung berdasarkan:
- *
- * tanggalTindakLanjut
- *
- * BUKAN tanggal pengajuan.
- *
- * Contoh:
- *
- * tanggal tindak lanjut = 08 Sep 2026
- * hari ini               = 09 Sep 2026
- *
- * hasil:
- * Terlambat 1 hari
- *
- * Jika:
- * tanggal tindak lanjut = 09 Sep
- *
- * hasil:
- * Hari ini
- *
- * Jika:
- * tanggal tindak lanjut = 10 Sep
- *
- * hasil:
- * 1 hari lagi
- */
-
 
 const getDeadlineDifference = (item) => {
 
   const status = normalizeStatus(item.status)
+
 
   /*
    * Close dan Cancel tidak perlu deadline
@@ -1015,6 +1018,7 @@ const getDeadlineDifference = (item) => {
 
 
   const today = new Date()
+
 
   /*
    * Normalisasi jam supaya
@@ -1527,7 +1531,9 @@ onMounted(() => {
 }
 
 
-/* COLUMN */
+/* =========================
+   COLUMN
+========================= */
 
 .col-kendaraan {
   width: 12%;
@@ -1801,7 +1807,9 @@ onMounted(() => {
 }
 
 
-/* DEADLINE DATE COLORS */
+/* =========================
+   DEADLINE DATE COLORS
+========================= */
 
 .follow-date-overdue {
   color: #b91c1c;
@@ -1903,7 +1911,7 @@ onMounted(() => {
 
 
 /* =========================
-   OPEN = BLUE
+   OPEN
 ========================= */
 
 .status-open {
@@ -1916,7 +1924,7 @@ onMounted(() => {
 
 
 /* =========================
-   ON PROGRESS = ORANGE
+   ON PROGRESS
 ========================= */
 
 .status-progress {
@@ -1929,7 +1937,7 @@ onMounted(() => {
 
 
 /* =========================
-   CLOSE = GREEN
+   CLOSE
 ========================= */
 
 .status-close {
@@ -1942,7 +1950,7 @@ onMounted(() => {
 
 
 /* =========================
-   CANCEL = RED
+   CANCEL
 ========================= */
 
 .status-cancel {
@@ -1978,28 +1986,56 @@ onMounted(() => {
 }
 
 
+/* =========================
+   DETAIL / EDIT ICON
+========================= */
+
 .detail-button {
-  padding: 6px 9px;
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   border: 1px solid #bfdbfe;
 
-  border-radius: 6px;
+  border-radius: 7px;
 
   background: #eff6ff;
 
   color: #2563eb;
 
-  font-size: 10px;
-  font-weight: 650;
-
   cursor: pointer;
 
-  transition: 0.15s ease;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 
 .detail-button:hover {
   background: #dbeafe;
+
+  border-color: #93c5fd;
+
+  color: #1d4ed8;
+
+  transform: translateY(-1px);
+}
+
+
+.detail-button:active {
+  transform: translateY(0);
+}
+
+
+.detail-button svg {
+  display: block;
 }
 
 
@@ -2036,6 +2072,10 @@ onMounted(() => {
   color: #b91c1c;
 }
 
+
+/* =========================
+   LOADING
+========================= */
 
 .loading-line {
   width: 180px;

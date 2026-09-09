@@ -180,7 +180,7 @@ onMounted(() => {
     <!-- PAGE HEADER -->
     <div class="page-header">
       <div>
-        <div class="breadcrumb">DATA SPK</div>
+        <span class="page-eyebrow">DATA SPK</span>
 
         <h1>
           {{ isEdit ? 'Edit Surat Perintah Kerja' : 'Tambah Surat Perintah Kerja' }}
@@ -196,16 +196,17 @@ onMounted(() => {
     </div>
 
     <!-- ERROR -->
-    <div v-if="errorMsg" class="error-box">
-      <div class="error-title">Data belum dapat disimpan</div>
-      <div class="error-message">
-        {{ errorMsg }}
+    <div v-if="errorMsg" class="error-message">
+      <div class="error-content">
+        <strong>Data belum dapat disimpan</strong>
+        <span>{{ errorMsg }}</span>
       </div>
     </div>
 
     <!-- LOADING -->
-    <div v-if="loading" class="loading-card">
-      Memuat data SPK...
+    <div v-if="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Memuat data SPK...</p>
     </div>
 
     <template v-else>
@@ -213,10 +214,8 @@ onMounted(() => {
       <!-- INFORMASI SPK -->
       <section class="form-card">
         <div class="card-header">
-          <div>
-            <h2>Informasi Surat Perintah Kerja</h2>
-            <p>Lengkapi informasi utama surat perintah kerja.</p>
-          </div>
+          <h2>Informasi Surat Perintah Kerja</h2>
+          <p>Lengkapi informasi utama surat perintah kerja.</p>
         </div>
 
         <div class="form-grid">
@@ -296,10 +295,7 @@ onMounted(() => {
         <div class="detail-header">
           <div>
             <h2>Daftar Perintah Kerja</h2>
-
-            <p>
-              Tambahkan pekerjaan yang akan dilakukan oleh bengkel.
-            </p>
+            <p>Tambahkan pekerjaan yang akan dilakukan oleh bengkel.</p>
           </div>
 
           <button
@@ -307,12 +303,12 @@ onMounted(() => {
             class="btn-add"
             @click="tambahDetail"
           >
-            <span class="plus">+</span>
+            <span class="btn-add-plus">+</span>
             Tambah Perintah Kerja
           </button>
         </div>
 
-        <div class="table-container">
+        <div class="table-wrapper">
 
           <table class="detail-table">
 
@@ -330,7 +326,7 @@ onMounted(() => {
                 <th>Deskripsi Keluhan / Jenis Pekerjaan</th>
                 <th>Kategori</th>
                 <th>Keterangan</th>
-                <th>Aksi</th>
+                <th class="text-center">Aksi</th>
               </tr>
             </thead>
 
@@ -342,7 +338,7 @@ onMounted(() => {
               >
 
                 <!-- NO -->
-                <td class="number-cell">
+                <td class="no-cell">
                   <span class="number-badge">
                     {{ index + 1 }}
                   </span>
@@ -360,12 +356,12 @@ onMounted(() => {
 
                 <!-- KATEGORI -->
                 <td>
-                <input
+                  <input
                     v-model="item.kategori"
                     type="text"
                     class="table-input"
                     placeholder="Kategori pekerjaan"
-                />
+                  />
                 </td>
 
                 <!-- KETERANGAN -->
@@ -381,54 +377,34 @@ onMounted(() => {
                 <!-- AKSI -->
                 <td class="action-cell">
 
-                <button
-                type="button"
-                class="btn-delete"
-                :disabled="form.detail.length <= 1"
-                title="Hapus perintah kerja"
-                aria-label="Hapus perintah kerja"
-                @click="hapusDetail(index)"
-                >
-                <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                    d="M4 7H20"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    />
-                    <path
-                    d="M10 11V17"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    />
-                    <path
-                    d="M14 11V17"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    />
-                    <path
-                    d="M6 7L7 19C7.1 20.1 8 21 9.1 21H14.9C16 21 16.9 20.1 17 19L18 7"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    />
-                    <path
-                    d="M9 7V4C9 3.45 9.45 3 10 3H14C14.55 3 15 3.45 15 4V7"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                    stroke-linecap="round"
-                    />
-                </svg>
-                </button>
+                  <button
+                    type="button"
+                    class="btn-delete"
+                    :disabled="form.detail.length <= 1"
+                    title="Hapus perintah kerja"
+                    aria-label="Hapus perintah kerja"
+                    @click="hapusDetail(index)"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M4 7H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M10 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                      <path d="M14 11V17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                      <path
+                        d="M6 7L7 19C7.1 20.1 8 21 9.1 21H14.9C16 21 16.9 20.1 17 19L18 7"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path d="M9 7V4C9 3.45 9.45 3 10 3H14C14.55 3 15 3.45 15 4V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    </svg>
+                  </button>
 
                 </td>
 
@@ -442,15 +418,8 @@ onMounted(() => {
 
         <!-- DETAIL FOOTER -->
         <div class="detail-footer">
-
-          <span class="detail-total-label">
-            Jumlah perintah kerja
-          </span>
-
-          <span class="detail-total">
-            {{ form.detail.length }}
-          </span>
-
+          <span class="detail-total-label">Jumlah perintah kerja</span>
+          <span class="detail-total">{{ form.detail.length }}</span>
         </div>
 
       </section>
@@ -492,7 +461,6 @@ onMounted(() => {
 .spk-form-page {
   width: 100%;
   max-width: 100%;
-  padding: 0 0 32px;
   box-sizing: border-box;
 }
 
@@ -504,67 +472,92 @@ onMounted(() => {
   margin-bottom: 24px;
 }
 
-.breadcrumb {
-  font-size: 13px;
-  font-weight: 700;
+.page-eyebrow {
+  display: block;
+  margin-bottom: 5px;
   color: #2563eb;
-  letter-spacing: 0.04em;
-  margin-bottom: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .page-header h1 {
   margin: 0;
-  color: #0f172a;
-  font-size: 28px;
-  line-height: 1.25;
+  color: #1e293b;
+  font-size: 25px;
   font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
 }
 
 .page-header p {
-  margin: 8px 0 0;
+  margin: 5px 0 0;
   color: #64748b;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 /* =========================
    ERROR
 ========================= */
 
-.error-box {
-  margin-bottom: 20px;
-  padding: 15px 18px;
+.error-message {
+  margin-bottom: 16px;
+  padding: 12px 14px;
   border: 1px solid #fecaca;
-  border-left: 4px solid #ef4444;
-  border-radius: 10px;
-  background: #fffafa;
+  border-radius: 9px;
+  background: #fef2f2;
 }
 
-.error-title {
-  margin-bottom: 3px;
-  color: #b91c1c;
-  font-size: 14px;
+.error-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.error-content strong {
+  color: #991b1b;
+  font-size: 12px;
   font-weight: 700;
 }
 
-.error-message {
-  color: #7f1d1d;
-  font-size: 14px;
-  line-height: 1.5;
+.error-content span {
+  color: #b91c1c;
+  font-size: 11px;
 }
 
 /* =========================
    LOADING
 ========================= */
 
-.loading-card {
-  padding: 40px 24px;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  background: #ffffff;
+.loading-container {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   color: #64748b;
-  text-align: center;
-  font-size: 14px;
+}
+
+.loading-container p {
+  margin: 0;
+  font-size: 12px;
+}
+
+.loading-spinner {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 10px;
+  border: 3px solid #dbeafe;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* =========================
@@ -573,31 +566,31 @@ onMounted(() => {
 
 .form-card {
   margin-bottom: 20px;
-  padding: 26px 28px;
+  padding: 22px 24px;
   border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border-radius: 11px;
   background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 }
 
 .card-header {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .card-header h2,
 .detail-header h2 {
   margin: 0;
-  color: #0f172a;
-  font-size: 20px;
+  color: #1e293b;
+  font-size: 16px;
   line-height: 1.3;
   font-weight: 700;
 }
 
 .card-header p,
 .detail-header p {
-  margin: 7px 0 0;
+  margin: 5px 0 0;
   color: #64748b;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -608,7 +601,7 @@ onMounted(() => {
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 24px;
+  gap: 16px 20px;
 }
 
 .form-group {
@@ -621,10 +614,10 @@ onMounted(() => {
 
 .form-group label {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   color: #334155;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .required {
@@ -634,19 +627,17 @@ onMounted(() => {
 
 .form-input {
   width: 100%;
-  height: 44px;
-  padding: 0 13px;
+  height: 40px;
+  padding: 0 12px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   outline: none;
   background: #ffffff;
-  color: #0f172a;
+  color: #1e293b;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
   box-sizing: border-box;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .form-input::placeholder {
@@ -663,74 +654,90 @@ onMounted(() => {
 ========================= */
 
 .detail-card {
-  padding-bottom: 18px;
+  padding-bottom: 16px;
 }
 
 .detail-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 22px;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
 .btn-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   flex-shrink: 0;
-  min-height: 42px;
-  padding: 0 17px;
+  min-height: 38px;
+  padding: 0 15px;
   border: none;
   border-radius: 8px;
   background: #2563eb;
   color: #ffffff;
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.16);
+  transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-add:hover {
   background: #1d4ed8;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(37, 99, 235, 0.2);
 }
 
 .btn-add:active {
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 
-.plus {
-  margin-right: 7px;
-  font-size: 18px;
+.btn-add-plus {
+  font-size: 16px;
   font-weight: 400;
-  line-height: 0;
-  vertical-align: -1px;
+  line-height: 1;
 }
 
 /* =========================
    TABLE
 ========================= */
 
-.table-container {
+.table-wrapper {
   width: 100%;
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 9px;
   scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
 }
 
 .detail-table {
   width: 100%;
-  min-width: 880px;
+  min-width: 860px;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
 }
 
 .col-no {
-  width: 70px;
+  width: 60px;
 }
 
 .col-deskripsi {
@@ -746,32 +753,29 @@ onMounted(() => {
 }
 
 .col-aksi {
-  width: 105px;
+  width: 90px;
 }
 
 .detail-table thead th {
-  height: 62px;
-  padding: 0 18px;
+  padding: 12px 14px;
   border-bottom: 1px solid #e2e8f0;
   background: #f8fafc;
-  color: #334155;
-  font-size: 14px;
+  color: #475569;
+  font-size: 10px;
   font-weight: 700;
   text-align: left;
-  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
 }
 
-.detail-table thead th:first-child {
-  text-align: center;
-}
-
-.detail-table thead th:last-child {
+.detail-table thead th.text-center {
   text-align: center;
 }
 
 .detail-table tbody td {
-  padding: 17px 18px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  border-bottom: 1px solid #edf2f7;
   background: #ffffff;
   vertical-align: middle;
 }
@@ -781,14 +785,14 @@ onMounted(() => {
 }
 
 .detail-table tbody tr:hover td {
-  background: #fcfdff;
+  background: #f8fbff;
 }
 
 /* =========================
    NUMBER
 ========================= */
 
-.number-cell {
+.no-cell {
   text-align: center;
 }
 
@@ -796,14 +800,13 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
-  border: 1px solid #dbe4ef;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
-  font-size: 14px;
-  font-weight: 600;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 700;
 }
 
 /* =========================
@@ -812,19 +815,17 @@ onMounted(() => {
 
 .table-input {
   width: 100%;
-  height: 44px;
-  padding: 0 13px;
+  height: 40px;
+  padding: 0 12px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   outline: none;
   background: #ffffff;
-  color: #0f172a;
+  color: #1e293b;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
   box-sizing: border-box;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .table-input::placeholder {
@@ -836,29 +837,22 @@ onMounted(() => {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
 }
 
-.select-input {
-  cursor: pointer;
-  color: #334155;
-}
-
 .table-textarea {
   display: block;
   width: 100%;
-  min-height: 72px;
-  padding: 11px 13px;
+  min-height: 64px;
+  padding: 10px 12px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   outline: none;
   resize: vertical;
   background: #ffffff;
-  color: #0f172a;
+  color: #1e293b;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
   box-sizing: border-box;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .table-textarea::placeholder {
@@ -882,18 +876,15 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: 7px;
   background: #ffffff;
   color: #dc2626;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .btn-delete:hover:not(:disabled) {
@@ -913,19 +904,6 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.btn-delete:hover:not(:disabled) {
-  border-color: #fca5a5;
-  background: #fef2f2;
-  color: #b91c1c;
-}
-
-.btn-delete:disabled {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-  color: #cbd5e1;
-  cursor: not-allowed;
-}
-
 /* =========================
    DETAIL FOOTER
 ========================= */
@@ -934,27 +912,26 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 18px 2px 0;
+  gap: 9px;
+  padding: 16px 2px 0;
 }
 
 .detail-total-label {
   color: #64748b;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .detail-total {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0 9px;
-  border: 1px solid #dbe4ef;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #334155;
-  font-size: 14px;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 7px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-size: 12px;
   font-weight: 700;
   box-sizing: border-box;
 }
@@ -967,54 +944,52 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 12px;
-  margin-top: 26px;
+  gap: 10px;
+  margin-top: 22px;
 }
 
 .btn-cancel,
 .btn-save {
-  min-width: 108px;
-  height: 46px;
-  padding: 0 20px;
-  border-radius: 9px;
+  min-width: 100px;
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
   font-family: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .btn-cancel {
-  border: 1px solid #cbd5e1;
+  border: 1px solid #e2e8f0;
   background: #ffffff;
-  color: #334155;
+  color: #475569;
 }
 
 .btn-cancel:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  border-color: #bfdbfe;
+  background: #f8fbff;
+  color: #2563eb;
 }
 
 .btn-save {
-  min-width: 160px;
-  border: 1px solid #2563eb;
+  min-width: 150px;
+  border: none;
   background: #2563eb;
   color: #ffffff;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.16);
 }
 
 .btn-save:hover:not(:disabled) {
   background: #1d4ed8;
-  border-color: #1d4ed8;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(37, 99, 235, 0.2);
 }
 
 .btn-cancel:active:not(:disabled),
 .btn-save:active:not(:disabled) {
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 
 .btn-cancel:disabled,
@@ -1029,7 +1004,7 @@ onMounted(() => {
 
 @media (max-width: 900px) {
   .form-card {
-    padding: 22px;
+    padding: 20px;
   }
 
   .detail-header {
@@ -1042,27 +1017,27 @@ onMounted(() => {
   }
 
   .detail-table {
-    min-width: 820px;
+    min-width: 800px;
   }
 }
 
 @media (max-width: 700px) {
   .page-header h1 {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .page-header p {
-    font-size: 14px;
+    font-size: 12px;
   }
 
   .form-card {
-    padding: 20px 16px;
+    padding: 18px 16px;
     border-radius: 10px;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
-    gap: 18px;
+    gap: 14px;
   }
 
   .full-width {
@@ -1071,17 +1046,17 @@ onMounted(() => {
 
   .card-header h2,
   .detail-header h2 {
-    font-size: 18px;
+    font-size: 15px;
   }
 
   .detail-table {
-    min-width: 790px;
+    min-width: 780px;
   }
 
   .detail-table thead th,
   .detail-table tbody td {
-    padding-left: 14px;
-    padding-right: 14px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .form-actions {
@@ -1097,20 +1072,16 @@ onMounted(() => {
 }
 
 @media (max-width: 480px) {
-  .spk-form-page {
-    padding-bottom: 20px;
-  }
-
   .page-header {
     margin-bottom: 18px;
   }
 
   .page-header h1 {
-    font-size: 22px;
+    font-size: 18px;
   }
 
-  .breadcrumb {
-    font-size: 12px;
+  .page-eyebrow {
+    font-size: 9px;
   }
 
   .form-card {

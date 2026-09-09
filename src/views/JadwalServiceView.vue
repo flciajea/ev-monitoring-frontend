@@ -1,16 +1,515 @@
+<template>
+  <div class="jadwal-page">
+
+    <!-- =========================
+         HEADER
+    ========================== -->
+    <section class="page-header">
+      <div class="header-content">
+        <p class="page-eyebrow">Monitoring</p>
+
+        <h1>Jadwal Service</h1>
+
+        <p class="page-description">
+          Monitoring jadwal service kendaraan
+        </p>
+      </div>
+    </section>
+
+
+    <!-- =========================
+         STATISTICS
+    ========================== -->
+    <section class="stats-grid">
+
+      <div class="stat-card">
+        <span class="stat-label">
+          Total Jadwal
+        </span>
+
+        <strong class="stat-value">
+          {{ totalJadwal }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-open">
+        <span class="stat-label">
+          Open
+        </span>
+
+        <strong class="stat-value">
+          {{ totalOpen }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-progress">
+        <span class="stat-label">
+          On Progress
+        </span>
+
+        <strong class="stat-value">
+          {{ totalProgress }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-close">
+        <span class="stat-label">
+          Close
+        </span>
+
+        <strong class="stat-value">
+          {{ totalClose }}
+        </strong>
+      </div>
+
+
+      <div class="stat-card stat-cancel">
+        <span class="stat-label">
+          Cancel
+        </span>
+
+        <strong class="stat-value">
+          {{ totalCancel }}
+        </strong>
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         SEARCH
+    ========================== -->
+    <section class="toolbar">
+
+      <div class="search-box">
+
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Cari kendaraan, driver, UID, dealer, status..."
+        />
+
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="clear-search"
+          @click="searchQuery = ''"
+        >
+          Clear
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- =========================
+         DATA SECTION
+    ========================== -->
+    <section class="data-section">
+
+      <div class="section-header">
+
+        <div>
+          <h2>Data Jadwal Service</h2>
+
+          <p>
+            {{ filteredJadwal.length }} data ditemukan
+          </p>
+        </div>
+
+      </div>
+
+
+      <!-- =========================
+           LOADING
+      ========================== -->
+      <div
+        v-if="loading"
+        class="state-card"
+      >
+        <div class="loading-line"></div>
+        <div class="loading-line short"></div>
+        <div class="loading-table"></div>
+      </div>
+
+
+      <!-- =========================
+           ERROR
+      ========================== -->
+      <div
+        v-else-if="errorMsg"
+        class="state-card error-state"
+      >
+        <h3>Data tidak dapat dimuat</h3>
+
+        <p>
+          {{ errorMsg }}
+        </p>
+
+        <button
+          type="button"
+          class="btn-secondary"
+          @click="ambilData"
+        >
+          Coba Lagi
+        </button>
+      </div>
+
+
+      <!-- =========================
+           EMPTY
+      ========================== -->
+      <div
+        v-else-if="filteredJadwal.length === 0"
+        class="state-card empty-state"
+      >
+        <h3>Tidak ada data jadwal service</h3>
+
+        <p v-if="searchQuery">
+          Tidak ditemukan jadwal yang sesuai dengan pencarian.
+        </p>
+
+        <p v-else>
+          Belum terdapat data jadwal service.
+        </p>
+      </div>
+
+
+      <!-- =========================
+           TABLE
+      ========================== -->
+      <div
+        v-else
+        class="table-container"
+      >
+
+        <table class="data-table">
+
+          <colgroup>
+            <col class="col-id" />
+            <col class="col-kendaraan" />
+            <col class="col-driver" />
+            <col class="col-uid" />
+            <col class="col-dealer" />
+            <col class="col-km" />
+            <col class="col-tanggal" />
+            <col class="col-tindak-tanggal" />
+            <col class="col-keterangan" />
+            <col class="col-status" />
+            <col class="col-tindak-lanjut" />
+          </colgroup>
+
+
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Kendaraan</th>
+              <th>Driver</th>
+              <th>UID / Daerah</th>
+              <th>Dealer</th>
+              <th>KM</th>
+              <th>Tanggal Service</th>
+              <th>Tanggal Tindak Lanjut</th>
+              <th>Keterangan</th>
+              <th>Status</th>
+              <th>Tindak Lanjut</th>
+            </tr>
+          </thead>
+
+
+          <tbody>
+
+            <tr
+              v-for="jadwal in filteredJadwal"
+              :key="jadwal.id"
+              :class="getRowClass(jadwal)"
+            >
+
+              <!-- =========================
+                   ID
+              ========================== -->
+              <td>
+
+                <span class="id-number">
+                  #{{ jadwal.id }}
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   KENDARAAN
+              ========================== -->
+              <td>
+
+                <div class="vehicle-cell">
+
+                  <span class="vehicle-number">
+                    {{ jadwal.nomorKendaraan || '-' }}
+                  </span>
+
+
+                  <!-- DEADLINE -->
+                  <span
+                    v-if="getDeadlineInfo(jadwal).text"
+                    class="deadline-text"
+                    :class="getDeadlineInfo(jadwal).class"
+                  >
+                    {{ getDeadlineInfo(jadwal).text }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   DRIVER
+              ========================== -->
+              <td>
+
+                <div class="requester-cell">
+
+                  <strong>
+                    {{ jadwal.namaLengkap || jadwal.username || '-' }}
+                  </strong>
+
+                  <span v-if="jadwal.username">
+                    {{ jadwal.username }}
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   UID / DAERAH
+              ========================== -->
+              <td>
+
+                <div class="requester-cell">
+
+                  <span v-if="jadwal.uid">
+                    UID: {{ jadwal.uid }}
+                  </span>
+
+                  <span v-if="jadwal.up3">
+                    {{ jadwal.up3 }}
+                  </span>
+
+                  <span v-if="!jadwal.uid && !jadwal.up3" class="empty-text">
+                    -
+                  </span>
+
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   DEALER
+              ========================== -->
+              <td>
+
+                <span class="date-text">
+                  {{ jadwal.dealer || '-' }}
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   KM
+              ========================== -->
+              <td>
+
+                <span class="date-text">
+                  {{ jadwal.km ?? '-' }}
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   TANGGAL SERVICE
+              ========================== -->
+              <td>
+
+                <span class="date-text">
+                  {{ formatTanggal(jadwal.tanggalService) }}
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   TANGGAL TINDAK LANJUT
+              ========================== -->
+              <td>
+
+                <span
+                  v-if="jadwal.tanggalTindakLanjut"
+                  class="follow-date"
+                >
+                  {{ formatTanggal(jadwal.tanggalTindakLanjut) }}
+                </span>
+
+                <span
+                  v-else
+                  class="empty-text"
+                >
+                  Belum ditentukan
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   KETERANGAN
+              ========================== -->
+              <td>
+
+                <div class="complaint-text">
+                  {{ jadwal.keterangan || '-' }}
+                </div>
+
+              </td>
+
+
+              <!-- =========================
+                   STATUS
+              ========================== -->
+              <td>
+
+                <select
+                  v-if="canManageStatus"
+                  :value="getActualStatus(jadwal.status)"
+                  class="status-select"
+                  :class="getStatusClass(jadwal.status)"
+                  :disabled="updatingId === jadwal.id"
+                  @change="updateStatus(jadwal, $event.target.value)"
+                >
+
+                  <option
+                    v-for="status in daftarStatus"
+                    :key="status"
+                    :value="status"
+                  >
+                    {{ status }}
+                  </option>
+
+                </select>
+
+
+                <span
+                  v-else
+                  class="status-badge"
+                  :class="getStatusClass(jadwal.status)"
+                >
+                  {{ getActualStatus(jadwal.status) }}
+                </span>
+
+              </td>
+
+
+              <!-- =========================
+                   TINDAK LANJUT
+              ========================== -->
+              <td>
+
+                <div class="follow-up-cell">
+
+                  <p
+                    v-if="jadwal.tindakLanjut"
+                    class="follow-up-text"
+                  >
+                    {{ jadwal.tindakLanjut }}
+                  </p>
+
+                  <span
+                    v-else
+                    class="empty-text"
+                  >
+                    Belum ada tindak lanjut
+                  </span>
+
+
+                  <!-- EDIT DETAIL -->
+                  <button
+                    v-if="isAdmin"
+                    type="button"
+                    class="detail-button"
+                    :title="
+                      jadwal.tindakLanjut
+                        ? 'Lihat detail jadwal'
+                        : 'Isi detail jadwal'
+                    "
+                    :aria-label="
+                      jadwal.tindakLanjut
+                        ? 'Lihat detail jadwal'
+                        : 'Isi detail jadwal'
+                    "
+                    @click="lihatDetail(jadwal.id)"
+                  >
+                    <svg
+                      width="17"
+                      height="17"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M12 20H21"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                      />
+
+                      <path
+                        d="M16.5 3.5C16.8978 3.10218 17.4374 2.87868 18 2.87868C18.5626 2.87868 19.1022 3.10218 19.5 3.5C19.8978 3.89782 20.1213 4.43739 20.1213 5C20.1213 5.56261 19.8978 6.10218 19.5 6.5L7 19L3 20L4 16L16.5 3.5Z"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+
+                </div>
+
+              </td>
+
+            </tr>
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </section>
+
+  </div>
+</template>
+
+
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
 
-import EmptyState from '../components/EmptyState.vue'
-import SearchInput from '../components/SearchInput.vue'
-
 const router = useRouter()
 
-// =========================
-// DATA
-// =========================
+
+/* =========================
+   STATE
+========================= */
 
 const daftarJadwal = ref([])
 const loading = ref(true)
@@ -18,39 +517,47 @@ const errorMsg = ref('')
 const searchQuery = ref('')
 const updatingId = ref(null)
 
-// =========================
-// USER
-// =========================
 
-const currentUser = computed(() => {
-  const userData = localStorage.getItem('user')
+/* =========================
+   CURRENT USER
+========================= */
 
-  if (!userData) {
-    return null
+const currentUser = ref(null)
+
+try {
+  const user = localStorage.getItem('user')
+
+  if (user) {
+    currentUser.value = JSON.parse(user)
   }
+} catch (error) {
+  currentUser.value = null
+}
 
-  try {
-    return JSON.parse(userData)
-  } catch {
-    return null
-  }
-})
 
-const role = computed(() => {
-  return currentUser.value?.role?.toLowerCase() || ''
-})
+const role = computed(() =>
+  String(currentUser.value?.role || '').toLowerCase()
+)
 
-const isAdmin = computed(() => {
-  return role.value === 'admin'
-})
 
-const canManageStatus = computed(() => {
-  return ['admin', 'uid'].includes(role.value)
-})
+const isAdmin = computed(() =>
+  role.value === 'admin'
+)
 
-// =========================
-// STATUS
-// =========================
+
+const isUid = computed(() =>
+  role.value === 'uid'
+)
+
+
+const canManageStatus = computed(() =>
+  isAdmin.value || isUid.value
+)
+
+
+/* =========================
+   STATUS
+========================= */
 
 const daftarStatus = [
   'Open',
@@ -59,160 +566,215 @@ const daftarStatus = [
   'Cancel'
 ]
 
+
 const getActualStatus = (status) => {
   return status || 'Open'
 }
 
-const getStatusStyle = (status) => {
-  const actualStatus = getActualStatus(status)
 
-  const styles = {
-    Open: {
-      backgroundColor: '#eff6ff',
-      color: '#2563eb',
-      borderColor: '#bfdbfe'
-    },
+const normalizeStatus = (status) => {
 
-    'On Progress': {
-      backgroundColor: '#fff7ed',
-      color: '#ea580c',
-      borderColor: '#fed7aa'
-    },
+  return String(getActualStatus(status))
+    .trim()
+    .toLowerCase()
+}
 
-    Close: {
-      backgroundColor: '#f0fdf4',
-      color: '#16a34a',
-      borderColor: '#bbf7d0'
-    },
 
-    Cancel: {
-      backgroundColor: '#fef2f2',
-      color: '#dc2626',
-      borderColor: '#fecaca'
-    }
+const getStatusClass = (status) => {
+
+  const normalized = normalizeStatus(status)
+
+  if (normalized === 'open') {
+    return 'status-open'
   }
 
-  return styles[actualStatus] || {
-    backgroundColor: '#f8fafc',
-    color: '#64748b',
-    borderColor: '#e2e8f0'
+  if (normalized === 'on progress') {
+    return 'status-progress'
+  }
+
+  if (normalized === 'close') {
+    return 'status-close'
+  }
+
+  if (normalized === 'cancel') {
+    return 'status-cancel'
+  }
+
+  return 'status-open'
+}
+
+
+/* =========================
+   GET DATA
+========================= */
+
+const ambilData = async () => {
+  loading.value = true
+  errorMsg.value = ''
+
+  try {
+    const response = await api.get('/jadwal-service')
+
+    daftarJadwal.value = Array.isArray(response.data)
+      ? response.data
+      : []
+
+  } catch (error) {
+    console.error('Error ambil jadwal service:', error)
+
+    errorMsg.value =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      'Terjadi kesalahan saat mengambil data jadwal service.'
+
+  } finally {
+    loading.value = false
   }
 }
 
-// =========================
-// SUMMARY
-// =========================
 
-const totalJadwal = computed(() => {
-  return daftarJadwal.value.length
-})
+/* =========================
+   STATISTICS
+========================= */
 
-const totalOpen = computed(() => {
-  return daftarJadwal.value.filter(
-    jadwal => getActualStatus(jadwal.status) === 'Open'
+const totalJadwal = computed(() =>
+  daftarJadwal.value.length
+)
+
+
+const totalOpen = computed(() =>
+  daftarJadwal.value.filter(
+    jadwal => normalizeStatus(jadwal.status) === 'open'
   ).length
-})
+)
 
-const totalProgress = computed(() => {
-  return daftarJadwal.value.filter(
-    jadwal => getActualStatus(jadwal.status) === 'On Progress'
+
+const totalProgress = computed(() =>
+  daftarJadwal.value.filter(
+    jadwal => normalizeStatus(jadwal.status) === 'on progress'
   ).length
-})
+)
 
-const totalClose = computed(() => {
-  return daftarJadwal.value.filter(
-    jadwal => getActualStatus(jadwal.status) === 'Close'
+
+const totalClose = computed(() =>
+  daftarJadwal.value.filter(
+    jadwal => normalizeStatus(jadwal.status) === 'close'
   ).length
-})
+)
 
-const totalCancel = computed(() => {
-  return daftarJadwal.value.filter(
-    jadwal => getActualStatus(jadwal.status) === 'Cancel'
+
+const totalCancel = computed(() =>
+  daftarJadwal.value.filter(
+    jadwal => normalizeStatus(jadwal.status) === 'cancel'
   ).length
-})
+)
 
-// =========================
-// SEARCH
-// =========================
+
+/* =========================
+   SEARCH
+========================= */
 
 const filteredJadwal = computed(() => {
-  const q = searchQuery.value
+
+  const keyword = searchQuery.value
     .trim()
     .toLowerCase()
 
-  if (!q) {
+  if (!keyword) {
     return daftarJadwal.value
   }
 
-  return daftarJadwal.value.filter((jadwal) => {
-    const id =
-      String(jadwal.id ?? '').toLowerCase()
+  return daftarJadwal.value.filter(jadwal => {
 
-    const nomorKendaraan =
-      jadwal.nomorKendaraan?.toLowerCase() || ''
+    const searchableText = [
+      jadwal.id,
+      jadwal.nomorKendaraan,
+      jadwal.namaLengkap,
+      jadwal.username,
+      jadwal.uid,
+      jadwal.up3,
+      jadwal.unit,
+      jadwal.dealer,
+      jadwal.km,
+      jadwal.tanggalService,
+      jadwal.tanggalTindakLanjut,
+      jadwal.keterangan,
+      jadwal.status,
+      jadwal.tindakLanjut
+    ]
+      .filter(
+        value =>
+          value !== null &&
+          value !== undefined
+      )
+      .join(' ')
+      .toLowerCase()
 
-    const namaLengkap =
-      jadwal.namaLengkap?.toLowerCase() || ''
-
-    const username =
-      jadwal.username?.toLowerCase() || ''
-
-    const uid =
-      jadwal.uid?.toLowerCase() || ''
-
-    const up3 =
-      jadwal.up3?.toLowerCase() || ''
-
-    const unit =
-      jadwal.unit?.toLowerCase() || ''
-
-    const dealer =
-      jadwal.dealer?.toLowerCase() || ''
-
-    const km =
-      String(jadwal.km ?? '').toLowerCase()
-
-    const tanggalService =
-      jadwal.tanggalService?.toLowerCase() || ''
-
-    const tanggalTindakLanjut =
-      jadwal.tanggalTindakLanjut
-        ?.toString()
-        .toLowerCase() || ''
-
-    const keterangan =
-      jadwal.keterangan?.toLowerCase() || ''
-
-    const status =
-      jadwal.status?.toLowerCase() || ''
-
-    const tindakLanjut =
-      jadwal.tindakLanjut?.toLowerCase() || ''
-
-    return (
-      id.includes(q) ||
-      nomorKendaraan.includes(q) ||
-      namaLengkap.includes(q) ||
-      username.includes(q) ||
-      uid.includes(q) ||
-      up3.includes(q) ||
-      unit.includes(q) ||
-      dealer.includes(q) ||
-      km.includes(q) ||
-      tanggalService.includes(q) ||
-      tanggalTindakLanjut.includes(q) ||
-      keterangan.includes(q) ||
-      status.includes(q) ||
-      tindakLanjut.includes(q)
-    )
+    return searchableText.includes(keyword)
   })
 })
 
-// =========================
-// FORMAT TANGGAL
-// =========================
+
+/* =========================
+   UPDATE STATUS
+========================= */
+
+const updateStatus = async (jadwal, statusBaru) => {
+
+  if (!canManageStatus.value) {
+    return
+  }
+
+  const statusLama = getActualStatus(jadwal.status)
+
+  if (statusBaru === statusLama) {
+    return
+  }
+
+  updatingId.value = jadwal.id
+
+  try {
+
+    const response = await api.put(
+      `/jadwal-service/${jadwal.id}`,
+      { status: statusBaru }
+    )
+
+    jadwal.status = response.data?.status || statusBaru
+
+  } catch (error) {
+
+    console.error('Error update status jadwal:', error)
+
+    jadwal.status = statusLama
+
+    alert(
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      'Status jadwal service gagal diperbarui.'
+    )
+
+  } finally {
+    updatingId.value = null
+  }
+}
+
+
+/* =========================
+   DETAIL
+========================= */
+
+const lihatDetail = (id) => {
+  router.push(`/jadwal-service/edit/${id}`)
+}
+
+
+/* =========================
+   DATE
+========================= */
 
 const formatTanggal = (tanggal) => {
+
   if (!tanggal) {
     return '-'
   }
@@ -230,73 +792,79 @@ const formatTanggal = (tanggal) => {
   })
 }
 
-// =========================
-// DEADLINE
-// =========================
 
-const getDeadlineInfo = (tanggal, status) => {
-  const actualStatus = getActualStatus(status)
+/* =========================
+   DEADLINE
+========================= */
 
+const getDeadlineDifference = (jadwal) => {
+
+  const status = normalizeStatus(jadwal.status)
+
+
+  /*
+   * Close dan Cancel tidak perlu deadline
+   */
   if (
-    actualStatus === 'Close' ||
-    actualStatus === 'Cancel'
+    status === 'close' ||
+    status === 'cancel'
   ) {
-    return {
-      class: '',
-      text: ''
-    }
+    return null
   }
 
-  if (!tanggal) {
-    return {
-      class: '',
-      text: ''
-    }
+
+  if (!jadwal.tanggalService) {
+    return null
   }
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
 
-  const tanggalService = new Date(tanggal)
-  tanggalService.setHours(0, 0, 0, 0)
+  const tanggalService = new Date(jadwal.tanggalService)
 
   if (Number.isNaN(tanggalService.getTime())) {
-    return {
-      class: '',
-      text: ''
-    }
+    return null
   }
 
-  const selisihMs =
-    today.getTime() -
-    tanggalService.getTime()
 
-  const selisihHari =
-    Math.floor(
-      selisihMs /
-      (1000 * 60 * 60 * 24)
-    )
+  const today = new Date()
+
+  today.setHours(0, 0, 0, 0)
+  tanggalService.setHours(0, 0, 0, 0)
+
+
+  const diffTime =
+    today.getTime() - tanggalService.getTime()
+
+
+  return Math.floor(
+    diffTime / (1000 * 60 * 60 * 24)
+  )
+}
+
+
+const getDeadlineInfo = (jadwal) => {
+
+  const selisihHari = getDeadlineDifference(jadwal)
+
+
+  if (selisihHari === null) {
+    return { class: '', text: '' }
+  }
+
 
   if (selisihHari <= 0) {
-    return {
-      class: '',
-      text: 'Hari ini'
-    }
+    return { class: 'deadline-normal', text: 'Hari ini' }
   }
+
 
   if (selisihHari <= 3) {
-    return {
-      class: '',
-      text: `${selisihHari} hari`
-    }
+    return { class: 'deadline-normal', text: `${selisihHari} hari` }
   }
 
+
   if (selisihHari <= 5) {
-    return {
-      class: 'deadline-warning',
-      text: `${selisihHari} hari`
-    }
+    return { class: 'deadline-warning', text: `${selisihHari} hari` }
   }
+
 
   return {
     class: 'deadline-danger',
@@ -304,736 +872,43 @@ const getDeadlineInfo = (tanggal, status) => {
   }
 }
 
-// =========================
-// UPDATE STATUS
-// =========================
 
-const updateStatus = async (jadwal, statusBaru) => {
-  if (!canManageStatus.value) {
-    return
+/* =========================
+   ROW STYLE
+========================= */
+
+const getRowClass = (jadwal) => {
+
+  const status = normalizeStatus(jadwal.status)
+
+
+  if (status === 'close') {
+    return 'row-close'
   }
 
-  const statusLama =
-    getActualStatus(jadwal.status)
 
-  if (statusBaru === statusLama) {
-    return
+  if (status === 'cancel') {
+    return 'row-cancel'
   }
 
-  updatingId.value = jadwal.id
-  errorMsg.value = ''
 
-  try {
-    const response = await api.put(
-      `/jadwal-service/${jadwal.id}`,
-      {
-        status: statusBaru
-      }
-    )
-
-    jadwal.status =
-      response.data?.status ||
-      statusBaru
-
-  } catch (error) {
-    console.error(
-      'Error update status jadwal:',
-      error
-    )
-
-    jadwal.status = statusLama
-
-    errorMsg.value =
-      'Gagal memperbarui status jadwal service: ' +
-      (
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message
-      )
-
-  } finally {
-    updatingId.value = null
+  if (status === 'on progress') {
+    return 'row-progress'
   }
+
+
+  return ''
 }
 
-// =========================
-// DETAIL
-// =========================
 
-const lihatDetail = (id) => {
-  router.push(
-    `/jadwal-service/edit/${id}`
-  )
-}
-
-// =========================
-// AMBIL DATA
-// =========================
-
-const ambilData = async () => {
-  loading.value = true
-  errorMsg.value = ''
-
-  try {
-    const response = await api.get(
-      '/jadwal-service'
-    )
-
-    daftarJadwal.value =
-      Array.isArray(response.data)
-        ? response.data
-        : []
-
-  } catch (error) {
-    console.error(
-      'Error ambil jadwal service:',
-      error
-    )
-
-    errorMsg.value =
-      'Gagal mengambil data jadwal service: ' +
-      (
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message
-      )
-
-  } finally {
-    loading.value = false
-  }
-}
-
-// =========================
-// INIT
-// =========================
+/* =========================
+   INIT
+========================= */
 
 onMounted(() => {
   ambilData()
 })
 </script>
-
-
-<template>
-
-  <div class="jadwal-page">
-
-    <!-- =========================
-         HEADER
-    ========================= -->
-
-    <div class="page-header">
-
-      <span class="page-eyebrow">
-        MONITORING
-      </span>
-
-      <h2>
-        Jadwal Service
-      </h2>
-
-      <p>
-        Monitoring jadwal service kendaraan
-      </p>
-
-    </div>
-
-
-    <!-- =========================
-         SUMMARY
-    ========================= -->
-
-    <div class="summary-grid">
-
-      <div class="summary-card">
-
-        <span class="summary-label">
-          Total Jadwal
-        </span>
-
-        <strong class="total-value">
-          {{ totalJadwal }}
-        </strong>
-
-      </div>
-
-
-      <div class="summary-card open-card">
-
-        <span class="summary-label">
-          Open
-        </span>
-
-        <strong class="open-value">
-          {{ totalOpen }}
-        </strong>
-
-      </div>
-
-
-      <div class="summary-card progress-card">
-
-        <span class="summary-label">
-          On Progress
-        </span>
-
-        <strong class="progress-value">
-          {{ totalProgress }}
-        </strong>
-
-      </div>
-
-
-      <div class="summary-card close-card">
-
-        <span class="summary-label">
-          Close
-        </span>
-
-        <strong class="close-value">
-          {{ totalClose }}
-        </strong>
-
-      </div>
-
-
-      <div class="summary-card cancel-card">
-
-        <span class="summary-label">
-          Cancel
-        </span>
-
-        <strong class="cancel-value">
-          {{ totalCancel }}
-        </strong>
-
-      </div>
-
-    </div>
-
-
-    <!-- =========================
-         SEARCH
-    ========================= -->
-
-    <div class="search-card">
-
-      <SearchInput
-        v-model="searchQuery"
-        placeholder="Cari kendaraan, driver, UID, dealer, status..."
-      />
-
-    </div>
-
-
-    <!-- =========================
-         ERROR
-    ========================= -->
-
-    <div
-      v-if="errorMsg"
-      class="error-box"
-    >
-      <span class="error-title">
-        Terjadi kesalahan
-      </span>
-
-      <span>
-        {{ errorMsg }}
-      </span>
-    </div>
-
-
-    <!-- =========================
-         LOADING
-    ========================= -->
-
-    <div
-      v-if="loading"
-      class="loading-card"
-    >
-
-      <div class="loading-spinner"></div>
-
-      <span>
-        Memuat data jadwal service...
-      </span>
-
-    </div>
-
-
-    <!-- =========================
-         EMPTY
-    ========================= -->
-
-    <EmptyState
-      v-else-if="filteredJadwal.length === 0"
-      :message="
-        searchQuery
-          ? 'Tidak ada hasil ditemukan'
-          : 'Belum ada data jadwal service'
-      "
-      :subtext="
-        searchQuery
-          ? 'Coba gunakan kata kunci lain'
-          : 'Belum ada jadwal service yang tersedia'
-      "
-    />
-
-
-    <!-- =========================
-         TABLE
-    ========================= -->
-
-    <div
-      v-else
-      class="table-card"
-    >
-
-      <!-- TABLE HEADER -->
-
-      <div class="table-header">
-
-        <div>
-
-          <h3>
-            Data Jadwal Service
-          </h3>
-
-          <span>
-            {{ filteredJadwal.length }} data ditemukan
-          </span>
-
-        </div>
-
-      </div>
-
-
-      <div class="table-wrapper">
-
-        <table>
-
-          <colgroup>
-
-            <col class="col-id">
-            <col class="col-kendaraan">
-            <col class="col-driver">
-            <col class="col-uid">
-            <col class="col-dealer">
-            <col class="col-km">
-            <col class="col-tanggal">
-            <col class="col-tindak-tanggal">
-            <col class="col-keterangan">
-            <col class="col-status">
-            <col class="col-tindak">
-
-          </colgroup>
-
-
-          <thead>
-
-            <tr>
-
-              <th>
-                ID
-              </th>
-
-              <th>
-                KENDARAAN
-              </th>
-
-              <th>
-                DRIVER
-              </th>
-
-              <th>
-                UID / DAERAH
-              </th>
-
-              <th>
-                DEALER
-              </th>
-
-              <th>
-                KM
-              </th>
-
-              <th>
-                TANGGAL
-                <br>
-                SERVICE
-              </th>
-
-              <th>
-                TANGGAL
-                <br>
-                TINDAK LANJUT
-              </th>
-
-              <th>
-                KETERANGAN
-              </th>
-
-              <th>
-                STATUS
-              </th>
-
-              <th>
-                TINDAK LANJUT
-              </th>
-
-            </tr>
-
-          </thead>
-
-
-          <tbody>
-
-            <tr
-              v-for="jadwal in filteredJadwal"
-              :key="jadwal.id"
-            >
-
-              <!-- ID -->
-
-              <td>
-
-                <span class="id-number">
-                  #{{ jadwal.id }}
-                </span>
-
-              </td>
-
-
-              <!-- KENDARAAN -->
-
-              <td>
-
-                <div class="vehicle-info">
-
-                  <strong>
-                    {{
-                      jadwal.nomorKendaraan ||
-                      '-'
-                    }}
-                  </strong>
-
-                  <span
-                    v-if="jadwal.dealer"
-                  >
-                    {{ jadwal.dealer }}
-                  </span>
-
-                </div>
-
-              </td>
-
-
-              <!-- DRIVER -->
-
-              <td>
-
-                <div class="driver-info">
-
-                  <strong>
-                    {{
-                      jadwal.namaLengkap ||
-                      jadwal.username ||
-                      '-'
-                    }}
-                  </strong>
-
-                  <span
-                    v-if="jadwal.username"
-                  >
-                    {{ jadwal.username }}
-                  </span>
-
-                </div>
-
-              </td>
-
-
-              <!-- UID / DAERAH -->
-
-              <td>
-
-                <div class="area-info">
-
-                  <span
-                    v-if="jadwal.uid"
-                    class="uid-text"
-                  >
-                    {{ jadwal.uid }}
-                  </span>
-
-                  <span
-                    v-if="jadwal.up3"
-                    class="area-text"
-                  >
-                    {{ jadwal.up3 }}
-                  </span>
-
-                  <span
-                    v-if="!jadwal.uid && !jadwal.up3"
-                    class="muted"
-                  >
-                    -
-                  </span>
-
-                </div>
-
-              </td>
-
-
-              <!-- DEALER -->
-
-              <td>
-
-                <span class="dealer-text">
-                  {{ jadwal.dealer || '-' }}
-                </span>
-
-              </td>
-
-
-              <!-- KM -->
-
-              <td>
-
-                <span class="km-value">
-                  {{ jadwal.km ?? '-' }}
-                </span>
-
-              </td>
-
-
-              <!-- TANGGAL SERVICE -->
-
-              <td>
-
-                <div
-                  class="service-date"
-                  :class="
-                    getDeadlineInfo(
-                      jadwal.tanggalService,
-                      jadwal.status
-                    ).class
-                  "
-                >
-
-                  <strong>
-                    {{
-                      formatTanggal(
-                        jadwal.tanggalService
-                      )
-                    }}
-                  </strong>
-
-                  <span
-                    v-if="
-                      getDeadlineInfo(
-                        jadwal.tanggalService,
-                        jadwal.status
-                      ).text
-                    "
-                    class="deadline-label"
-                    :class="
-                      getDeadlineInfo(
-                        jadwal.tanggalService,
-                        jadwal.status
-                      ).class
-                    "
-                  >
-                    {{
-                      getDeadlineInfo(
-                        jadwal.tanggalService,
-                        jadwal.status
-                      ).text
-                    }}
-                  </span>
-
-                </div>
-
-              </td>
-
-
-              <!-- TANGGAL TINDAK LANJUT -->
-
-              <td>
-
-                <span
-                  v-if="jadwal.tanggalTindakLanjut"
-                  class="follow-date"
-                >
-                  {{
-                    formatTanggal(
-                      jadwal.tanggalTindakLanjut
-                    )
-                  }}
-                </span>
-
-                <span
-                  v-else
-                  class="muted"
-                >
-                  Belum ditentukan
-                </span>
-
-              </td>
-
-
-              <!-- KETERANGAN -->
-
-              <td>
-
-                <div class="description">
-                  {{
-                    jadwal.keterangan ||
-                    '-'
-                  }}
-                </div>
-
-              </td>
-
-
-              <!-- STATUS -->
-
-              <td>
-
-                <select
-                  v-if="canManageStatus"
-                  class="status-select"
-                  :value="
-                    getActualStatus(
-                      jadwal.status
-                    )
-                  "
-                  :disabled="
-                    updatingId === jadwal.id
-                  "
-                  @change="
-                    updateStatus(
-                      jadwal,
-                      $event.target.value
-                    )
-                  "
-                  :style="
-                    getStatusStyle(
-                      jadwal.status
-                    )
-                  "
-                >
-
-                  <option
-                    v-for="status in daftarStatus"
-                    :key="status"
-                    :value="status"
-                  >
-                    {{ status }}
-                  </option>
-
-                </select>
-
-
-                <span
-                  v-else
-                  class="status-badge"
-                  :style="
-                    getStatusStyle(
-                      jadwal.status
-                    )
-                  "
-                >
-
-                  <span class="status-dot"></span>
-
-                  {{
-                    getActualStatus(
-                      jadwal.status
-                    )
-                  }}
-
-                </span>
-
-              </td>
-
-
-              <!-- TINDAK LANJUT -->
-
-              <td>
-
-                <div class="follow-up">
-
-                  <template
-                    v-if="
-                      jadwal.tindakLanjut &&
-                      jadwal.tindakLanjut.trim()
-                    "
-                  >
-
-                    <span class="follow-up-text">
-                      {{ jadwal.tindakLanjut }}
-                    </span>
-
-
-                    <button
-                      v-if="isAdmin"
-                      type="button"
-                      class="edit-button"
-                      title="Edit tindak lanjut"
-                      @click="
-                        lihatDetail(
-                          jadwal.id
-                        )
-                      "
-                    >
-                      Edit
-                    </button>
-
-                  </template>
-
-
-                  <template v-else>
-
-                    <button
-                      v-if="isAdmin"
-                      type="button"
-                      class="detail-button"
-                      @click="
-                        lihatDetail(
-                          jadwal.id
-                        )
-                      "
-                    >
-                      Isi Detail
-                    </button>
-
-                    <span
-                      v-else
-                      class="muted"
-                    >
-                      Belum ada
-                    </span>
-
-                  </template>
-
-                </div>
-
-              </td>
-
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-
-  </div>
-
-</template>
 
 
 <style scoped>
@@ -1045,7 +920,10 @@ onMounted(() => {
 .jadwal-page {
   width: 100%;
   max-width: 100%;
-  margin: 0;
+
+  padding: 32px 36px 48px;
+
+  box-sizing: border-box;
 }
 
 
@@ -1054,329 +932,295 @@ onMounted(() => {
 ========================= */
 
 .page-header {
-  margin-bottom: 34px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+
+  gap: 24px;
+
+  margin-bottom: 28px;
 }
 
-.page-eyebrow {
-  display: block;
 
-  margin-bottom: 8px;
+.page-eyebrow {
+  margin: 0 0 6px;
 
   color: #2563eb;
 
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 750;
 
+  text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
-.page-header h2 {
+
+.page-header h1 {
   margin: 0;
 
-  color: #162b46;
+  color: #172033;
 
   font-size: 30px;
-  font-weight: 700;
+  line-height: 1.2;
 
-  line-height: 1.15;
-
-  letter-spacing: -0.025em;
+  font-weight: 750;
 }
 
-.page-header p {
-  margin: 10px 0 0;
+
+.page-description {
+  margin: 8px 0 0;
 
   color: #64748b;
 
-  font-size: 16px;
-
-  line-height: 1.5;
+  font-size: 15px;
 }
 
 
 /* =========================
-   SUMMARY
+   BUTTON
 ========================= */
 
-.summary-grid {
+.btn-primary,
+.btn-secondary {
+  border: none;
+  border-radius: 9px;
+
+  padding: 11px 17px;
+
+  font-size: 14px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition: 0.2s ease;
+}
+
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+
+.btn-secondary {
+  background: #eef2f7;
+  color: #374151;
+}
+
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+
+/* =========================
+   STATISTICS
+========================= */
+
+.stats-grid {
   display: grid;
 
   grid-template-columns:
     repeat(5, minmax(0, 1fr));
 
-  gap: 20px;
+  gap: 14px;
 
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
-.summary-card {
-  min-height: 104px;
+
+.stat-card {
+  min-height: 90px;
+
+  padding: 18px 20px;
+
+  box-sizing: border-box;
+
+  background: white;
+
+  border: 1px solid #e5eaf1;
+
+  border-radius: 12px;
 
   display: flex;
   flex-direction: column;
-
   justify-content: center;
 
-  padding: 22px 28px;
-
-  background: #ffffff;
-
-  border: 1px solid #e2e8f0;
-
-  border-top: 3px solid transparent;
-
-  border-radius: 16px;
-
   box-shadow:
-    0 2px 8px
-    rgba(15, 23, 42, 0.025);
-
-  transition:
-    transform 0.18s ease,
-    box-shadow 0.18s ease;
+    0 2px 8px rgba(15, 23, 42, 0.035);
 }
 
-.summary-card:hover {
-  transform: translateY(-2px);
 
-  box-shadow:
-    0 6px 18px
-    rgba(15, 23, 42, 0.06);
-}
+.stat-label {
+  margin-bottom: 7px;
 
-.summary-label {
   color: #64748b;
 
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-
-  line-height: 1.4;
 }
 
-.summary-card strong {
-  margin-top: 5px;
 
-  color: #172b46;
+.stat-value {
+  color: #172033;
 
-  font-size: 32px;
-  font-weight: 700;
-
+  font-size: 25px;
   line-height: 1;
-}
 
-.summary-card.open-card {
-  border-top-color: #3b82f6;
-}
-
-.summary-card.progress-card {
-  border-top-color: #f59e0b;
-}
-
-.summary-card.close-card {
-  border-top-color: #22c55e;
-}
-
-.summary-card.cancel-card {
-  border-top-color: #ef4444;
-}
-
-.open-value {
-  color: #2563eb !important;
-}
-
-.progress-value {
-  color: #ea580c !important;
-}
-
-.close-value {
-  color: #16a34a !important;
-}
-
-.cancel-value {
-  color: #dc2626 !important;
+  font-weight: 750;
 }
 
 
 /* =========================
-   SEARCH
+   STAT COLOR ACCENTS
 ========================= */
 
-.search-card {
+.stat-open {
+  border-top: 3px solid #3b82f6;
+}
+
+
+.stat-progress {
+  border-top: 3px solid #f59e0b;
+}
+
+
+.stat-close {
+  border-top: 3px solid #22c55e;
+}
+
+
+.stat-cancel {
+  border-top: 3px solid #ef4444;
+}
+
+
+/* =========================
+   TOOLBAR
+========================= */
+
+.toolbar {
+  margin-bottom: 24px;
+}
+
+
+.search-box {
+  position: relative;
+
   width: 100%;
+}
 
-  margin-bottom: 32px;
 
-  padding: 16px 22px;
+.search-box input {
+  width: 100%;
+  height: 48px;
 
-  background: #ffffff;
+  box-sizing: border-box;
 
-  border: 1px solid #dbe4ef;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 80px 0 16px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.search-box input::placeholder {
+  color: #94a3b8;
+}
+
+
+.search-box input:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.clear-search {
+  position: absolute;
+
+  top: 50%;
+  right: 12px;
+
+  transform: translateY(-50%);
+
+  border: none;
+
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 12px;
+  font-weight: 650;
+
+  cursor: pointer;
+}
+
+
+.clear-search:hover {
+  color: #2563eb;
+}
+
+
+/* =========================
+   DATA SECTION
+========================= */
+
+.data-section {
+  background: white;
+
+  border: 1px solid #e5eaf1;
 
   border-radius: 14px;
 
+  overflow: hidden;
+
   box-shadow:
-    0 2px 8px
-    rgba(15, 23, 42, 0.025);
-
-  box-sizing: border-box;
-}
-
-.search-card :deep(.search-container) {
-  width: 100%;
-}
-
-.search-card :deep(input) {
-  width: 100%;
+    0 2px 10px rgba(15, 23, 42, 0.035);
 }
 
 
-/* =========================
-   ERROR
-========================= */
+.section-header {
+  padding: 22px 24px 18px;
 
-.error-box {
-  display: flex;
-  flex-direction: column;
-
-  gap: 3px;
-
-  margin-bottom: 20px;
-
-  padding: 13px 16px;
-
-  background: #fef2f2;
-
-  border: 1px solid #fecaca;
-
-  border-radius: 10px;
-
-  color: #b91c1c;
-
-  font-size: 13px;
-
-  line-height: 1.5;
-}
-
-.error-title {
-  font-weight: 700;
+  border-bottom: 1px solid #edf0f4;
 }
 
 
-/* =========================
-   LOADING
-========================= */
+.section-header h2 {
+  margin: 0;
 
-.loading-card {
-  min-height: 260px;
+  color: #172033;
 
-  display: flex;
-  flex-direction: column;
+  font-size: 19px;
+  font-weight: 720;
+}
 
-  align-items: center;
-  justify-content: center;
 
-  gap: 13px;
-
-  background: #ffffff;
-
-  border: 1px solid #e2e8f0;
-
-  border-radius: 16px;
+.section-header p {
+  margin: 5px 0 0;
 
   color: #64748b;
 
   font-size: 13px;
-}
-
-.loading-spinner {
-  width: 30px;
-  height: 30px;
-
-  border: 3px solid #e2e8f0;
-
-  border-top-color: #3b82f6;
-
-  border-radius: 50%;
-
-  animation:
-    spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-
-/* =========================
-   TABLE CARD
-========================= */
-
-.table-card {
-  width: 100%;
-
-  background: #ffffff;
-
-  border: 1px solid #e2e8f0;
-
-  border-radius: 16px;
-
-  box-shadow:
-    0 3px 12px
-    rgba(15, 23, 42, 0.035);
-
-  overflow: hidden;
-}
-
-
-/* =========================
-   TABLE HEADER
-========================= */
-
-.table-header {
-  padding: 28px 32px;
-
-  border-bottom: 1px solid #edf2f7;
-}
-
-.table-header h3 {
-  margin: 0;
-
-  color: #172b46;
-
-  font-size: 23px;
-  font-weight: 700;
-
-  line-height: 1.25;
-}
-
-.table-header span {
-  display: block;
-
-  margin-top: 6px;
-
-  color: #71839a;
-
-  font-size: 14px;
-}
-
-
-/* =========================
-   TABLE WRAPPER
-========================= */
-
-.table-wrapper {
-  width: 100%;
-
-  overflow-x: auto;
-  overflow-y: hidden;
-
-  scrollbar-width: thin;
-
-  scrollbar-color:
-    #cbd5e1
-    transparent;
 }
 
 
@@ -1384,7 +1228,15 @@ onMounted(() => {
    TABLE
 ========================= */
 
-table {
+.table-container {
+  width: 100%;
+
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+
+.data-table {
   width: 100%;
 
   min-width: 1280px;
@@ -1400,47 +1252,47 @@ table {
 ========================= */
 
 .col-id {
-  width: 55px;
+  width: 6%;
 }
 
 .col-kendaraan {
-  width: 130px;
+  width: 11%;
 }
 
 .col-driver {
-  width: 160px;
+  width: 12%;
 }
 
 .col-uid {
-  width: 130px;
+  width: 10%;
 }
 
 .col-dealer {
-  width: 110px;
+  width: 9%;
 }
 
 .col-km {
-  width: 65px;
+  width: 6%;
 }
 
 .col-tanggal {
-  width: 135px;
+  width: 10%;
 }
 
 .col-tindak-tanggal {
-  width: 145px;
+  width: 11%;
 }
 
 .col-keterangan {
-  width: 180px;
+  width: 12%;
 }
 
 .col-status {
-  width: 125px;
+  width: 10%;
 }
 
-.col-tindak {
-  width: 205px;
+.col-tindak-lanjut {
+  width: 13%;
 }
 
 
@@ -1448,25 +1300,25 @@ table {
    TABLE HEADER
 ========================= */
 
-thead th {
-  padding: 18px 17px;
+.data-table thead th {
+  padding: 15px 13px;
 
   background: #f8fafc;
 
   border-bottom: 1px solid #e2e8f0;
 
-  color: #58708e;
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 750;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.04em;
 
   text-align: left;
 
-  font-size: 12px;
-  font-weight: 700;
-
-  line-height: 1.25;
-
-  letter-spacing: 0.035em;
-
-  white-space: nowrap;
+  vertical-align: middle;
 }
 
 
@@ -1474,33 +1326,49 @@ thead th {
    TABLE BODY
 ========================= */
 
-tbody tr {
-  transition:
-    background-color 0.15s ease;
-}
+.data-table tbody td {
+  padding: 15px 13px;
 
-tbody tr:hover {
-  background: #f8fbff;
-}
+  border-bottom: 1px solid #edf0f4;
 
-tbody td {
-  padding: 19px 17px;
-
-  border-bottom: 1px solid #edf2f7;
-
-  color: #334155;
+  color: #374151;
 
   font-size: 13px;
 
-  line-height: 1.5;
-
   vertical-align: middle;
 
-  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
-tbody tr:last-child td {
+
+.data-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+
+.data-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+
+.data-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+
+.data-table tbody tr.row-close {
+  background: #fbfefc;
+}
+
+
+.data-table tbody tr.row-cancel {
+  background: #fffafa;
+}
+
+
+.data-table tbody tr.row-progress {
+  background: #fffdf7;
 }
 
 
@@ -1512,8 +1380,7 @@ tbody tr:last-child td {
   color: #94a3b8;
 
   font-size: 12px;
-
-  font-weight: 600;
+  font-weight: 650;
 }
 
 
@@ -1521,172 +1388,21 @@ tbody tr:last-child td {
    VEHICLE
 ========================= */
 
-.vehicle-info {
+.vehicle-cell {
   display: flex;
   flex-direction: column;
 
-  gap: 4px;
-
-  min-width: 0;
-}
-
-.vehicle-info strong {
-  color: #1e293b;
-
-  font-size: 14px;
-  font-weight: 700;
-
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-}
-
-.vehicle-info span {
-  color: #71839a;
-
-  font-size: 11px;
-
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
+  gap: 7px;
 }
 
 
-/* =========================
-   DRIVER
-========================= */
-
-.driver-info {
-  display: flex;
-  flex-direction: column;
-
-  gap: 4px;
-
-  min-width: 0;
-}
-
-.driver-info strong {
-  color: #1e293b;
+.vehicle-number {
+  color: #27364a;
 
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 720;
 
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-}
-
-.driver-info span {
-  color: #64748b;
-
-  font-size: 11px;
-
-  white-space: nowrap;
-
-  overflow: hidden;
-
-  text-overflow: ellipsis;
-}
-
-
-/* =========================
-   UID / AREA
-========================= */
-
-.area-info {
-  display: flex;
-  flex-direction: column;
-
-  align-items: flex-start;
-
-  gap: 5px;
-
-  min-width: 0;
-}
-
-.uid-text {
-  color: #2563eb;
-
-  font-size: 12px;
-  font-weight: 700;
-
-  line-height: 1.3;
-
-  overflow-wrap: anywhere;
-}
-
-.area-text {
-  color: #64748b;
-
-  font-size: 11px;
-
-  line-height: 1.3;
-
-  overflow-wrap: anywhere;
-}
-
-
-/* =========================
-   DEALER
-========================= */
-
-.dealer-text {
-  color: #475569;
-
-  font-size: 12px;
-
-  line-height: 1.45;
-
-  overflow-wrap: anywhere;
-}
-
-
-/* =========================
-   KM
-========================= */
-
-.km-value {
-  color: #334155;
-
-  font-size: 13px;
-  font-weight: 600;
-}
-
-
-/* =========================
-   SERVICE DATE
-========================= */
-
-.service-date {
-  display: flex;
-  flex-direction: column;
-
-  align-items: flex-start;
-
-  gap: 6px;
-}
-
-.service-date strong {
-  color: #334155;
-
-  font-size: 12px;
-  font-weight: 600;
-
-  white-space: nowrap;
-}
-
-.service-date.deadline-warning strong {
-  color: #ea580c;
-}
-
-.service-date.deadline-danger strong {
-  color: #dc2626;
+  line-height: 1.35;
 }
 
 
@@ -1694,108 +1410,145 @@ tbody tr:last-child td {
    DEADLINE
 ========================= */
 
-.deadline-label {
-  display: inline-flex;
+.deadline-text {
+  width: fit-content;
 
-  padding: 4px 8px;
+  padding: 4px 7px;
 
-  border-radius: 6px;
-
-  background: #f1f5f9;
-
-  color: #64748b;
+  border-radius: 5px;
 
   font-size: 10px;
   font-weight: 700;
-
-  line-height: 1;
-
-  white-space: nowrap;
 }
 
-.deadline-label.deadline-warning {
+
+.deadline-normal {
+  color: #2563eb;
+
+  background: #eff6ff;
+}
+
+
+.deadline-warning {
+  color: #b45309;
+
   background: #fff7ed;
-
-  color: #ea580c;
 }
 
-.deadline-label.deadline-danger {
-  background: #fef2f2;
 
-  color: #dc2626;
+.deadline-danger {
+  color: #b91c1c;
+
+  background: #fee2e2;
 }
 
 
 /* =========================
-   FOLLOW DATE
+   KETERANGAN
 ========================= */
 
+.complaint-text {
+  color: #334155;
+
+  line-height: 1.55;
+
+  white-space: normal;
+}
+
+
+/* =========================
+   DATE
+========================= */
+
+.date-text,
 .follow-date {
-  color: #1e293b;
+  display: inline-block;
 
-  font-size: 12px;
-  font-weight: 600;
-
-  white-space: nowrap;
-}
-
-
-/* =========================
-   DESCRIPTION
-========================= */
-
-.description {
   color: #475569;
 
   font-size: 12px;
 
-  line-height: 1.5;
+  line-height: 1.45;
+}
 
-  overflow-wrap: anywhere;
 
-  display: -webkit-box;
+.follow-date {
+  font-weight: 650;
+}
 
-  -webkit-line-clamp: 3;
 
-  -webkit-box-orient: vertical;
+.empty-text {
+  color: #94a3b8;
 
-  overflow: hidden;
+  font-size: 12px;
 }
 
 
 /* =========================
-   STATUS SELECT
+   REQUESTER / DRIVER
 ========================= */
 
-.status-select {
-  width: 112px;
+.requester-cell {
+  display: flex;
+  flex-direction: column;
 
-  padding: 8px 10px;
+  gap: 4px;
+}
 
-  border: 1px solid;
 
-  border-radius: 20px;
+.requester-cell strong {
+  color: #172033;
 
-  outline: none;
+  font-size: 13px;
+  font-weight: 700;
 
-  font-family: inherit;
+  line-height: 1.4;
+}
+
+
+.requester-cell span {
+  color: #475569;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  line-height: 1.4;
+}
+
+
+/* =========================
+   STATUS
+========================= */
+
+.status-select,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 34px;
+
+  box-sizing: border-box;
+
+  border-radius: 8px;
 
   font-size: 11px;
   font-weight: 700;
+}
+
+
+.status-select {
+  width: 100%;
+  max-width: 130px;
+
+  padding: 0 10px;
+
+  border: 1px solid transparent;
+
+  outline: none;
 
   cursor: pointer;
-
-  appearance: auto;
-
-  transition:
-    box-shadow 0.15s ease;
 }
 
-.status-select:focus {
-  box-shadow:
-    0 0 0 3px
-    rgba(37, 99, 235, 0.10);
-}
 
 .status-select:disabled {
   opacity: 0.55;
@@ -1804,38 +1557,60 @@ tbody tr:last-child td {
 }
 
 
-/* =========================
-   STATUS BADGE
-========================= */
-
 .status-badge {
-  display: inline-flex;
-
-  align-items: center;
-
-  gap: 7px;
-
-  padding: 8px 11px;
-
-  border: 1px solid;
-
-  border-radius: 20px;
-
-  font-size: 11px;
-  font-weight: 700;
-
-  white-space: nowrap;
+  padding: 7px 10px;
 }
 
-.status-dot {
-  width: 6px;
-  height: 6px;
 
-  flex-shrink: 0;
+/* =========================
+   OPEN
+========================= */
 
-  border-radius: 50%;
+.status-open {
+  color: #1d4ed8;
 
-  background: currentColor;
+  background: #eff6ff;
+
+  border-color: #bfdbfe;
+}
+
+
+/* =========================
+   ON PROGRESS
+========================= */
+
+.status-progress {
+  color: #c2410c;
+
+  background: #fff7ed;
+
+  border-color: #fed7aa;
+}
+
+
+/* =========================
+   CLOSE
+========================= */
+
+.status-close {
+  color: #15803d;
+
+  background: #f0fdf4;
+
+  border-color: #bbf7d0;
+}
+
+
+/* =========================
+   CANCEL
+========================= */
+
+.status-cancel {
+  color: #b91c1c;
+
+  background: #fef2f2;
+
+  border-color: #fecaca;
 }
 
 
@@ -1843,45 +1618,39 @@ tbody tr:last-child td {
    FOLLOW UP
 ========================= */
 
-.follow-up {
+.follow-up-cell {
   display: flex;
-
+  flex-direction: column;
   align-items: flex-start;
 
-  gap: 9px;
-
-  min-width: 0;
+  gap: 8px;
 }
 
-.follow-up-text {
-  flex: 1;
 
-  min-width: 0;
+.follow-up-text {
+  margin: 0;
 
   color: #475569;
 
   font-size: 12px;
 
   line-height: 1.5;
-
-  overflow-wrap: anywhere;
-
-  display: -webkit-box;
-
-  -webkit-line-clamp: 3;
-
-  -webkit-box-orient: vertical;
-
-  overflow: hidden;
 }
 
 
 /* =========================
-   DETAIL BUTTON
+   DETAIL / EDIT ICON
 ========================= */
 
 .detail-button {
-  padding: 7px 12px;
+  width: 34px;
+  height: 34px;
+
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
   border: 1px solid #bfdbfe;
 
@@ -1891,81 +1660,134 @@ tbody tr:last-child td {
 
   color: #2563eb;
 
-  font-family: inherit;
-
-  font-size: 11px;
-  font-weight: 700;
-
   cursor: pointer;
 
   transition:
     background 0.15s ease,
-    border-color 0.15s ease;
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
+
 
 .detail-button:hover {
   background: #dbeafe;
 
   border-color: #93c5fd;
+
+  color: #1d4ed8;
+
+  transform: translateY(-1px);
+}
+
+
+.detail-button:active {
+  transform: translateY(0);
+}
+
+
+.detail-button svg {
+  display: block;
 }
 
 
 /* =========================
-   EDIT BUTTON
+   STATES
 ========================= */
 
-.edit-button {
-  flex-shrink: 0;
+.state-card {
+  padding: 50px 24px;
 
-  padding: 6px 10px;
-
-  border: 1px solid #bfdbfe;
-
-  border-radius: 7px;
-
-  background: #eff6ff;
-
-  color: #2563eb;
-
-  font-family: inherit;
-
-  font-size: 10px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease;
+  text-align: center;
 }
 
-.edit-button:hover {
-  background: #dbeafe;
 
-  border-color: #93c5fd;
+.state-card h3 {
+  margin: 0 0 8px;
+
+  color: #334155;
+
+  font-size: 16px;
+}
+
+
+.state-card p {
+  margin: 0 0 18px;
+
+  color: #94a3b8;
+
+  font-size: 13px;
+}
+
+
+.error-state h3 {
+  color: #b91c1c;
 }
 
 
 /* =========================
-   MUTED
+   LOADING
 ========================= */
 
-.muted {
-  color: #94a3b8 !important;
+.loading-line {
+  width: 180px;
+  height: 14px;
 
-  font-size: 11px !important;
+  margin: 0 auto 10px;
 
-  font-style: italic;
+  border-radius: 5px;
+
+  background: #edf2f7;
+
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+
+.loading-line.short {
+  width: 110px;
+}
+
+
+.loading-table {
+  width: 90%;
+  height: 180px;
+
+  margin: 28px auto 0;
+
+  border-radius: 8px;
+
+  background: #f8fafc;
+
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
 }
 
 
 /* =========================
-   TABLET
+   RESPONSIVE
 ========================= */
 
 @media (max-width: 1200px) {
 
-  .summary-grid {
+  .jadwal-page {
+    padding: 28px 26px 40px;
+  }
+
+
+  .stats-grid {
     grid-template-columns:
       repeat(3, minmax(0, 1fr));
   }
@@ -1973,108 +1795,64 @@ tbody tr:last-child td {
 }
 
 
-/* =========================
-   MOBILE
-========================= */
-
-@media (max-width: 700px) {
+@media (max-width: 768px) {
 
   .jadwal-page {
-    width: 100%;
+    padding: 20px 16px 32px;
   }
+
 
   .page-header {
-    margin-bottom: 24px;
+    align-items: flex-start;
+
+    flex-direction: column;
+
+    margin-bottom: 22px;
   }
 
-  .page-eyebrow {
-    margin-bottom: 6px;
 
-    font-size: 11px;
+  .page-header h1 {
+    font-size: 26px;
   }
 
-  .page-header h2 {
-    font-size: 25px;
-  }
 
-  .page-header p {
-    margin-top: 7px;
-
-    font-size: 13px;
-  }
-
-  .summary-grid {
+  .stats-grid {
     grid-template-columns:
       repeat(2, minmax(0, 1fr));
 
     gap: 10px;
-
-    margin-bottom: 20px;
   }
 
-  .summary-card {
-    min-height: 82px;
 
-    padding: 16px 17px;
+  .stat-card {
+    min-height: 80px;
 
-    border-radius: 12px;
+    padding: 15px;
   }
 
-  .summary-label {
-    font-size: 11px;
+
+  .stat-value {
+    font-size: 22px;
   }
 
-  .summary-card strong {
-    font-size: 25px;
-  }
 
-  .search-card {
-    margin-bottom: 20px;
-
-    padding: 12px 14px;
-
-    border-radius: 11px;
-  }
-
-  .table-card {
-    border-radius: 12px;
-  }
-
-  .table-header {
-    padding: 20px;
-  }
-
-  .table-header h3 {
-    font-size: 19px;
-  }
-
-  .table-header span {
-    font-size: 12px;
-  }
-
-  table {
-    min-width: 1280px;
+  .section-header {
+    padding: 18px;
   }
 
 }
 
 
-/* =========================
-   VERY SMALL
-========================= */
+@media (max-width: 480px) {
 
-@media (max-width: 450px) {
-
-  .summary-grid {
-    gap: 8px;
+  .stats-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
   }
 
-  .summary-card {
-    padding: 13px 14px;
-  }
 
-  .summary-card strong {
-    font-size: 22px;
+  .stat-card:last-child {
+    grid-column: span 2;
   }
 
 }
