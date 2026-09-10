@@ -323,6 +323,16 @@
                 <span
                   v-if="item.tanggalTindakLanjut"
                   class="follow-date"
+                  :class="{
+                    'follow-date-overdue':
+                      isFollowUpOverdue(item),
+
+                    'follow-date-today':
+                      isFollowUpToday(item),
+
+                    'follow-date-upcoming':
+                      isFollowUpUpcoming(item)
+                  }"
                 >
                   {{ formatTanggal(item.tanggalTindakLanjut) }}
                 </span>
@@ -1099,6 +1109,68 @@ const getStatusTanggal = (tanggal, status) => {
 
 
 /* =========================
+   DEADLINE — TANGGAL TINDAK LANJUT
+
+   Dipakai HANYA untuk mewarnai teks
+   tanggal tindak lanjut itu sendiri
+   (menandakan target follow-up yang
+   dijanjikan sudah lewat / hari ini
+   / masih akan datang). Terpisah dari
+   getStatusTanggal di atas, yang
+   mengukur SLA dari tanggal Rencana.
+========================= */
+
+const getFollowUpDifference = (item) => {
+
+  const status = normalizeStatus(item.status)
+
+  if (
+    status === 'close' ||
+    status === 'cancel'
+  ) {
+    return null
+  }
+
+  if (!item.tanggalTindakLanjut) {
+    return null
+  }
+
+  const followUp = new Date(item.tanggalTindakLanjut)
+
+  if (Number.isNaN(followUp.getTime())) {
+    return null
+  }
+
+  const today = new Date()
+
+  today.setHours(0, 0, 0, 0)
+  followUp.setHours(0, 0, 0, 0)
+
+  const diffTime = followUp.getTime() - today.getTime()
+
+  return Math.round(diffTime / (1000 * 60 * 60 * 24))
+}
+
+
+const isFollowUpOverdue = (item) => {
+  const difference = getFollowUpDifference(item)
+  return difference !== null && difference < 0
+}
+
+
+const isFollowUpToday = (item) => {
+  const difference = getFollowUpDifference(item)
+  return difference !== null && difference === 0
+}
+
+
+const isFollowUpUpcoming = (item) => {
+  const difference = getFollowUpDifference(item)
+  return difference !== null && difference > 0
+}
+
+
+/* =========================
    ROW STYLE
 ========================= */
 
@@ -1822,6 +1894,31 @@ onMounted(() => {
 
 
 .follow-date {
+  font-weight: 650;
+}
+
+
+/* =========================
+   DEADLINE DATE COLORS
+========================= */
+
+.follow-date-overdue {
+  color: #b91c1c;
+
+  font-weight: 700;
+}
+
+
+.follow-date-today {
+  color: #b45309;
+
+  font-weight: 700;
+}
+
+
+.follow-date-upcoming {
+  color: #2563eb;
+
   font-weight: 650;
 }
 

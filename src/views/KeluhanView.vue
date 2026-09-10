@@ -243,16 +243,6 @@
                     {{ item.nomorKendaraan || '-' }}
                   </span>
 
-
-                  <!-- DEADLINE -->
-                  <span
-                    v-if="getDeadlineText(item)"
-                    class="deadline-text"
-                    :class="getDeadlineClass(item)"
-                  >
-                    {{ getDeadlineText(item) }}
-                  </span>
-
                 </div>
 
               </td>
@@ -314,9 +304,23 @@
               ========================== -->
               <td>
 
-                <span class="date-text">
-                  {{ formatTanggal(item.tanggal) }}
-                </span>
+                <div class="vehicle-cell">
+
+                  <span class="date-text">
+                    {{ formatTanggal(item.tanggal) }}
+                  </span>
+
+
+                  <!-- DEADLINE (berbasis tanggal pengajuan) -->
+                  <span
+                    v-if="getPengajuanDeadlineText(item)"
+                    class="deadline-text"
+                    :class="getPengajuanDeadlineClass(item)"
+                  >
+                    {{ getPengajuanDeadlineText(item) }}
+                  </span>
+
+                </div>
 
               </td>
 
@@ -981,7 +985,13 @@ const formatTanggal = (tanggal) => {
 
 
 /* =========================
-   DEADLINE
+   DEADLINE — TANGGAL TINDAK LANJUT
+
+   Dipakai HANYA untuk mewarnai teks
+   tanggal tindak lanjut itu sendiri
+   (menandakan target follow-up yang
+   dijanjikan admin sudah lewat / hari ini
+   / masih akan datang).
 ========================= */
 
 const getDeadlineDifference = (item) => {
@@ -1038,90 +1048,6 @@ const getDeadlineDifference = (item) => {
 }
 
 
-/* =========================
-   DEADLINE TEXT
-========================= */
-
-const getDeadlineText = (item) => {
-
-  const difference =
-    getDeadlineDifference(item)
-
-
-  if (difference === null) {
-    return ''
-  }
-
-
-  /*
-   * Sudah lewat deadline
-   */
-  if (difference < 0) {
-
-    const terlambat =
-      Math.abs(difference)
-
-    return `Terlambat ${terlambat} hari`
-  }
-
-
-  /*
-   * Deadline hari ini
-   */
-  if (difference === 0) {
-    return 'Hari ini'
-  }
-
-
-  /*
-   * Deadline masih akan datang
-   */
-  return `${difference} hari lagi`
-}
-
-
-/* =========================
-   DEADLINE CLASS
-========================= */
-
-const getDeadlineClass = (item) => {
-
-  const difference =
-    getDeadlineDifference(item)
-
-
-  if (difference === null) {
-    return ''
-  }
-
-
-  /*
-   * Terlambat
-   */
-  if (difference < 0) {
-    return 'deadline-danger'
-  }
-
-
-  /*
-   * Hari ini
-   */
-  if (difference === 0) {
-    return 'deadline-warning'
-  }
-
-
-  /*
-   * Masih ada waktu
-   */
-  return 'deadline-normal'
-}
-
-
-/* =========================
-   DEADLINE DATE STYLE
-========================= */
-
 const isDeadlineOverdue = (item) => {
 
   const difference =
@@ -1155,6 +1081,107 @@ const isDeadlineUpcoming = (item) => {
     difference !== null &&
     difference > 0
   )
+}
+
+
+/* =========================
+   DEADLINE — TANGGAL PENGAJUAN
+
+   Dipakai untuk badge SLA di kolom
+   Tanggal Pengajuan: menandakan sudah
+   berapa lama keluhan ini mengendap
+   sejak dilaporkan, tanpa bergantung
+   pada apakah tanggal tindak lanjut
+   sudah diisi atau belum.
+
+   Ambang batas mengikuti pola yang sama
+   dengan halaman Jadwal Service.
+========================= */
+
+const getPengajuanDeadlineDifference = (item) => {
+
+  const status = normalizeStatus(item.status)
+
+
+  /*
+   * Close dan Cancel tidak perlu SLA
+   */
+  if (
+    status === 'close' ||
+    status === 'cancel'
+  ) {
+    return null
+  }
+
+
+  if (!item.tanggal) {
+    return null
+  }
+
+
+  const tanggalPengajuan = new Date(item.tanggal)
+
+  if (Number.isNaN(tanggalPengajuan.getTime())) {
+    return null
+  }
+
+
+  const today = new Date()
+
+  today.setHours(0, 0, 0, 0)
+  tanggalPengajuan.setHours(0, 0, 0, 0)
+
+
+  const diffTime =
+    today.getTime() - tanggalPengajuan.getTime()
+
+
+  return Math.floor(
+    diffTime / (1000 * 60 * 60 * 24)
+  )
+}
+
+
+const getPengajuanDeadlineInfo = (item) => {
+
+  const selisihHari =
+    getPengajuanDeadlineDifference(item)
+
+
+  if (selisihHari === null) {
+    return { class: '', text: '' }
+  }
+
+
+  if (selisihHari <= 0) {
+    return { class: 'deadline-normal', text: 'Hari ini' }
+  }
+
+
+  if (selisihHari <= 3) {
+    return { class: 'deadline-normal', text: `${selisihHari} hari` }
+  }
+
+
+  if (selisihHari <= 5) {
+    return { class: 'deadline-warning', text: `${selisihHari} hari` }
+  }
+
+
+  return {
+    class: 'deadline-danger',
+    text: `Terlambat ${selisihHari - 5} hari`
+  }
+}
+
+
+const getPengajuanDeadlineText = (item) => {
+  return getPengajuanDeadlineInfo(item).text
+}
+
+
+const getPengajuanDeadlineClass = (item) => {
+  return getPengajuanDeadlineInfo(item).class
 }
 
 
@@ -1694,7 +1721,7 @@ onMounted(() => {
 
 
 /* =========================
-   VEHICLE
+   VEHICLE / TANGGAL PENGAJUAN
 ========================= */
 
 .vehicle-cell {

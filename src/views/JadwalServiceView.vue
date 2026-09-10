@@ -252,16 +252,6 @@
                     {{ jadwal.nomorKendaraan || '-' }}
                   </span>
 
-
-                  <!-- DEADLINE -->
-                  <span
-                    v-if="getDeadlineInfo(jadwal).text"
-                    class="deadline-text"
-                    :class="getDeadlineInfo(jadwal).class"
-                  >
-                    {{ getDeadlineInfo(jadwal).text }}
-                  </span>
-
                 </div>
 
               </td>
@@ -340,9 +330,23 @@
               ========================== -->
               <td>
 
-                <span class="date-text">
-                  {{ formatTanggal(jadwal.tanggalService) }}
-                </span>
+                <div class="vehicle-cell">
+
+                  <span class="date-text">
+                    {{ formatTanggal(jadwal.tanggalService) }}
+                  </span>
+
+
+                  <!-- DEADLINE (berbasis tanggal service) -->
+                  <span
+                    v-if="getDeadlineInfo(jadwal).text"
+                    class="deadline-text"
+                    :class="getDeadlineInfo(jadwal).class"
+                  >
+                    {{ getDeadlineInfo(jadwal).text }}
+                  </span>
+
+                </div>
 
               </td>
 
@@ -355,6 +359,16 @@
                 <span
                   v-if="jadwal.tanggalTindakLanjut"
                   class="follow-date"
+                  :class="{
+                    'follow-date-overdue':
+                      isFollowUpOverdue(jadwal),
+
+                    'follow-date-today':
+                      isFollowUpToday(jadwal),
+
+                    'follow-date-upcoming':
+                      isFollowUpUpcoming(jadwal)
+                  }"
                 >
                   {{ formatTanggal(jadwal.tanggalTindakLanjut) }}
                 </span>
@@ -870,6 +884,68 @@ const getDeadlineInfo = (jadwal) => {
     class: 'deadline-danger',
     text: `Terlambat ${selisihHari - 5} hari`
   }
+}
+
+
+/* =========================
+   DEADLINE — TANGGAL TINDAK LANJUT
+
+   Dipakai HANYA untuk mewarnai teks
+   tanggal tindak lanjut itu sendiri
+   (menandakan target follow-up yang
+   dijanjikan sudah lewat / hari ini
+   / masih akan datang). Terpisah dari
+   getDeadlineInfo di atas, yang
+   mengukur SLA dari Tanggal Service.
+========================= */
+
+const getFollowUpDifference = (jadwal) => {
+
+  const status = normalizeStatus(jadwal.status)
+
+  if (
+    status === 'close' ||
+    status === 'cancel'
+  ) {
+    return null
+  }
+
+  if (!jadwal.tanggalTindakLanjut) {
+    return null
+  }
+
+  const followUp = new Date(jadwal.tanggalTindakLanjut)
+
+  if (Number.isNaN(followUp.getTime())) {
+    return null
+  }
+
+  const today = new Date()
+
+  today.setHours(0, 0, 0, 0)
+  followUp.setHours(0, 0, 0, 0)
+
+  const diffTime = followUp.getTime() - today.getTime()
+
+  return Math.round(diffTime / (1000 * 60 * 60 * 24))
+}
+
+
+const isFollowUpOverdue = (jadwal) => {
+  const difference = getFollowUpDifference(jadwal)
+  return difference !== null && difference < 0
+}
+
+
+const isFollowUpToday = (jadwal) => {
+  const difference = getFollowUpDifference(jadwal)
+  return difference !== null && difference === 0
+}
+
+
+const isFollowUpUpcoming = (jadwal) => {
+  const difference = getFollowUpDifference(jadwal)
+  return difference !== null && difference > 0
 }
 
 
@@ -1513,6 +1589,31 @@ onMounted(() => {
 
 
 .follow-date {
+  font-weight: 650;
+}
+
+
+/* =========================
+   DEADLINE DATE COLORS
+========================= */
+
+.follow-date-overdue {
+  color: #b91c1c;
+
+  font-weight: 700;
+}
+
+
+.follow-date-today {
+  color: #b45309;
+
+  font-weight: 700;
+}
+
+
+.follow-date-upcoming {
+  color: #2563eb;
+
   font-weight: 650;
 }
 
