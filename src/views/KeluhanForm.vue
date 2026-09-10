@@ -283,7 +283,7 @@ const getStatusClass = (status) => {
 
   if (actualStatus === 'Open') {
 
-    return 'status-pending'
+    return 'status-open'
 
   }
 
@@ -297,7 +297,7 @@ const getStatusClass = (status) => {
 
   if (actualStatus === 'Close') {
 
-    return 'status-success'
+    return 'status-close'
 
   }
 
@@ -307,7 +307,7 @@ const getStatusClass = (status) => {
 
   }
 
-  return 'status-default'
+  return 'status-open'
 
 }
 
@@ -467,15 +467,14 @@ onMounted(() => {
 
 <template>
 
-  <div class="page-container">
+  <div class="keluhan-page">
 
     <!-- =========================
          HEADER
-         ========================= -->
-
-    <div class="page-header">
-
-      <div>
+    ========================== -->
+    <section class="page-header">
+      <div class="header-content">
+        <p class="page-eyebrow">Keluhan</p>
 
         <h1>
           {{
@@ -485,23 +484,20 @@ onMounted(() => {
           }}
         </h1>
 
-        <p>
+        <p class="page-description">
           {{
             isEditMode
               ? 'Detail laporan keluhan kendaraan'
               : 'Laporkan keluhan atau kerusakan kendaraan'
           }}
         </p>
-
       </div>
-
-    </div>
+    </section>
 
 
     <!-- =========================
          ERROR
-         ========================= -->
-
+    ========================== -->
     <p
       v-if="errorMsg"
       class="error-text"
@@ -511,359 +507,387 @@ onMounted(() => {
 
 
     <!-- =========================
-         FORM
-         ========================= -->
+         DATA SECTION
+    ========================== -->
+    <section class="data-section">
 
-    <form
-      class="form-card"
-      @submit.prevent="submitForm"
-    >
+      <div class="section-header">
 
+        <div>
+          <h2>
+            {{
+              isEditMode
+                ? 'Detail Laporan'
+                : 'Form Pengaduan'
+            }}
+          </h2>
 
-      <!-- =========================
-           NOMOR KENDARAAN
-           ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Nomor Kendaraan
-        </label>
-
-        <input
-          v-model="form.nomorKendaraan"
-          type="text"
-          readonly
-          placeholder="Nomor kendaraan belum tersedia"
-        />
-
-      </div>
-
-
-      <!-- =========================
-           USERNAME
-           ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Username
-        </label>
-
-        <input
-          v-model="form.username"
-          type="text"
-          readonly
-        />
-
-      </div>
-
-
-      <!-- =========================
-           TANGGAL
-           ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Tanggal
-        </label>
-
-        <input
-          v-model="form.tanggal"
-          type="text"
-          readonly
-        />
-
-      </div>
-
-
-      <!-- =========================
-           PENGADUAN
-           ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Pengaduan & Keluhan
-        </label>
-
-        <textarea
-          v-model="form.pengaduan"
-          rows="5"
-          :readonly="isEditMode"
-          required
-          placeholder="Jelaskan keluhan atau kerusakan yang dialami..."
-        ></textarea>
-
-        <small
-          v-if="isEditMode"
-          class="readonly-info"
-        >
-          Data pengaduan tidak dapat diubah.
-        </small>
-
-      </div>
-
-
-      <!-- =========================
-           FOTO
-           ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Foto Kerusakan
-        </label>
-
-
-        <!--
-          Input foto hanya muncul
-          saat membuat laporan.
-        -->
-
-        <input
-          v-if="!isEditMode"
-          type="file"
-          accept="image/*"
-          @change="handleFileChange"
-        />
-
-
-        <!--
-          Foto existing
-        -->
-
-        <img
-          v-if="previewFoto"
-          :src="previewFoto"
-          class="preview-img"
-          alt="Foto kerusakan"
-        />
-
-
-        <span
-          v-if="!previewFoto && isEditMode"
-          class="no-photo"
-        >
-          Tidak ada foto.
-        </span>
-
-
-        <small
-          v-if="isEditMode"
-          class="readonly-info"
-        >
-          Foto tidak dapat diubah.
-        </small>
-
-      </div>
-
-
-      <!-- =========================
-           STATUS
-           ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Status
-        </label>
-
-
-        <!-- ADMIN / UID -->
-
-        <select
-          v-if="canEditStatus && isEditMode"
-          v-model="form.status"
-          :disabled="loading"
-        >
-
-          <option value="Open">
-            Open
-          </option>
-
-          <option value="On Progress">
-            On Progress
-          </option>
-
-          <option value="Close">
-            Close
-          </option>
-
-          <option value="Cancel">
-            Cancel
-          </option>
-
-        </select>
-
-
-        <!--
-          Role yang tidak boleh
-          mengubah status
-        -->
-
-        <div
-          v-else
-          class="status-badge"
-          :class="getStatusClass(form.status)"
-        >
-
-          {{ normalizeStatus(form.status) }}
-
+          <p>
+            {{
+              isEditMode
+                ? 'Informasi lengkap laporan dan tindak lanjutnya.'
+                : 'Isi form berikut untuk melaporkan keluhan atau kerusakan kendaraan.'
+            }}
+          </p>
         </div>
 
       </div>
 
 
-      <!-- =========================
-           TINDAK LANJUT
-           ========================= -->
-
-      <div
-        v-if="isEditMode"
-        class="form-row"
+      <form
+        class="form-body"
+        @submit.prevent="submitForm"
       >
 
-        <label>
-          Tindak Lanjut
-        </label>
 
+        <!-- =========================
+             NOMOR KENDARAAN
+        ========================== -->
 
-        <!-- ADMIN -->
+        <div class="form-row">
 
-        <textarea
-          v-if="isAdmin"
-          v-model="form.tindakLanjut"
-          rows="5"
-          :disabled="loading"
-          placeholder="Tuliskan tindak lanjut yang dilakukan..."
-        ></textarea>
+          <label>
+            Nomor Kendaraan
+          </label>
 
-
-        <!-- UID / ROLE LAIN -->
-
-        <div
-          v-else
-          class="tindak-lanjut-readonly"
-        >
-
-          {{
-            form.tindakLanjut ||
-            'Belum ada tindak lanjut.'
-          }}
+          <input
+            v-model="form.nomorKendaraan"
+            type="text"
+            readonly
+            placeholder="Nomor kendaraan belum tersedia"
+          />
 
         </div>
 
 
-        <!-- INFO ADMIN -->
+        <!-- =========================
+             USERNAME
+        ========================== -->
 
-        <small
-          v-if="isAdmin"
-          class="field-info"
-        >
-          Tindak lanjut hanya dapat diisi atau diubah oleh Admin.
-        </small>
+        <div class="form-row">
 
-      </div>
+          <label>
+            Username
+          </label>
 
-
-      <!-- =========================
-           TANGGAL TINDAK LANJUT
-           ========================= -->
-
-      <div
-        v-if="isEditMode"
-        class="form-row"
-      >
-
-        <label>
-          Tanggal Tindak Lanjut
-        </label>
-
-
-        <!-- ADMIN -->
-
-        <input
-          v-if="isAdmin"
-          v-model="form.tanggalTindakLanjut"
-          type="date"
-          :disabled="loading"
-        />
-
-
-        <!-- UID / ROLE LAIN -->
-
-        <div
-          v-else
-          class="tanggal-tindak-lanjut-readonly"
-        >
-
-          {{
-            form.tanggalTindakLanjut ||
-            'Belum ada tanggal tindak lanjut.'
-          }}
+          <input
+            v-model="form.username"
+            type="text"
+            readonly
+          />
 
         </div>
 
 
-        <!-- INFO ADMIN -->
+        <!-- =========================
+             TANGGAL
+        ========================== -->
 
-        <small
-          v-if="isAdmin"
-          class="field-info"
+        <div class="form-row">
+
+          <label>
+            Tanggal
+          </label>
+
+          <input
+            v-model="form.tanggal"
+            type="text"
+            readonly
+          />
+
+        </div>
+
+
+        <!-- =========================
+             PENGADUAN
+        ========================== -->
+
+        <div class="form-row">
+
+          <label>
+            Pengaduan & Keluhan
+          </label>
+
+          <textarea
+            v-model="form.pengaduan"
+            rows="5"
+            :readonly="isEditMode"
+            required
+            placeholder="Jelaskan keluhan atau kerusakan yang dialami..."
+          ></textarea>
+
+          <small
+            v-if="isEditMode"
+            class="readonly-info"
+          >
+            Data pengaduan tidak dapat diubah.
+          </small>
+
+        </div>
+
+
+        <!-- =========================
+             FOTO
+        ========================== -->
+
+        <div class="form-row">
+
+          <label>
+            Foto Kerusakan
+          </label>
+
+
+          <!--
+            Input foto hanya muncul
+            saat membuat laporan.
+          -->
+
+          <input
+            v-if="!isEditMode"
+            type="file"
+            accept="image/*"
+            @change="handleFileChange"
+          />
+
+
+          <!--
+            Foto existing
+          -->
+
+          <img
+            v-if="previewFoto"
+            :src="previewFoto"
+            class="preview-img"
+            alt="Foto kerusakan"
+          />
+
+
+          <span
+            v-if="!previewFoto && isEditMode"
+            class="no-photo"
+          >
+            Tidak ada foto.
+          </span>
+
+
+          <small
+            v-if="isEditMode"
+            class="readonly-info"
+          >
+            Foto tidak dapat diubah.
+          </small>
+
+        </div>
+
+
+        <!-- =========================
+             STATUS
+        ========================== -->
+
+        <div class="form-row">
+
+          <label>
+            Status
+          </label>
+
+
+          <!-- ADMIN / UID -->
+
+          <select
+            v-if="canEditStatus && isEditMode"
+            v-model="form.status"
+            class="status-select"
+            :class="getStatusClass(form.status)"
+            :disabled="loading"
+          >
+
+            <option value="Open">
+              Open
+            </option>
+
+            <option value="On Progress">
+              On Progress
+            </option>
+
+            <option value="Close">
+              Close
+            </option>
+
+            <option value="Cancel">
+              Cancel
+            </option>
+
+          </select>
+
+
+          <!--
+            Role yang tidak boleh
+            mengubah status
+          -->
+
+          <div
+            v-else
+            class="status-badge"
+            :class="getStatusClass(form.status)"
+          >
+
+            {{ normalizeStatus(form.status) }}
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             TINDAK LANJUT
+        ========================== -->
+
+        <div
+          v-if="isEditMode"
+          class="form-row"
         >
-          Tanggal tindak lanjut hanya dapat diisi atau diubah oleh Admin.
-        </small>
 
-      </div>
-
-
-      <!-- =========================
-           ACTION
-           ========================= -->
-
-      <div class="form-actions">
+          <label>
+            Tindak Lanjut
+          </label>
 
 
-        <!--
-          Saat tambah:
-          Kirim Laporan
+          <!-- ADMIN -->
 
-          Saat edit:
-          Simpan perubahan
-        -->
+          <textarea
+            v-if="isAdmin"
+            v-model="form.tindakLanjut"
+            rows="5"
+            :disabled="loading"
+            placeholder="Tuliskan tindak lanjut yang dilakukan..."
+          ></textarea>
 
-        <button
-          type="submit"
-          class="btn-primary"
-          :disabled="loading"
+
+          <!-- UID / ROLE LAIN -->
+
+          <div
+            v-else
+            class="tindak-lanjut-readonly"
+          >
+
+            {{
+              form.tindakLanjut ||
+              'Belum ada tindak lanjut.'
+            }}
+
+          </div>
+
+
+          <!-- INFO ADMIN -->
+
+          <small
+            v-if="isAdmin"
+            class="field-info"
+          >
+            Tindak lanjut hanya dapat diisi atau diubah oleh Admin.
+          </small>
+
+        </div>
+
+
+        <!-- =========================
+             TANGGAL TINDAK LANJUT
+        ========================== -->
+
+        <div
+          v-if="isEditMode"
+          class="form-row"
         >
 
-          {{
-            loading
-              ? 'Menyimpan...'
-              : isEditMode
-                ? 'Simpan Perubahan'
-                : 'Kirim Laporan'
-          }}
-
-        </button>
+          <label>
+            Tanggal Tindak Lanjut
+          </label>
 
 
-        <button
-          type="button"
-          class="btn-secondary"
-          @click="batal"
-        >
+          <!-- ADMIN -->
 
-          Kembali
+          <input
+            v-if="isAdmin"
+            v-model="form.tanggalTindakLanjut"
+            type="date"
+            :disabled="loading"
+          />
 
-        </button>
 
-      </div>
+          <!-- UID / ROLE LAIN -->
 
-    </form>
+          <div
+            v-else
+            class="tanggal-tindak-lanjut-readonly"
+          >
+
+            {{
+              form.tanggalTindakLanjut ||
+              'Belum ada tanggal tindak lanjut.'
+            }}
+
+          </div>
+
+
+          <!-- INFO ADMIN -->
+
+          <small
+            v-if="isAdmin"
+            class="field-info"
+          >
+            Tanggal tindak lanjut hanya dapat diisi atau diubah oleh Admin.
+          </small>
+
+        </div>
+
+
+        <!-- =========================
+             ACTION
+        ========================== -->
+
+        <div class="form-actions">
+
+
+          <!--
+            Saat tambah:
+            Kirim Laporan
+
+            Saat edit:
+            Simpan perubahan
+          -->
+
+          <button
+            type="submit"
+            class="btn-primary"
+            :disabled="loading"
+          >
+
+            {{
+              loading
+                ? 'Menyimpan...'
+                : isEditMode
+                  ? 'Simpan Perubahan'
+                  : 'Kirim Laporan'
+            }}
+
+          </button>
+
+
+          <button
+            type="button"
+            class="btn-secondary"
+            @click="batal"
+          >
+
+            Kembali
+
+          </button>
+
+        </div>
+
+      </form>
+
+    </section>
 
   </div>
 
@@ -874,239 +898,278 @@ onMounted(() => {
 
 /* =========================
    PAGE
-   ========================= */
+========================= */
 
-.page-container {
-
+.keluhan-page {
   width: 100%;
+  max-width: 100%;
 
-  max-width: 1000px;
-
-  margin: 0;
-
-  padding: 18px 20px;
+  padding: 32px 36px 48px;
 
   box-sizing: border-box;
-
 }
 
 
 /* =========================
    HEADER
-   ========================= */
+========================= */
 
 .page-header {
-
-  margin-bottom: 20px;
-
+  margin-bottom: 24px;
 }
+
+
+.page-eyebrow {
+  margin: 0 0 6px;
+
+  color: #2563eb;
+
+  font-size: 12px;
+  font-weight: 750;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 
 .page-header h1 {
-
   margin: 0;
 
-  color: #1e293b;
+  color: #172033;
 
-  font-size: 26px;
+  font-size: 30px;
+  line-height: 1.2;
 
-  font-weight: 700;
-
+  font-weight: 750;
 }
 
-.page-header p {
 
-  margin: 5px 0 0;
+.page-description {
+  margin: 8px 0 0;
 
   color: #64748b;
 
-  font-size: 14px;
-
+  font-size: 15px;
 }
 
 
 /* =========================
-   FORM CARD
-   ========================= */
+   ERROR
+========================= */
 
-.form-card {
+.error-text {
+  margin-bottom: 20px;
 
-  width: 100%;
+  padding: 12px 16px;
 
-  max-width: 700px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
 
+  background: #fef2f2;
+
+  color: #b91c1c;
+
+  font-size: 13px;
+}
+
+
+/* =========================
+   DATA SECTION
+========================= */
+
+.data-section {
   background: white;
 
-  padding: 28px;
+  border: 1px solid #e5eaf1;
 
-  border-radius: 16px;
+  border-radius: 14px;
+
+  overflow: hidden;
 
   box-shadow:
-    0 4px 20px
-    rgba(58, 141, 222, 0.08);
+    0 2px 10px rgba(15, 23, 42, 0.035);
+}
 
-  border:
-    1px solid #eef4fa;
+
+.section-header {
+  padding: 22px 24px 18px;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+
+.section-header h2 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 19px;
+  font-weight: 720;
+}
+
+
+.section-header p {
+  margin: 5px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+
+/* =========================
+   FORM BODY
+========================= */
+
+.form-body {
+  max-width: 640px;
+
+  padding: 24px;
 
   box-sizing: border-box;
-
 }
 
 
 /* =========================
    FORM ROW
-   ========================= */
+========================= */
 
 .form-row {
-
   margin-bottom: 20px;
-
 }
 
 
 /* =========================
    LABEL
-   ========================= */
+========================= */
 
 label {
-
   display: block;
 
   margin-bottom: 8px;
 
-  font-weight: 600;
-
-  color: #4a5568;
+  color: #374151;
 
   font-size: 13px;
-
+  font-weight: 650;
 }
 
 
 /* =========================
    INPUT
-   ========================= */
+========================= */
 
 input,
 select,
 textarea {
-
   width: 100%;
 
-  padding: 11px 14px;
+  padding: 0 16px;
 
-  border:
-    1.5px solid #e3edf7;
-
-  border-radius: 10px;
+  height: 46px;
 
   box-sizing: border-box;
 
-  font-size: 14px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
 
+  background: white;
+
+  color: #1f2937;
+
+  font-size: 14px;
   font-family: inherit;
 
-  background: #fbfdff;
+  outline: none;
 
-  color: #1e2a3a;
-
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 
 /* =========================
    READONLY
-   ========================= */
+========================= */
 
 input[readonly],
 textarea[readonly] {
-
-  background: #f4f7fa;
+  background: #f8fafc;
 
   color: #64748b;
 
   cursor: not-allowed;
-
 }
 
 
 /* =========================
    TEXTAREA
-   ========================= */
+========================= */
 
 textarea {
+  height: auto;
+
+  min-height: 110px;
+
+  padding: 12px 16px;
+
+  line-height: 1.55;
 
   resize: vertical;
-
-  min-height: 100px;
-
-  line-height: 1.5;
-
 }
 
 
 /* =========================
    DISABLED
-   ========================= */
+========================= */
 
 select:disabled,
 textarea:disabled,
 input:disabled {
+  opacity: 0.65;
 
-  opacity: 0.7;
-
-  cursor: wait;
-
+  cursor: not-allowed;
 }
 
 
 /* =========================
    FOCUS
-   ========================= */
+========================= */
 
 input:focus,
 select:focus,
 textarea:focus {
-
-  outline: none;
-
-  border-color: #4a9eeb;
+  border-color: #93c5fd;
 
   box-shadow:
-    0 0 0 4px
-    rgba(74, 158, 235, 0.12);
-
+    0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 
 /* =========================
    PREVIEW FOTO
-   ========================= */
+========================= */
 
 .preview-img {
-
   margin-top: 12px;
 
   max-width: 100%;
-
-  max-height: 300px;
+  max-height: 280px;
 
   border-radius: 10px;
-
-  border:
-    1px solid #eef4fa;
+  border: 1px solid #e5eaf1;
 
   display: block;
 
   object-fit: contain;
-
 }
 
 
 /* =========================
    NO PHOTO
-   ========================= */
+========================= */
 
 .no-photo {
-
   display: block;
 
   padding: 12px 14px;
@@ -1118,16 +1181,14 @@ textarea:focus {
   color: #64748b;
 
   font-size: 13px;
-
 }
 
 
 /* =========================
    READONLY INFO
-   ========================= */
+========================= */
 
 .readonly-info {
-
   display: block;
 
   margin-top: 7px;
@@ -1135,16 +1196,14 @@ textarea:focus {
   color: #94a3b8;
 
   font-size: 11px;
-
 }
 
 
 /* =========================
    FIELD INFO
-   ========================= */
+========================= */
 
 .field-info {
-
   display: block;
 
   margin-top: 7px;
@@ -1152,185 +1211,161 @@ textarea:focus {
   color: #64748b;
 
   font-size: 11px;
-
 }
 
 
 /* =========================
    TINDAK LANJUT READONLY
-   ========================= */
+========================= */
 
 .tindak-lanjut-readonly {
+  min-height: 110px;
 
-  min-height: 100px;
-
-  padding: 12px 14px;
+  padding: 12px 16px;
 
   box-sizing: border-box;
 
-  border:
-    1.5px solid #e3edf7;
-
+  border: 1px solid #dbe2ea;
   border-radius: 10px;
 
-  background: #f4f7fa;
+  background: #f8fafc;
 
   color: #475569;
 
   font-size: 14px;
-
   line-height: 1.6;
 
   white-space: pre-wrap;
-
   overflow-wrap: anywhere;
-
 }
 
 
 /* =========================
    TANGGAL TINDAK LANJUT READONLY
-   ========================= */
+========================= */
 
 .tanggal-tindak-lanjut-readonly {
+  min-height: 46px;
 
-  min-height: 42px;
+  padding: 0 16px;
 
-  padding: 11px 14px;
+  display: flex;
+  align-items: center;
 
   box-sizing: border-box;
 
-  border:
-    1.5px solid #e3edf7;
-
+  border: 1px solid #dbe2ea;
   border-radius: 10px;
 
-  background: #f4f7fa;
+  background: #f8fafc;
 
   color: #475569;
 
   font-size: 14px;
-
   line-height: 1.5;
-
 }
 
 
 /* =========================
-   STATUS BADGE
-   ========================= */
+   STATUS
+========================= */
 
+.status-select,
 .status-badge {
-
   display: inline-flex;
-
   align-items: center;
 
-  justify-content: center;
-
-  min-width: 95px;
+  width: auto;
 
   min-height: 38px;
 
-  padding: 0 16px;
-
-  border-radius: 999px;
-
-  font-size: 13px;
-
-  font-weight: 600;
+  height: auto;
 
   box-sizing: border-box;
 
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+.status-select {
+  width: 100%;
+  max-width: 190px;
+
+  padding: 0 12px;
+
+  border: 1px solid transparent;
+
+  outline: none;
+
+  cursor: pointer;
+}
+
+
+.status-badge {
+  padding: 8px 14px;
 }
 
 
 /* =========================
    OPEN
-   ========================= */
+========================= */
 
-.status-pending {
+.status-open {
+  color: #1d4ed8;
 
-  background: #eaf3ff;
+  background: #eff6ff;
 
-  color: #2563eb;
-
-  border:
-    1px solid #93c5fd;
-
+  border-color: #bfdbfe;
 }
 
 
 /* =========================
    ON PROGRESS
-   ========================= */
+========================= */
 
 .status-progress {
+  color: #c2410c;
 
-  background: #fff8db;
+  background: #fff7ed;
 
-  color: #ca8a04;
-
-  border:
-    1px solid #facc15;
-
+  border-color: #fed7aa;
 }
 
 
 /* =========================
    CLOSE
-   ========================= */
+========================= */
 
-.status-success {
+.status-close {
+  color: #15803d;
 
-  background: #e8f8e9;
+  background: #f0fdf4;
 
-  color: #16a34a;
-
-  border:
-    1px solid #22c55e;
-
+  border-color: #bbf7d0;
 }
 
 
 /* =========================
    CANCEL
-   ========================= */
+========================= */
 
 .status-cancel {
+  color: #b91c1c;
 
-  background: #fff0f0;
+  background: #fef2f2;
 
-  color: #dc2626;
-
-  border:
-    1px solid #f87171;
-
-}
-
-
-/* =========================
-   DEFAULT
-   ========================= */
-
-.status-default {
-
-  background: #f1f5f9;
-
-  color: #475569;
-
-  border:
-    1px solid #cbd5e1;
-
+  border-color: #fecaca;
 }
 
 
 /* =========================
    FORM ACTIONS
-   ========================= */
+========================= */
 
 .form-actions {
-
   display: flex;
 
   gap: 12px;
@@ -1339,141 +1374,104 @@ textarea:focus {
 
   padding-top: 20px;
 
-  border-top:
-    1px solid #f0f4f8;
-
+  border-top: 1px solid #edf0f4;
 }
 
 
 /* =========================
    BUTTON
-   ========================= */
+========================= */
 
 .btn-primary,
 .btn-secondary {
+  border: none;
+  border-radius: 9px;
 
-  padding: 11px 24px;
+  padding: 11px 17px;
 
-  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 650;
 
   cursor: pointer;
 
-  font-weight: 600;
-
-  font-family: inherit;
-
-  font-size: 14px;
-
-  border: none;
-
+  transition: 0.2s ease;
 }
 
-
-/* =========================
-   PRIMARY
-   ========================= */
 
 .btn-primary {
-
-  background: #4a9eeb;
-
+  background: #2563eb;
   color: white;
-
 }
+
 
 .btn-primary:hover:not(:disabled) {
-
-  background: #2b7cd3;
-
+  background: #1d4ed8;
 }
+
 
 .btn-primary:disabled {
-
-  background: #b8d9f7;
+  background: #93c5fd;
 
   cursor: not-allowed;
-
 }
 
-
-/* =========================
-   SECONDARY
-   ========================= */
 
 .btn-secondary {
-
-  background: #f4f7fa;
-
-  color: #4a5568;
-
+  background: #eef2f7;
+  color: #374151;
 }
+
 
 .btn-secondary:hover {
-
-  background: #e6ebf1;
-
+  background: #e2e8f0;
 }
 
 
 /* =========================
-   ERROR
-   ========================= */
+   RESPONSIVE
+========================= */
 
-.error-text {
+@media (max-width: 1200px) {
 
-  color: #c0392b;
-
-  background: #fdecea;
-
-  border:
-    1px solid #f8d7d3;
-
-  padding: 12px 16px;
-
-  border-radius: 10px;
-
-  font-size: 14px;
-
-  margin-bottom: 20px;
+  .keluhan-page {
+    padding: 28px 26px 40px;
+  }
 
 }
 
-
-/* =========================
-   MOBILE
-   ========================= */
 
 @media (max-width: 768px) {
 
-  .page-container {
-
-    padding: 14px;
-
+  .keluhan-page {
+    padding: 20px 16px 32px;
   }
+
 
   .page-header h1 {
-
-    font-size: 22px;
-
+    font-size: 26px;
   }
 
-  .form-card {
 
-    padding: 20px;
-
+  .section-header {
+    padding: 18px;
   }
+
+
+  .form-body {
+    max-width: none;
+
+    padding: 18px;
+  }
+
 
   .form-actions {
-
     flex-direction: column;
-
   }
+
 
   .btn-primary,
   .btn-secondary {
-
     width: 100%;
-
   }
 
 }

@@ -48,13 +48,13 @@ const totalSparepart = computed(() =>
 
 const totalDigunakan = computed(() =>
   daftarSparepart.value.filter(
-    item => item.fUsed === true
+    item => !!item.fUsed
   ).length
 )
 
 const totalTidakDigunakan = computed(() =>
   daftarSparepart.value.filter(
-    item => item.fUsed !== true
+    item => !item.fUsed
   ).length
 )
 

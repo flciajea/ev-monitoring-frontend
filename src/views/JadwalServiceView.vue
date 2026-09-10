@@ -1233,6 +1233,46 @@ onMounted(() => {
 
   overflow-x: auto;
   overflow-y: hidden;
+
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 12px,
+    black calc(100% - 12px),
+    transparent 100%
+  );
+}
+
+
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+
+.table-container::-webkit-scrollbar-track {
+  background: #f8fafc;
+}
+
+
+.table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+
+  border-radius: 10px;
+}
+
+
+.table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 
@@ -1620,8 +1660,8 @@ onMounted(() => {
 
 .follow-up-cell {
   display: flex;
-  flex-direction: column;
   align-items: flex-start;
+  justify-content: space-between;
 
   gap: 8px;
 }
@@ -1643,8 +1683,10 @@ onMounted(() => {
 ========================= */
 
 .detail-button {
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
+
+  flex-shrink: 0;
 
   padding: 0;
 
@@ -1654,7 +1696,7 @@ onMounted(() => {
 
   border: 1px solid #bfdbfe;
 
-  border-radius: 7px;
+  border-radius: 6px;
 
   background: #eff6ff;
 
@@ -1688,6 +1730,9 @@ onMounted(() => {
 
 .detail-button svg {
   display: block;
+
+  width: 13px;
+  height: 13px;
 }
 
 

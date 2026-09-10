@@ -20,14 +20,54 @@
     <!-- =========================
          LOADING
     ========================== -->
-    <section
-      v-if="loading"
-      class="state-card"
-    >
-      <div class="loading-line"></div>
-      <div class="loading-line short"></div>
-      <div class="loading-table"></div>
-    </section>
+    <template v-if="loading">
+
+      <section class="data-section">
+
+        <div class="section-header">
+          <div>
+            <div class="loading-line"></div>
+            <div class="loading-line short"></div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div
+            v-for="n in 4"
+            :key="n"
+            class="stat-card skeleton-card"
+          >
+            <div class="skeleton-icon"></div>
+            <div class="loading-line short"></div>
+            <div class="loading-line tiny"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="data-section impact-section">
+
+        <div class="section-header">
+          <div>
+            <div class="loading-line"></div>
+            <div class="loading-line short"></div>
+          </div>
+        </div>
+
+        <div class="impact-grid">
+          <div
+            v-for="n in 2"
+            :key="n"
+            class="impact-item skeleton-card"
+          >
+            <div class="skeleton-icon"></div>
+            <div class="loading-line short"></div>
+          </div>
+        </div>
+
+      </section>
+
+    </template>
 
 
     <!-- =========================
@@ -37,6 +77,14 @@
       v-else-if="errorMsg"
       class="state-card error-state"
     >
+      <div class="state-icon state-icon-error">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 9V13" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <path d="M12 16.5V16.6" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2" />
+        </svg>
+      </div>
+
       <h3>Data tidak dapat dimuat</h3>
 
       <p>
@@ -60,6 +108,13 @@
       v-else-if="!dataEmisi"
       class="state-card empty-state"
     >
+      <div class="state-icon state-icon-empty">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M4 19.5C4 17 7.5 15 12 15C16.5 15 20 17 20 19.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle cx="12" cy="8.5" r="4" stroke="currentColor" stroke-width="2" />
+        </svg>
+      </div>
+
       <h3>Belum ada data emisi karbon</h3>
 
       <p>
@@ -96,6 +151,16 @@
           <!-- TOTAL KENDARAAN -->
           <div class="stat-card">
 
+            <div class="stat-icon stat-icon-neutral">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 16V11L6 6H18L20 11V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M4 16H20V18.5C20 19.05 19.55 19.5 19 19.5H18C17.45 19.5 17 19.05 17 18.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M4 16V18.5C4 19.05 4.45 19.5 5 19.5H6C6.55 19.5 7 19.05 7 18.5V16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="7.5" cy="12.5" r="1.2" fill="currentColor" />
+                <circle cx="16.5" cy="12.5" r="1.2" fill="currentColor" />
+              </svg>
+            </div>
+
             <span class="stat-label">
               Total Kendaraan
             </span>
@@ -113,6 +178,15 @@
 
           <!-- TOTAL JARAK -->
           <div class="stat-card">
+
+            <div class="stat-icon stat-icon-neutral">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 20L9 4H11L8 20H4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                <path d="M16 20L13 4H15L20 20H16Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                <path d="M11.3 11H12.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                <path d="M10.6 15H13.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </div>
 
             <span class="stat-label">
               Total Jarak Tempuh
@@ -132,6 +206,12 @@
           <!-- EMISI EV -->
           <div class="stat-card stat-open">
 
+            <div class="stat-icon stat-icon-open">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M13 3L5 13.5H11L10 21L19 10H13L13 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+              </svg>
+            </div>
+
             <span class="stat-label">
               Emisi EV
             </span>
@@ -150,6 +230,15 @@
           <!-- EMISI ICE -->
           <div class="stat-card stat-cancel">
 
+            <div class="stat-icon stat-icon-cancel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 20V11L8 6H16L18 11V20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M6 20H18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <path d="M9 3V6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <path d="M13 3V6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              </svg>
+            </div>
+
             <span class="stat-label">
               Emisi ICE
             </span>
@@ -161,6 +250,65 @@
             <span class="stat-unit">
               kg CO&#8322;
             </span>
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             PERBANDINGAN EMISI
+        ========================== -->
+        <div
+          v-if="totalEmisiKeseluruhan > 0"
+          class="ratio-card"
+        >
+
+          <div class="ratio-header">
+
+            <span class="ratio-title">
+              Kontribusi Emisi EV vs ICE
+            </span>
+
+            <span class="ratio-subtitle">
+              Berdasarkan total emisi kg CO&#8322;
+            </span>
+
+          </div>
+
+
+          <div class="ratio-bar">
+
+            <div
+              class="ratio-bar-ev"
+              :style="{ width: persentaseEv + '%' }"
+            ></div>
+
+            <div
+              class="ratio-bar-ice"
+              :style="{ width: persentaseIce + '%' }"
+            ></div>
+
+          </div>
+
+
+          <div class="ratio-legend">
+
+            <div class="ratio-legend-item">
+              <span class="ratio-dot ratio-dot-ev"></span>
+
+              <span>
+                EV — {{ persentaseEv }}%
+              </span>
+            </div>
+
+            <div class="ratio-legend-item">
+              <span class="ratio-dot ratio-dot-ice"></span>
+
+              <span>
+                ICE — {{ persentaseIce }}%
+              </span>
+            </div>
 
           </div>
 
@@ -192,6 +340,14 @@
           <!-- PENURUNAN EMISI -->
           <div class="impact-item">
 
+            <div class="impact-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21C12 21 5 15.5 5 10C5 5 8.5 3 12 3C15.5 3 19 5 19 10C19 15.5 12 21 12 21Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+                <path d="M12 6.5V13.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <path d="M9 10.5L12 13.5L15 10.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </div>
+
             <span class="impact-label">
               Penurunan Emisi
             </span>
@@ -209,6 +365,14 @@
 
           <!-- REDUKSI BIAYA -->
           <div class="impact-item">
+
+            <div class="impact-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7" />
+                <path d="M12 7V17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                <path d="M9.5 14.5C9.5 15.6 10.6 16 12 16C13.4 16 14.5 15.4 14.5 14.3C14.5 13.2 13.5 12.9 12 12.5C10.5 12.1 9.5 11.8 9.5 10.7C9.5 9.6 10.6 9 12 9C13.4 9 14.5 9.4 14.5 10.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              </svg>
+            </div>
 
             <span class="impact-label">
               Reduksi Biaya Karbon
@@ -235,7 +399,7 @@
 
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import api from '../api'
 
 
@@ -280,6 +444,39 @@ const ambilData = async () => {
     loading.value = false
   }
 }
+
+
+/* =========================
+   PERBANDINGAN EV vs ICE
+========================= */
+
+const totalEmisiKeseluruhan = computed(() => {
+
+  const ev = Number(dataEmisi.value?.totalEmisiEv) || 0
+  const ice = Number(dataEmisi.value?.totalEmisiIce) || 0
+
+  return ev + ice
+})
+
+
+const persentaseEv = computed(() => {
+
+  if (totalEmisiKeseluruhan.value <= 0) {
+    return 0
+  }
+
+  const ev = Number(dataEmisi.value?.totalEmisiEv) || 0
+
+  return Math.round(
+    (ev / totalEmisiKeseluruhan.value) * 100
+  )
+})
+
+
+const persentaseIce = computed(() => {
+
+  return 100 - persentaseEv.value
+})
 
 
 /* =========================
@@ -472,7 +669,7 @@ onMounted(() => {
 
 
 .stat-card {
-  min-height: 90px;
+  min-height: 128px;
 
   padding: 18px 20px;
 
@@ -515,6 +712,47 @@ onMounted(() => {
 }
 
 
+/* =========================
+   STAT ICON
+========================= */
+
+.stat-icon {
+  width: 34px;
+  height: 34px;
+
+  margin-bottom: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  flex-shrink: 0;
+}
+
+
+.stat-icon-neutral {
+  background: #f1f5f9;
+
+  color: #64748b;
+}
+
+
+.stat-icon-open {
+  background: #eff6ff;
+
+  color: #2563eb;
+}
+
+
+.stat-icon-cancel {
+  background: #fef2f2;
+
+  color: #dc2626;
+}
+
+
 .stat-label {
   margin-bottom: 7px;
 
@@ -543,6 +781,119 @@ onMounted(() => {
   color: #94a3b8;
 
   font-size: 12px;
+}
+
+
+/* =========================
+   RATIO CARD
+========================= */
+
+.ratio-card {
+  margin-top: 18px;
+
+  padding: 20px 22px;
+
+  border: 1px solid #e5eaf1;
+
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+
+.ratio-header {
+  margin-bottom: 14px;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+
+.ratio-title {
+  color: #172033;
+
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+
+.ratio-subtitle {
+  color: #94a3b8;
+
+  font-size: 12px;
+}
+
+
+.ratio-bar {
+  display: flex;
+
+  width: 100%;
+  height: 10px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #e2e8f0;
+}
+
+
+.ratio-bar-ev {
+  background: #3b82f6;
+
+  transition: width 0.3s ease;
+}
+
+
+.ratio-bar-ice {
+  background: #ef4444;
+
+  transition: width 0.3s ease;
+}
+
+
+.ratio-legend {
+  display: flex;
+  align-items: center;
+
+  gap: 20px;
+
+  margin-top: 12px;
+}
+
+
+.ratio-legend-item {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: #475569;
+
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+
+.ratio-dot {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  flex-shrink: 0;
+}
+
+
+.ratio-dot-ev {
+  background: #3b82f6;
+}
+
+
+.ratio-dot-ice {
+  background: #ef4444;
 }
 
 
@@ -577,6 +928,26 @@ onMounted(() => {
 
   display: flex;
   flex-direction: column;
+}
+
+
+.impact-icon {
+  width: 38px;
+  height: 38px;
+
+  margin-bottom: 14px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 10px;
+
+  background: #dbeafe;
+
+  color: #1d4ed8;
+
+  flex-shrink: 0;
 }
 
 
@@ -631,6 +1002,34 @@ onMounted(() => {
 }
 
 
+.state-icon {
+  width: 52px;
+  height: 52px;
+
+  margin: 0 auto 16px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+}
+
+
+.state-icon-error {
+  background: #fef2f2;
+
+  color: #dc2626;
+}
+
+
+.state-icon-empty {
+  background: #f1f5f9;
+
+  color: #94a3b8;
+}
+
+
 .state-card h3 {
   margin: 0 0 8px;
 
@@ -667,8 +1066,6 @@ onMounted(() => {
   width: 180px;
   height: 14px;
 
-  margin: 0 auto 10px;
-
   border-radius: 5px;
 
   background: #edf2f7;
@@ -679,6 +1076,16 @@ onMounted(() => {
 
 .loading-line.short {
   width: 110px;
+
+  margin-top: 8px;
+}
+
+
+.loading-line.tiny {
+  width: 70px;
+  height: 10px;
+
+  margin-top: 8px;
 }
 
 
@@ -691,6 +1098,25 @@ onMounted(() => {
   border-radius: 8px;
 
   background: #f8fafc;
+
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+
+.skeleton-card {
+  align-items: flex-start;
+}
+
+
+.skeleton-icon {
+  width: 34px;
+  height: 34px;
+
+  margin-bottom: 12px;
+
+  border-radius: 9px;
+
+  background: #edf2f7;
 
   animation: pulse 1.4s infinite ease-in-out;
 }
@@ -764,7 +1190,7 @@ onMounted(() => {
 
 
   .stat-card {
-    min-height: 80px;
+    min-height: 110px;
 
     padding: 15px;
   }
@@ -772,6 +1198,18 @@ onMounted(() => {
 
   .stat-value {
     font-size: 22px;
+  }
+
+
+  .ratio-card {
+    padding: 16px 18px;
+  }
+
+
+  .ratio-legend {
+    flex-wrap: wrap;
+
+    gap: 12px;
   }
 
 

@@ -110,44 +110,26 @@ const getActualStatus = (status) => {
    STATUS STYLE
 ========================= */
 
-const getStatusStyle = (status) => {
+const getStatusClass = (status) => {
   const actualStatus = getActualStatus(status)
 
-  const styles = {
-
-    Open: {
-      backgroundColor: '#e0f0ff',
-      color: '#2b7cd3',
-      borderColor: '#93c5fd'
-    },
-
-    'On Progress': {
-      backgroundColor: '#fff4e0',
-      color: '#d68a00',
-      borderColor: '#facc15'
-    },
-
-    Close: {
-      backgroundColor: '#e3f9e5',
-      color: '#1e9e3a',
-      borderColor: '#22c55e'
-    },
-
-    Cancel: {
-      backgroundColor: '#fdecea',
-      color: '#e74c3c',
-      borderColor: '#f87171'
-    }
-
+  if (actualStatus === 'Open') {
+    return 'status-open'
   }
 
-  return (
-    styles[actualStatus] || {
-      backgroundColor: '#f1f5f9',
-      color: '#64748b',
-      borderColor: '#cbd5e1'
-    }
-  )
+  if (actualStatus === 'On Progress') {
+    return 'status-progress'
+  }
+
+  if (actualStatus === 'Close') {
+    return 'status-close'
+  }
+
+  if (actualStatus === 'Cancel') {
+    return 'status-cancel'
+  }
+
+  return 'status-open'
 }
 
 
@@ -392,21 +374,29 @@ onMounted(() => {
          HEADER
     ========================= -->
 
-    <div class="page-header">
+    <section class="page-header">
+      <div class="header-content">
+        <p class="page-eyebrow">Monitoring</p>
 
-      <div>
+        <h1>Detail Ganti Sparepart</h1>
 
-        <h2>
-          Detail Ganti Sparepart
-        </h2>
-
-        <p>
+        <p class="page-description">
           Informasi penggantian sparepart kendaraan
         </p>
-
       </div>
+    </section>
 
-    </div>
+
+    <!-- =========================
+         ERROR
+    ========================= -->
+
+    <p
+      v-if="errorMsg && !loading"
+      class="error-text"
+    >
+      {{ errorMsg }}
+    </p>
 
 
     <!-- =========================
@@ -428,376 +418,368 @@ onMounted(() => {
 
 
     <!-- =========================
-         ERROR
+         DATA SECTION
     ========================= -->
 
-    <div
-      v-else-if="errorMsg"
-      class="error-box"
-    >
-
-      {{ errorMsg }}
-
-    </div>
-
-
-    <!-- =========================
-         DETAIL
-    ========================= -->
-
-    <div
+    <section
       v-else
-      class="detail-card"
+      class="data-section"
     >
 
-      <!-- =========================
-           INFORMASI KENDARAAN
-      ========================= -->
+      <div class="section-header">
+        <div>
+          <h2>Detail Penggantian Sparepart</h2>
 
-      <div class="section-title">
-        Informasi Kendaraan
+          <p>
+            Perbarui status dan tindak lanjut penggantian sparepart.
+          </p>
+        </div>
       </div>
 
+      <div class="form-body">
 
-      <!-- NOMOR KENDARAAN -->
+        <!-- =========================
+             INFORMASI KENDARAAN
+        ========================= -->
 
-      <div class="form-row">
-
-        <label>
-          Nomor Kendaraan
-        </label>
-
-        <input
-          :value="
-            form.nomorKendaraan || '-'
-          "
-          type="text"
-          readonly
-        />
-
-      </div>
+        <div class="section-title">
+          Informasi Kendaraan
+        </div>
 
 
-      <!-- SPAREPART -->
+        <!-- NOMOR KENDARAAN -->
 
-      <div class="form-row">
+        <div class="form-row">
 
-        <label>
-          Sparepart
-        </label>
+          <label>
+            Nomor Kendaraan
+          </label>
 
-        <input
-          :value="
-            form.sparepart || '-'
-          "
-          type="text"
-          readonly
-        />
-
-      </div>
-
-
-      <!-- BIAYA -->
-
-      <div class="form-row">
-
-        <label>
-          Biaya
-        </label>
-
-        <input
-          :value="
-            form.biaya !== null &&
-            form.biaya !== undefined
-              ? `Rp ${form.biaya}`
-              : '-'
-          "
-          type="text"
-          readonly
-        />
-
-      </div>
-
-
-      <!-- RENCANA TANGGAL -->
-
-      <div class="form-row">
-
-        <label>
-          Rencana Tanggal
-        </label>
-
-        <input
-          :value="
-            formatTanggal(form.tanggal)
-          "
-          type="text"
-          readonly
-        />
-
-      </div>
-
-
-      <!-- PENGAJU -->
-
-      <div class="form-row">
-
-        <label>
-          Pengaju
-        </label>
-
-        <input
-          :value="
-            form.username || '-'
-          "
-          type="text"
-          readonly
-        />
-
-      </div>
-
-
-      <!-- =========================
-           KETERANGAN
-      ========================= -->
-
-      <div class="section-title section-spacing">
-        Keterangan
-      </div>
-
-
-      <div class="form-row">
-
-        <label>
-          Keterangan Penggantian
-        </label>
-
-        <textarea
-          :value="
-            form.keterangan || '-'
-          "
-          rows="4"
-          readonly
-        ></textarea>
-
-      </div>
-
-
-      <!-- =========================
-           FOTO
-      ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Foto Bukti
-        </label>
-
-        <div
-          v-if="previewFoto"
-          class="photo-container"
-        >
-
-          <img
-            :src="previewFoto"
-            alt="Foto bukti penggantian sparepart"
-            class="preview-img"
+          <input
+            :value="
+              form.nomorKendaraan || '-'
+            "
+            type="text"
+            readonly
           />
 
         </div>
 
-        <div
-          v-else
-          class="no-photo"
-        >
 
-          Tidak ada foto
+        <!-- SPAREPART -->
+
+        <div class="form-row">
+
+          <label>
+            Sparepart
+          </label>
+
+          <input
+            :value="
+              form.sparepart || '-'
+            "
+            type="text"
+            readonly
+          />
 
         </div>
 
-      </div>
+
+        <!-- BIAYA -->
+
+        <div class="form-row">
+
+          <label>
+            Biaya
+          </label>
+
+          <input
+            :value="
+              form.biaya !== null &&
+              form.biaya !== undefined
+                ? `Rp ${form.biaya}`
+                : '-'
+            "
+            type="text"
+            readonly
+          />
+
+        </div>
 
 
-      <!-- =========================
-           PROSES
-      ========================= -->
+        <!-- RENCANA TANGGAL -->
 
-      <div class="section-title section-spacing">
-        Proses
-      </div>
+        <div class="form-row">
+
+          <label>
+            Rencana Tanggal
+          </label>
+
+          <input
+            :value="
+              formatTanggal(form.tanggal)
+            "
+            type="text"
+            readonly
+          />
+
+        </div>
 
 
-      <!-- STATUS -->
+        <!-- PENGAJU -->
 
-      <div class="form-row">
+        <div class="form-row">
 
-        <label>
-          Status
-        </label>
+          <label>
+            Pengaju
+          </label>
+
+          <input
+            :value="
+              form.username || '-'
+            "
+            type="text"
+            readonly
+          />
+
+        </div>
 
 
-        <!-- ADMIN / UID -->
+        <!-- =========================
+             KETERANGAN
+        ========================= -->
 
-        <select
-          v-if="canManageStatus"
-          v-model="form.status"
-          class="status-select"
-          :style="
-            getStatusStyle(
-              form.status
-            )
-          "
-          :disabled="saving"
-        >
+        <div class="section-title section-spacing">
+          Keterangan
+        </div>
 
-          <option
-            v-for="status in daftarStatus"
-            :key="status"
-            :value="status"
+
+        <div class="form-row">
+
+          <label>
+            Keterangan Penggantian
+          </label>
+
+          <textarea
+            :value="
+              form.keterangan || '-'
+            "
+            rows="4"
+            readonly
+          ></textarea>
+
+        </div>
+
+
+        <!-- =========================
+             FOTO
+        ========================= -->
+
+        <div class="form-row">
+
+          <label>
+            Foto Bukti
+          </label>
+
+          <div
+            v-if="previewFoto"
+            class="photo-container"
           >
 
-            {{ status }}
+            <img
+              :src="previewFoto"
+              alt="Foto bukti penggantian sparepart"
+              class="preview-img"
+            />
 
-          </option>
+          </div>
 
-        </select>
+          <div
+            v-else
+            class="no-photo"
+          >
+
+            Tidak ada foto
+
+          </div>
+
+        </div>
 
 
-        <!-- DRIVER -->
+        <!-- =========================
+             PROSES
+        ========================= -->
 
-        <div
-          v-else
-          class="status-badge"
-          :style="
-            getStatusStyle(
-              form.status
-            )
-          "
-        >
+        <div class="section-title section-spacing">
+          Proses
+        </div>
 
-          {{ getActualStatus(form.status) }}
+
+        <!-- STATUS -->
+
+        <div class="form-row">
+
+          <label>
+            Status
+          </label>
+
+
+          <!-- ADMIN / UID -->
+
+          <select
+            v-if="canManageStatus"
+            v-model="form.status"
+            class="status-select"
+            :class="getStatusClass(form.status)"
+            :disabled="saving"
+          >
+
+            <option
+              v-for="status in daftarStatus"
+              :key="status"
+              :value="status"
+            >
+
+              {{ status }}
+
+            </option>
+
+          </select>
+
+
+          <!-- DRIVER -->
+
+          <div
+            v-else
+            class="status-badge"
+            :class="getStatusClass(form.status)"
+          >
+
+            {{ getActualStatus(form.status) }}
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             TINDAK LANJUT
+        ========================= -->
+
+        <div class="form-row">
+
+          <label>
+            Tindak Lanjut
+          </label>
+
+
+          <!-- ADMIN -->
+
+          <textarea
+            v-if="isAdmin"
+            v-model="form.tindakLanjut"
+            rows="5"
+            placeholder="Tulis tindak lanjut penggantian sparepart..."
+            :disabled="saving"
+          ></textarea>
+
+
+          <!-- UID / DRIVER -->
+
+          <div
+            v-else
+            class="readonly-followup"
+          >
+
+            {{
+              form.tindakLanjut ||
+              'Belum ada tindak lanjut'
+            }}
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             TANGGAL TINDAK LANJUT
+        ========================= -->
+
+        <div class="form-row">
+
+          <label>
+            Tanggal Tindak Lanjut
+          </label>
+
+
+          <!-- ADMIN -->
+
+          <input
+            v-if="isAdmin"
+            v-model="form.tanggalTindakLanjut"
+            type="date"
+            :disabled="saving"
+          />
+
+
+          <!-- UID / DRIVER -->
+
+          <div
+            v-else
+            class="tanggal-tindak-lanjut-readonly"
+          >
+
+            {{
+              form.tanggalTindakLanjut
+                ? formatTanggal(
+                    form.tanggalTindakLanjut
+                  )
+                : 'Belum ada tanggal tindak lanjut'
+            }}
+
+          </div>
+
+        </div>
+
+
+        <!-- =========================
+             ACTION
+        ========================= -->
+
+        <div class="form-actions">
+
+          <button
+            v-if="canManageStatus"
+            type="button"
+            class="btn-primary"
+            :disabled="saving"
+            @click="simpanPerubahan"
+          >
+
+            {{
+              saving
+                ? 'Menyimpan...'
+                : 'Simpan Perubahan'
+            }}
+
+          </button>
+
+
+          <button
+            type="button"
+            class="btn-secondary"
+            @click="batal"
+          >
+
+            Kembali
+
+          </button>
 
         </div>
 
       </div>
 
-
-      <!-- =========================
-           TINDAK LANJUT
-      ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Tindak Lanjut
-        </label>
-
-
-        <!-- ADMIN -->
-
-        <textarea
-          v-if="isAdmin"
-          v-model="form.tindakLanjut"
-          rows="5"
-          placeholder="Tulis tindak lanjut penggantian sparepart..."
-          :disabled="saving"
-        ></textarea>
-
-
-        <!-- UID / DRIVER -->
-
-        <div
-          v-else
-          class="readonly-followup"
-        >
-
-          {{
-            form.tindakLanjut ||
-            'Belum ada tindak lanjut'
-          }}
-
-        </div>
-
-      </div>
-
-
-      <!-- =========================
-           TANGGAL TINDAK LANJUT
-      ========================= -->
-
-      <div class="form-row">
-
-        <label>
-          Tanggal Tindak Lanjut
-        </label>
-
-
-        <!-- ADMIN -->
-
-        <input
-          v-if="isAdmin"
-          v-model="form.tanggalTindakLanjut"
-          type="date"
-          :disabled="saving"
-        />
-
-
-        <!-- UID / DRIVER -->
-
-        <div
-          v-else
-          class="tanggal-tindak-lanjut-readonly"
-        >
-
-          {{
-            form.tanggalTindakLanjut
-              ? formatTanggal(
-                  form.tanggalTindakLanjut
-                )
-              : 'Belum ada tanggal tindak lanjut'
-          }}
-
-        </div>
-
-      </div>
-
-
-      <!-- =========================
-           ACTION
-      ========================= -->
-
-      <div class="form-actions">
-
-        <button
-          v-if="canManageStatus"
-          type="button"
-          class="btn-primary"
-          :disabled="saving"
-          @click="simpanPerubahan"
-        >
-
-          {{
-            saving
-              ? 'Menyimpan...'
-              : 'Simpan Perubahan'
-          }}
-
-        </button>
-
-
-        <button
-          type="button"
-          class="btn-secondary"
-          @click="batal"
-        >
-
-          Kembali
-
-        </button>
-
-      </div>
-
-    </div>
+    </section>
 
   </div>
 
@@ -813,6 +795,10 @@ onMounted(() => {
 .detail-page {
   width: 100%;
   max-width: 100%;
+
+  padding: 32px 36px 48px;
+
+  box-sizing: border-box;
 }
 
 
@@ -821,49 +807,123 @@ onMounted(() => {
 ========================= */
 
 .page-header {
-  margin-bottom: 22px;
+  margin-bottom: 24px;
 }
 
-.page-header h2 {
+
+.page-eyebrow {
+  margin: 0 0 6px;
+
+  color: #2563eb;
+
+  font-size: 12px;
+  font-weight: 750;
+
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+
+.page-header h1 {
   margin: 0;
-  color: #1e2a3a;
-  font-size: 24px;
-  font-weight: 700;
+
+  color: #172033;
+
+  font-size: 30px;
+  line-height: 1.2;
+
+  font-weight: 750;
 }
 
-.page-header p {
-  margin: 6px 0 0;
+
+.page-description {
+  margin: 8px 0 0;
+
   color: #64748b;
-  font-size: 14px;
+
+  font-size: 15px;
 }
 
 
 /* =========================
-   CARD
+   ERROR
 ========================= */
 
-.detail-card {
-  width: 100%;
-  max-width: 720px;
+.error-text {
+  margin-bottom: 20px;
 
+  padding: 12px 16px;
+
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+
+  background: #fef2f2;
+
+  color: #b91c1c;
+
+  font-size: 13px;
+}
+
+
+/* =========================
+   DATA SECTION
+========================= */
+
+.data-section {
   background: white;
 
-  padding: 28px;
+  border: 1px solid #e5eaf1;
 
-  border-radius: 16px;
+  border-radius: 14px;
 
-  border: 1px solid #eef4fa;
+  overflow: hidden;
 
   box-shadow:
-    0 4px 20px
-    rgba(58, 141, 222, 0.08);
+    0 2px 10px rgba(15, 23, 42, 0.035);
+}
+
+
+.section-header {
+  padding: 22px 24px 18px;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+
+.section-header h2 {
+  margin: 0;
+
+  color: #172033;
+
+  font-size: 19px;
+  font-weight: 720;
+}
+
+
+.section-header p {
+  margin: 5px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+
+/* =========================
+   FORM BODY
+========================= */
+
+.form-body {
+  max-width: 640px;
+
+  padding: 24px;
 
   box-sizing: border-box;
 }
 
 
 /* =========================
-   SECTION
+   SECTION TITLE (SUB-GROUP)
 ========================= */
 
 .section-title {
@@ -871,12 +931,12 @@ onMounted(() => {
 
   color: #2563eb;
 
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 
   padding-bottom: 9px;
 
-  border-bottom: 1px solid #e5eef8;
+  border-bottom: 1px solid #edf0f4;
 }
 
 .section-spacing {
@@ -897,11 +957,10 @@ onMounted(() => {
 
   margin-bottom: 8px;
 
-  color: #4a5568;
+  color: #374151;
 
   font-size: 13px;
-
-  font-weight: 600;
+  font-weight: 650;
 }
 
 
@@ -910,25 +969,31 @@ onMounted(() => {
 ========================= */
 
 input,
-textarea,
-select {
+select,
+textarea {
   width: 100%;
 
-  padding: 11px 14px;
+  padding: 0 16px;
 
-  border: 1.5px solid #e3edf7;
-
-  border-radius: 10px;
+  height: 46px;
 
   box-sizing: border-box;
 
-  font-family: inherit;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
 
   font-size: 14px;
+  font-family: inherit;
 
-  color: #1e2a3a;
+  outline: none;
 
-  background: #fbfdff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 
@@ -938,11 +1003,11 @@ select {
 
 input[readonly],
 textarea[readonly] {
-  background: #f7f9fc;
+  background: #f8fafc;
 
-  color: #475569;
+  color: #64748b;
 
-  cursor: default;
+  cursor: not-allowed;
 }
 
 
@@ -951,11 +1016,49 @@ textarea[readonly] {
 ========================= */
 
 textarea {
-  resize: vertical;
+  height: auto;
 
   min-height: 90px;
 
-  line-height: 1.5;
+  padding: 12px 16px;
+
+  line-height: 1.55;
+
+  resize: vertical;
+}
+
+
+/* =========================
+   DISABLED
+========================= */
+
+select:disabled,
+textarea:disabled,
+input:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================
+   FOCUS
+========================= */
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: #bcd4f5;
 }
 
 
@@ -966,24 +1069,21 @@ textarea {
 .readonly-followup {
   min-height: 90px;
 
-  padding: 13px 14px;
+  padding: 12px 16px;
 
   box-sizing: border-box;
 
-  border: 1.5px solid #e3edf7;
-
+  border: 1px solid #dbe2ea;
   border-radius: 10px;
 
-  background: #f7f9fc;
+  background: #f8fafc;
 
   color: #475569;
 
   font-size: 14px;
-
-  line-height: 1.5;
+  line-height: 1.6;
 
   white-space: pre-wrap;
-
   overflow-wrap: anywhere;
 }
 
@@ -993,21 +1093,24 @@ textarea {
 ========================= */
 
 .tanggal-tindak-lanjut-readonly {
-  width: 100%;
+  min-height: 46px;
 
-  padding: 11px 14px;
+  padding: 0 16px;
+
+  display: flex;
+  align-items: center;
 
   box-sizing: border-box;
 
-  border: 1.5px solid #e3edf7;
-
+  border: 1px solid #dbe2ea;
   border-radius: 10px;
 
-  background: #f7f9fc;
+  background: #f8fafc;
 
   color: #475569;
 
   font-size: 14px;
+  line-height: 1.5;
 }
 
 
@@ -1015,52 +1118,94 @@ textarea {
    STATUS
 ========================= */
 
+.status-select,
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+
+  width: auto;
+
+  min-height: 38px;
+
+  height: auto;
+
+  box-sizing: border-box;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
 .status-select {
-  font-weight: 600;
+  width: 100%;
+  max-width: 190px;
 
-  cursor: pointer;
+  padding: 0 12px;
 
-  border: 1.5px solid;
+  border: 1px solid transparent;
 
   outline: none;
+
+  cursor: pointer;
 }
 
-.status-select:focus {
-  box-shadow:
-    0 0 0 3px
-    rgba(37, 99, 235, 0.1);
-}
 
-.status-select:disabled {
-  opacity: 0.6;
-
-  cursor: not-allowed;
+.status-badge {
+  padding: 8px 14px;
 }
 
 
 /* =========================
-   STATUS BADGE
+   OPEN
 ========================= */
 
-.status-badge {
-  display: inline-flex;
+.status-open {
+  color: #1d4ed8;
 
-  align-items: center;
-  justify-content: center;
+  background: #eff6ff;
 
-  min-width: 110px;
+  border-color: #bfdbfe;
+}
 
-  padding: 9px 16px;
 
-  border-radius: 20px;
+/* =========================
+   ON PROGRESS
+========================= */
 
-  border: 1.5px solid;
+.status-progress {
+  color: #c2410c;
 
-  font-size: 13px;
+  background: #fff7ed;
 
-  font-weight: 600;
+  border-color: #fed7aa;
+}
 
-  box-sizing: border-box;
+
+/* =========================
+   CLOSE
+========================= */
+
+.status-close {
+  color: #15803d;
+
+  background: #f0fdf4;
+
+  border-color: #bbf7d0;
+}
+
+
+/* =========================
+   CANCEL
+========================= */
+
+.status-cancel {
+  color: #b91c1c;
+
+  background: #fef2f2;
+
+  border-color: #fecaca;
 }
 
 
@@ -1076,37 +1221,34 @@ textarea {
   display: block;
 
   max-width: 100%;
-
-  max-height: 300px;
+  max-height: 280px;
 
   object-fit: contain;
 
   border-radius: 10px;
-
-  border: 1px solid #e3edf7;
+  border: 1px solid #e5eaf1;
 
   background: #f8fafc;
 }
 
 .no-photo {
-  padding: 15px;
+  padding: 12px 14px;
 
-  border-radius: 10px;
+  border-radius: 9px;
 
   background: #f8fafc;
 
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e5eaf1;
 
-  color: #9ca3af;
+  color: #94a3b8;
 
   font-size: 13px;
-
   font-style: italic;
 }
 
 
 /* =========================
-   ACTION
+   FORM ACTIONS
 ========================= */
 
 .form-actions {
@@ -1114,107 +1256,67 @@ textarea {
 
   gap: 12px;
 
-  margin-top: 30px;
+  margin-top: 28px;
 
   padding-top: 20px;
 
-  border-top: 1px solid #eef2f7;
+  border-top: 1px solid #edf0f4;
 }
 
 
 /* =========================
-   PRIMARY
+   BUTTON
 ========================= */
 
-.btn-primary {
-  background: #4a9eeb;
-
-  color: white;
-
+.btn-primary,
+.btn-secondary {
   border: none;
-
-  padding: 11px 22px;
-
   border-radius: 9px;
+
+  padding: 11px 17px;
+
+  font-size: 14px;
+  font-weight: 650;
 
   cursor: pointer;
 
-  font-family: inherit;
-
-  font-size: 14px;
-
-  font-weight: 600;
-
-  transition:
-    background 0.2s,
-    transform 0.1s;
+  transition: 0.2s ease;
 }
+
+
+.btn-primary {
+  background: #2563eb;
+  color: white;
+}
+
 
 .btn-primary:hover:not(:disabled) {
-  background: #2b7cd3;
+  background: #1d4ed8;
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: scale(0.98);
-}
 
 .btn-primary:disabled {
-  background: #b8d9f7;
+  background: #93c5fd;
 
   cursor: not-allowed;
 }
 
 
-/* =========================
-   SECONDARY
-========================= */
-
 .btn-secondary {
-  background: #f4f7fa;
-
-  color: #4a5568;
-
-  border: none;
-
-  padding: 11px 22px;
-
-  border-radius: 9px;
-
-  cursor: pointer;
-
-  font-family: inherit;
-
-  font-size: 14px;
-
-  font-weight: 600;
-
-  transition:
-    background 0.2s;
-}
-
-.btn-secondary:hover {
-  background: #e6ebf1;
+  background: #eef2f7;
+  color: #374151;
 }
 
 
-/* =========================
-   ERROR
-========================= */
+.btn-secondary:hover:not(:disabled) {
+  background: #e2e8f0;
+}
 
-.error-box {
-  max-width: 720px;
 
-  padding: 14px 16px;
+.btn-secondary:disabled {
+  opacity: 0.6;
 
-  border-radius: 10px;
-
-  background: #fef2f2;
-
-  border: 1px solid #fecaca;
-
-  color: #b91c1c;
-
-  font-size: 14px;
+  cursor: not-allowed;
 }
 
 
@@ -1226,11 +1328,9 @@ textarea {
   min-height: 250px;
 
   display: flex;
-
   flex-direction: column;
 
   align-items: center;
-
   justify-content: center;
 
   color: #64748b;
@@ -1242,7 +1342,7 @@ textarea {
 
   margin-bottom: 12px;
 
-  border: 3px solid #e2e8f0;
+  border: 3px solid #dbeafe;
 
   border-top-color: #2563eb;
 
@@ -1261,53 +1361,55 @@ textarea {
 
 
 /* =========================
-   MOBILE
+   RESPONSIVE
 ========================= */
 
-@media (max-width: 700px) {
+@media (max-width: 1200px) {
 
-  .page-header h2 {
-    font-size: 21px;
+  .detail-page {
+    padding: 28px 26px 40px;
   }
 
-  .page-header p {
-    font-size: 12px;
+}
+
+
+@media (max-width: 768px) {
+
+  .detail-page {
+    padding: 20px 16px 32px;
   }
 
-  .detail-card {
-    padding: 20px;
 
-    border-radius: 12px;
+  .page-header h1 {
+    font-size: 26px;
   }
 
-  .section-title {
-    font-size: 14px;
+
+  .section-header {
+    padding: 18px;
   }
 
-  input,
-  textarea,
-  select {
-    font-size: 13px;
 
-    padding: 10px 12px;
+  .form-body {
+    max-width: none;
+
+    padding: 18px;
   }
+
 
   .form-actions {
     flex-direction: column;
   }
+
 
   .btn-primary,
   .btn-secondary {
     width: 100%;
   }
 
-  .tanggal-tindak-lanjut-readonly {
-    font-size: 13px;
-    padding: 10px 12px;
-  }
 
   .preview-img {
-    max-height: 240px;
+    max-height: 220px;
   }
 
 }

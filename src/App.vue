@@ -475,9 +475,9 @@ body {
 ========================= */
 
 .sidebar {
-  width: 240px;
+  width: 250px;
 
-  background-color: #1e2a3a;
+  background-color: #172033;
 
   display: flex;
   flex-direction: column;
@@ -499,7 +499,7 @@ body {
 ========================= */
 
 .sidebar-collapsed .sidebar {
-  width: 72px;
+  width: 76px;
 }
 
 
@@ -508,9 +508,9 @@ body {
 ========================= */
 
 .sidebar-header {
-  min-height: 64px;
+  min-height: 66px;
 
-  padding: 12px 16px;
+  padding: 14px 18px;
 
   border-bottom: 1px solid
     rgba(255, 255, 255, 0.08);
@@ -528,18 +528,18 @@ body {
 
   min-width: 0;
 
-  gap: 10px;
+  gap: 11px;
 }
 
 .brand-icon {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
 
   flex-shrink: 0;
 
-  border-radius: 9px;
+  border-radius: 10px;
 
-  background: #4a9eeb;
+  background: #2563eb;
 
   color: white;
 
@@ -548,14 +548,18 @@ body {
   justify-content: center;
 
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 750;
+
+  letter-spacing: 0.02em;
 }
 
 .sidebar-header h1 {
   color: white;
 
-  font-size: 17px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 750;
+
+  letter-spacing: -0.01em;
 
   margin: 0;
 
@@ -580,29 +584,29 @@ body {
   flex-shrink: 0;
 
   border: none;
-  border-radius: 6px;
+  border-radius: 7px;
 
   background:
     rgba(255, 255, 255, 0.08);
 
-  color: #b8c4d4;
+  color: #94a3b8;
 
   cursor: pointer;
 
-  font-size: 20px;
+  font-size: 19px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
   transition:
-    background 0.2s,
-    color 0.2s;
+    background 0.2s ease,
+    color 0.2s ease;
 }
 
 .collapse-btn:hover {
   background:
-    rgba(255, 255, 255, 0.15);
+    rgba(255, 255, 255, 0.14);
 
   color: white;
 }
@@ -630,7 +634,7 @@ body {
 .sidebar-collapsed .collapse-btn {
   position: absolute;
 
-  top: 44px;
+  top: 46px;
   right: -12px;
 
   width: 24px;
@@ -638,11 +642,14 @@ body {
 
   border-radius: 50%;
 
-  background: #4a9eeb;
+  background: #2563eb;
 
   color: white;
 
   z-index: 5;
+
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.25);
 }
 
 
@@ -656,28 +663,28 @@ body {
   display: flex;
   flex-direction: column;
 
-  padding: 10px 12px;
+  padding: 14px 12px;
 
-  gap: 2px;
+  gap: 3px;
 
   overflow: hidden;
 }
 
 .sidebar-nav a {
-  color: #b8c4d4;
+  color: #94a3b8;
 
   text-decoration: none;
 
-  font-weight: 500;
-  font-size: 14px;
+  font-weight: 550;
+  font-size: 13.5px;
 
-  padding: 8px 12px;
+  padding: 9px 12px;
 
-  border-radius: 8px;
+  border-radius: 9px;
 
   transition:
-    background-color 0.2s,
-    color 0.2s;
+    background-color 0.15s ease,
+    color 0.15s ease;
 
   display: flex;
   align-items: center;
@@ -689,19 +696,21 @@ body {
 
 .sidebar-nav a:hover {
   background-color:
-    rgba(74, 158, 235, 0.12);
+    rgba(37, 99, 235, 0.14);
 
   color: white;
 }
 
 .sidebar-nav a.router-link-active {
-  background-color: #4a9eeb;
+  background-color: #2563eb;
 
   color: white;
+
+  font-weight: 650;
 }
 
 .nav-icon {
-  width: 22px;
+  width: 20px;
 
   flex-shrink: 0;
 
@@ -709,7 +718,9 @@ body {
   align-items: center;
   justify-content: center;
 
-  font-size: 17px;
+  font-size: 16px;
+
+  opacity: 0.9;
 }
 
 .nav-label {
@@ -752,7 +763,7 @@ body {
 ========================= */
 
 .sidebar-footer {
-  padding: 12px 16px;
+  padding: 14px 16px;
 
   border-top: 1px solid
     rgba(255, 255, 255, 0.08);
@@ -781,7 +792,7 @@ body {
 
   border-radius: 50%;
 
-  background: #4a9eeb;
+  background: #2563eb;
 
   color: white;
 
@@ -806,7 +817,7 @@ body {
   color: white;
 
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
 
   margin-bottom: 4px;
 
@@ -818,18 +829,24 @@ body {
 }
 
 .role-badge {
-  background-color: #4a9eeb;
+  background-color:
+    rgba(37, 99, 235, 0.18);
 
-  color: white;
+  border: 1px solid
+    rgba(37, 99, 235, 0.35);
+
+  color: #93c5fd;
 
   padding: 2px 9px;
 
   border-radius: 12px;
 
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 650;
 
   text-transform: uppercase;
+
+  letter-spacing: 0.03em;
 }
 
 
@@ -867,24 +884,26 @@ body {
   width: 100%;
 
   background-color:
-    rgba(231, 76, 60, 0.15);
+    rgba(239, 68, 68, 0.12);
 
-  color: #ff6b5c;
+  color: #fca5a5;
 
   border: none;
 
-  padding: 9px;
+  padding: 10px;
 
-  border-radius: 8px;
+  border-radius: 9px;
 
   cursor: pointer;
 
-  font-weight: 600;
+  font-weight: 650;
+  font-size: 13.5px;
 
   font-family: inherit;
 
   transition:
-    background-color 0.2s;
+    background-color 0.2s ease,
+    color 0.2s ease;
 
   display: flex;
   align-items: center;
@@ -895,11 +914,13 @@ body {
 
 .logout-btn:hover {
   background-color:
-    rgba(231, 76, 60, 0.25);
+    rgba(239, 68, 68, 0.2);
+
+  color: #fecaca;
 }
 
 .logout-icon {
-  font-size: 17px;
+  font-size: 16px;
 
   flex-shrink: 0;
 }
@@ -929,7 +950,7 @@ main {
 
   padding: 32px 40px;
 
-  background-color: #f7fafd;
+  background-color: #f7f9fc;
 
   min-height: 100vh;
 
@@ -958,11 +979,11 @@ main.full-width {
 
   z-index: 60;
 
-  background: #1e2a3a;
+  background: #172033;
 
   border: none;
 
-  border-radius: 8px;
+  border-radius: 9px;
 
   width: 42px;
   height: 42px;
@@ -975,6 +996,9 @@ main.full-width {
   gap: 4px;
 
   cursor: pointer;
+
+  box-shadow:
+    0 3px 10px rgba(15, 23, 42, 0.2);
 }
 
 .hamburger span {
@@ -1011,17 +1035,17 @@ main.full-width {
      sidebar di mobile */
 
   .sidebar-collapsed .sidebar {
-    width: 240px;
+    width: 250px;
   }
 
 
   .sidebar {
     position: fixed;
 
-    left: -260px;
+    left: -270px;
     top: 0;
 
-    width: 240px;
+    width: 250px;
 
     height: 100vh;
 
@@ -1034,6 +1058,9 @@ main.full-width {
 
   .sidebar.open {
     left: 0;
+
+    box-shadow:
+      4px 0 20px rgba(15, 23, 42, 0.2);
   }
 
 
@@ -1045,7 +1072,7 @@ main.full-width {
     inset: 0;
 
     background:
-      rgba(0, 0, 0, 0.4);
+      rgba(15, 23, 42, 0.45);
 
     z-index: 40;
   }
@@ -1086,7 +1113,7 @@ main.full-width {
 
 
   main {
-    padding: 70px 16px 24px;
+    padding: 72px 16px 24px;
 
     width: 100%;
   }
