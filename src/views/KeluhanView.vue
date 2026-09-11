@@ -27,11 +27,16 @@
 
 
     <!-- =========================
-         STATISTICS
+         STATISTICS (klik untuk filter status)
     ========================== -->
     <section class="stats-grid">
 
-      <div class="stat-card">
+      <button
+        type="button"
+        class="stat-card"
+        :class="{ 'stat-active': filterStatus === '' }"
+        @click="filterStatus = ''"
+      >
         <span class="stat-label">
           Total Keluhan
         </span>
@@ -39,10 +44,15 @@
         <strong class="stat-value">
           {{ totalKeluhan }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-open">
+      <button
+        type="button"
+        class="stat-card stat-open"
+        :class="{ 'stat-active': filterStatus === 'Open' }"
+        @click="toggleFilterStatus('Open')"
+      >
         <span class="stat-label">
           Open
         </span>
@@ -50,10 +60,15 @@
         <strong class="stat-value">
           {{ totalOpen }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-progress">
+      <button
+        type="button"
+        class="stat-card stat-progress"
+        :class="{ 'stat-active': filterStatus === 'On Progress' }"
+        @click="toggleFilterStatus('On Progress')"
+      >
         <span class="stat-label">
           On Progress
         </span>
@@ -61,10 +76,15 @@
         <strong class="stat-value">
           {{ totalOnProgress }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-close">
+      <button
+        type="button"
+        class="stat-card stat-close"
+        :class="{ 'stat-active': filterStatus === 'Close' }"
+        @click="toggleFilterStatus('Close')"
+      >
         <span class="stat-label">
           Close
         </span>
@@ -72,10 +92,15 @@
         <strong class="stat-value">
           {{ totalClose }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-cancel">
+      <button
+        type="button"
+        class="stat-card stat-cancel"
+        :class="{ 'stat-active': filterStatus === 'Cancel' }"
+        @click="toggleFilterStatus('Cancel')"
+      >
         <span class="stat-label">
           Cancel
         </span>
@@ -83,13 +108,13 @@
         <strong class="stat-value">
           {{ totalCancel }}
         </strong>
-      </div>
+      </button>
 
     </section>
 
 
     <!-- =========================
-         SEARCH
+         SEARCH + FILTER + SORT
     ========================== -->
     <section class="toolbar">
 
@@ -112,6 +137,77 @@
 
       </div>
 
+
+      <!-- =========================
+           FILTER UID
+      ========================== -->
+      <div class="filter-uid">
+
+        <select v-model="filterUid" class="uid-select">
+
+          <option value="">
+            Semua UID
+          </option>
+
+          <option
+            v-for="uid in daftarUidOptions"
+            :key="uid"
+            :value="uid"
+          >
+            {{ uid }}
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- =========================
+           FILTER TANGGAL (RANGE)
+      ========================== -->
+      <div class="filter-tanggal">
+
+        <select v-model="dateField" class="sort-select">
+          <option value="tanggal">Tanggal Pengajuan</option>
+          <option value="tanggalTindakLanjut">Tanggal Tindak Lanjut</option>
+        </select>
+
+        <div class="date-range">
+
+          <input
+            v-model="dateFrom"
+            type="date"
+            class="date-input"
+            title="Dari tanggal"
+          />
+
+          <span class="date-separator">s/d</span>
+
+          <input
+            v-model="dateTo"
+            type="date"
+            class="date-input"
+            title="Sampai tanggal"
+          />
+
+        </div>
+
+        <select v-model="sortOrder" class="sort-select">
+          <option value="terbaru">Terbaru &rarr; Terlama</option>
+          <option value="terlama">Terlama &rarr; Terbaru</option>
+        </select>
+
+        <button
+          v-if="filterUid || dateFrom || dateTo || filterStatus"
+          type="button"
+          class="clear-date"
+          @click="resetFilter"
+        >
+          Reset Filter
+        </button>
+
+      </div>
+
     </section>
 
 
@@ -127,6 +223,10 @@
 
           <p>
             {{ filteredKeluhan.length }} data ditemukan
+
+            <span v-if="filterStatus">
+              &middot; Status: {{ filterStatus }}
+            </span>
           </p>
         </div>
 
@@ -178,13 +278,22 @@
       >
         <h3>Tidak ada data keluhan</h3>
 
-        <p v-if="searchQuery">
-          Tidak ditemukan keluhan yang sesuai dengan pencarian.
+        <p v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus">
+          Tidak ditemukan keluhan yang sesuai dengan pencarian / filter.
         </p>
 
         <p v-else>
           Belum terdapat data keluhan.
         </p>
+
+        <button
+          v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus"
+          type="button"
+          class="btn-secondary"
+          @click="resetSemuaFilter"
+        >
+          Reset Semua Filter
+        </button>
       </div>
 
 
@@ -568,6 +677,82 @@ const selectedPhoto = ref('')
 
 
 /* =========================
+   FILTER & SORT
+========================= */
+
+const filterUid = ref('')
+const filterStatus = ref('')
+const dateField = ref('tanggal')
+const dateFrom = ref('')
+const dateTo = ref('')
+const sortOrder = ref('terbaru')
+
+
+const daftarUidOptions = [
+  'UID LAMPUNG TAHAP 1',
+  'UID LAMPUNG TAHAP 2',
+  'UID BANTEN',
+  'UIP JBT (TAHAP 1)',
+  'UIP JBT (TAHAP 2)',
+  'UID JATIM',
+  'UIW NTB',
+  'UID JATENG (TAHAP 1)',
+  'UID JATENG (TAHAP 2)',
+  'UID DIY (TAHAP 1)',
+  'UID DIY (TAHAP 2)',
+  'UIT JBT (TAHAP 1)',
+  'PLN PUSAT (TAHAP 1)',
+  'UID KALTIMRA',
+  'PLN PUSAT (TAHAP 2)',
+  'UID BALI (TAHAP 1)',
+  'UIP JBTB',
+  'UIW MMU',
+  'UIP3B SUMATERA',
+  'BANDA ACEH',
+  'TANJUNG KARANG',
+  'UIK DWIPANTARA',
+  'UID KALSELTENG',
+  'UID JABAR',
+  'UIP3B SULAWESI',
+  'MANADO',
+  'PALU',
+  'PLN PUSAT (TAHAP 3)',
+  'PLN UID BALI (TAHAP II)'
+]
+
+
+/*
+ * Klik kartu status:
+ * - kalau status yang sama diklik lagi, filter dilepas
+ *   (balik menampilkan semua status)
+ * - kalau klik status lain, filter berpindah ke status itu
+ */
+const toggleFilterStatus = (status) => {
+
+  filterStatus.value =
+    filterStatus.value === status
+      ? ''
+      : status
+}
+
+
+const resetFilter = () => {
+  filterUid.value = ''
+  filterStatus.value = ''
+  dateField.value = 'tanggal'
+  dateFrom.value = ''
+  dateTo.value = ''
+  sortOrder.value = 'terbaru'
+}
+
+
+const resetSemuaFilter = () => {
+  searchQuery.value = ''
+  resetFilter()
+}
+
+
+/* =========================
    CURRENT USER
 ========================= */
 
@@ -675,7 +860,7 @@ const totalCancel = computed(() =>
 
 
 /* =========================
-   SEARCH
+   SEARCH + FILTER + SORT
 ========================= */
 
 const filteredKeluhan = computed(() => {
@@ -684,36 +869,124 @@ const filteredKeluhan = computed(() => {
     .trim()
     .toLowerCase()
 
-  if (!keyword) {
-    return daftarKeluhan.value
+  let hasil = daftarKeluhan.value
+
+
+  /* SEARCH */
+  if (keyword) {
+
+    hasil = hasil.filter(item => {
+
+      const searchableText = [
+        item.nomorKendaraan,
+        item.pengaduan,
+        item.username,
+        item.namaLengkap,
+        item.namaPengaju,
+        item.uid,
+        item.up3,
+        item.unit,
+        item.status,
+        item.tindakLanjut,
+        item.tanggal,
+        item.tanggalTindakLanjut
+      ]
+        .filter(
+          value =>
+            value !== null &&
+            value !== undefined
+        )
+        .join(' ')
+        .toLowerCase()
+
+      return searchableText.includes(keyword)
+    })
   }
 
-  return daftarKeluhan.value.filter(item => {
 
-    const searchableText = [
-      item.nomorKendaraan,
-      item.pengaduan,
-      item.username,
-      item.namaLengkap,
-      item.namaPengaju,
-      item.uid,
-      item.up3,
-      item.unit,
-      item.status,
-      item.tindakLanjut,
-      item.tanggal,
-      item.tanggalTindakLanjut
-    ]
-      .filter(
-        value =>
-          value !== null &&
-          value !== undefined
-      )
-      .join(' ')
-      .toLowerCase()
+  /* FILTER UID */
+  if (filterUid.value) {
 
-    return searchableText.includes(keyword)
+    hasil = hasil.filter(
+      item => item.uid === filterUid.value
+    )
+  }
+
+
+  /* FILTER STATUS (klik kartu statistik) */
+  if (filterStatus.value) {
+
+    hasil = hasil.filter(
+      item =>
+        normalizeStatus(item.status) ===
+        normalizeStatus(filterStatus.value)
+    )
+  }
+
+
+  /* FILTER RENTANG TANGGAL (dari / sampai), ala cek mutasi ATM */
+
+  const field = dateField.value
+
+  if (dateFrom.value || dateTo.value) {
+
+    const batasAwal = dateFrom.value
+      ? new Date(dateFrom.value + 'T00:00:00').getTime()
+      : null
+
+    const batasAkhir = dateTo.value
+      ? new Date(dateTo.value + 'T23:59:59').getTime()
+      : null
+
+    hasil = hasil.filter(item => {
+
+      if (!item[field]) {
+        return false
+      }
+
+      const nilaiTanggal = new Date(item[field]).getTime()
+
+      if (Number.isNaN(nilaiTanggal)) {
+        return false
+      }
+
+      if (batasAwal !== null && nilaiTanggal < batasAwal) {
+        return false
+      }
+
+      if (batasAkhir !== null && nilaiTanggal > batasAkhir) {
+        return false
+      }
+
+      return true
+    })
+  }
+
+
+  /* SORT berdasarkan field tanggal yang sama */
+
+  hasil = [...hasil].sort((a, b) => {
+
+    const nilaiA = a[field]
+      ? new Date(a[field]).getTime()
+      : 0
+
+    const nilaiB = b[field]
+      ? new Date(b[field]).getTime()
+      : 0
+
+    // data tanpa tanggal selalu ditaruh di paling bawah
+    if (!nilaiA && !nilaiB) return 0
+    if (!nilaiA) return 1
+    if (!nilaiB) return -1
+
+    return sortOrder.value === 'terbaru'
+      ? nilaiB - nilaiA
+      : nilaiA - nilaiB
   })
+
+
+  return hasil
 })
 
 
@@ -1332,7 +1605,8 @@ onMounted(() => {
 
 
 /* =========================
-   STATISTICS
+   STATISTICS (kini elemen <button>,
+   klik untuk filter status)
 ========================= */
 
 .stats-grid {
@@ -1366,6 +1640,30 @@ onMounted(() => {
 
   box-shadow:
     0 2px 8px rgba(15, 23, 42, 0.035);
+
+  /* reset gaya default <button> */
+  font-family: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.stat-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-card:active {
+  transform: translateY(0);
 }
 
 
@@ -1414,10 +1712,65 @@ onMounted(() => {
 
 
 /* =========================
+   STAT ACTIVE (kartu yang sedang
+   dipilih sebagai filter status)
+========================= */
+
+.stat-active {
+  border-color: #93c5fd;
+
+  background: #f5f9ff;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.12),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-open.stat-active {
+  background: #eff6ff;
+}
+
+
+.stat-progress.stat-active {
+  background: #fffaf0;
+
+  box-shadow:
+    0 0 0 3px rgba(245, 158, 11, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-close.stat-active {
+  background: #f0fdf4;
+
+  box-shadow:
+    0 0 0 3px rgba(34, 197, 94, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-cancel.stat-active {
+  background: #fef2f2;
+
+  box-shadow:
+    0 0 0 3px rgba(239, 68, 68, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+/* =========================
    TOOLBAR
 ========================= */
 
 .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 12px;
+
   margin-bottom: 24px;
 }
 
@@ -1425,7 +1778,7 @@ onMounted(() => {
 .search-box {
   position: relative;
 
-  width: 100%;
+  flex: 1 1 320px;
 }
 
 
@@ -1490,6 +1843,174 @@ onMounted(() => {
 
 .clear-search:hover {
   color: #2563eb;
+}
+
+
+/* =========================
+   FILTER UID
+========================= */
+
+.filter-uid {
+  flex: 0 0 auto;
+
+  display: flex;
+  gap: 10px;
+}
+
+
+.uid-select,
+.sort-select {
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 14px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.uid-select {
+  min-width: 220px;
+}
+
+
+.sort-select {
+  min-width: 170px;
+}
+
+
+.uid-select:focus,
+.sort-select:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+/* =========================
+   FILTER TANGGAL (RANGE, CHIP)
+========================= */
+
+.filter-tanggal {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 6px 12px;
+
+  border: 1px solid #e5eaf1;
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+
+.date-range {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+.date-input {
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 12px;
+
+  font-size: 13px;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.date-input:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.date-separator {
+  color: #94a3b8;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+
+.clear-date {
+  height: 48px;
+
+  padding: 0 16px;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+.clear-date:hover {
+  background: #fef2f2;
+
+  border-color: #fecaca;
+
+  color: #b91c1c;
 }
 
 
@@ -2339,6 +2860,47 @@ onMounted(() => {
 
   .stat-value {
     font-size: 22px;
+  }
+
+
+  .toolbar {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .filter-uid,
+  .filter-tanggal {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .filter-tanggal {
+    padding: 12px;
+  }
+
+
+  .date-range {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .date-separator {
+    text-align: center;
+  }
+
+
+  .uid-select,
+  .sort-select,
+  .date-input,
+  .clear-date {
+    width: 100%;
+    min-width: 0;
   }
 
 

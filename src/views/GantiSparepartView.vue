@@ -80,7 +80,7 @@
 
 
     <!-- =========================
-         SEARCH
+         SEARCH + FILTER + SORT
     ========================== -->
     <section class="toolbar">
 
@@ -99,6 +99,75 @@
           @click="searchQuery = ''"
         >
           Clear
+        </button>
+
+      </div>
+
+
+      <!-- =========================
+           FILTER UID
+      ========================== -->
+      <div class="filter-uid">
+
+        <select v-model="selectedUid" class="uid-select">
+
+          <option value="">Semua UID</option>
+
+          <option
+            v-for="uid in daftarUid"
+            :key="uid"
+            :value="uid"
+          >
+            {{ uid }}
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- =========================
+           FILTER TANGGAL (RANGE, ala mutasi ATM)
+      ========================== -->
+      <div class="filter-tanggal">
+
+        <select v-model="dateField" class="sort-select">
+          <option value="tanggal">Tanggal Rencana</option>
+          <option value="tanggalTindakLanjut">Tanggal Tindak Lanjut</option>
+        </select>
+
+        <div class="date-range">
+
+          <input
+            v-model="dateFrom"
+            type="date"
+            class="date-input"
+            title="Dari tanggal"
+          />
+
+          <span class="date-separator">s/d</span>
+
+          <input
+            v-model="dateTo"
+            type="date"
+            class="date-input"
+            title="Sampai tanggal"
+          />
+
+        </div>
+
+        <select v-model="sortOrder" class="sort-select">
+          <option value="terbaru">Terbaru &rarr; Terlama</option>
+          <option value="terlama">Terlama &rarr; Terbaru</option>
+        </select>
+
+        <button
+          v-if="dateFrom || dateTo"
+          type="button"
+          class="clear-date"
+          @click="dateFrom = ''; dateTo = ''"
+        >
+          Reset Tanggal
         </button>
 
       </div>
@@ -169,8 +238,8 @@
       >
         <h3>Tidak ada data ganti sparepart</h3>
 
-        <p v-if="searchQuery">
-          Tidak ditemukan data yang sesuai dengan pencarian.
+        <p v-if="searchQuery || selectedUid">
+          Tidak ditemukan data yang sesuai dengan pencarian / filter.
         </p>
 
         <p v-else>
@@ -501,8 +570,8 @@
                     @click="lihatDetail(item.id)"
                   >
                     <svg
-                      width="17"
-                      height="17"
+                      width="15"
+                      height="15"
                       viewBox="0 0 24 24"
                       fill="none"
                       xmlns="http://www.w3.org/2000/svg"
@@ -627,6 +696,51 @@ const daftarStatus = [
   'On Progress',
   'Close',
   'Cancel'
+]
+
+
+/* =========================
+   FILTER UID & SORT
+========================= */
+
+const selectedUid = ref('')
+const sortOrder = ref('terbaru')
+
+// filter tanggal ala "cek mutasi" — pilih field tanggal + rentang dari/sampai
+const dateField = ref('tanggal')
+const dateFrom = ref('')
+const dateTo = ref('')
+
+const daftarUid = [
+  'UID LAMPUNG TAHAP 1',
+  'UID LAMPUNG TAHAP 2',
+  'UID BANTEN',
+  'UIP JBT (TAHAP 1)',
+  'UIP JBT (TAHAP 2)',
+  'UID JATIM',
+  'UIW NTB',
+  'UID JATENG (TAHAP 1)',
+  'UID JATENG (TAHAP 2)',
+  'UID DIY (TAHAP 1)',
+  'UID DIY (TAHAP 2)',
+  'UIT JBT (TAHAP 1)',
+  'PLN PUSAT (TAHAP 1)',
+  'UID KALTIMRA',
+  'PLN PUSAT (TAHAP 2)',
+  'UID BALI (TAHAP 1)',
+  'UIP JBTB',
+  'UIW MMU',
+  'UIP3B SUMATERA',
+  'BANDA ACEH',
+  'TANJUNG KARANG',
+  'UIK DWIPANTARA',
+  'UID KALSELTENG',
+  'UID JABAR',
+  'UIP3B SULAWESI',
+  'MANADO',
+  'PALU',
+  'PLN PUSAT (TAHAP 3)',
+  'PLN UID BALI (TAHAP II)'
 ]
 
 
@@ -875,7 +989,7 @@ const getPhotos = (item) => {
 
 
 /* =========================
-   SEARCH
+   SEARCH + FILTER UID + SORT TANGGAL
 ========================= */
 
 const filteredData = computed(() => {
@@ -884,35 +998,114 @@ const filteredData = computed(() => {
     .trim()
     .toLowerCase()
 
-  if (!keyword) {
-    return daftarData.value
+  let hasil = daftarData.value
+
+
+  /* ---- filter UID ---- */
+
+  if (selectedUid.value) {
+
+    hasil = hasil.filter(
+      item => item.uid === selectedUid.value
+    )
   }
 
-  return daftarData.value.filter(item => {
 
-    const searchableText = [
-      item.id,
-      item.nomorKendaraan,
-      item.sparepart,
-      item.username,
-      item.namaLengkap,
-      item.uid,
-      item.up3,
-      item.unit,
-      item.keterangan,
-      item.tindakLanjut,
-      item.status
-    ]
-      .filter(
-        value =>
-          value !== null &&
-          value !== undefined
-      )
-      .join(' ')
-      .toLowerCase()
+  /* ---- search ---- */
 
-    return searchableText.includes(keyword)
+  if (keyword) {
+
+    hasil = hasil.filter(item => {
+
+      const searchableText = [
+        item.id,
+        item.nomorKendaraan,
+        item.sparepart,
+        item.username,
+        item.namaLengkap,
+        item.uid,
+        item.up3,
+        item.unit,
+        item.keterangan,
+        item.tindakLanjut,
+        item.status
+      ]
+        .filter(
+          value =>
+            value !== null &&
+            value !== undefined
+        )
+        .join(' ')
+        .toLowerCase()
+
+      return searchableText.includes(keyword)
+    })
+  }
+
+
+  /* ---- filter rentang tanggal (dari / sampai), ala cek mutasi ATM ---- */
+
+  const field = dateField.value
+
+  if (dateFrom.value || dateTo.value) {
+
+    const batasAwal = dateFrom.value
+      ? new Date(dateFrom.value + 'T00:00:00').getTime()
+      : null
+
+    const batasAkhir = dateTo.value
+      ? new Date(dateTo.value + 'T23:59:59').getTime()
+      : null
+
+    hasil = hasil.filter(item => {
+
+      if (!item[field]) {
+        return false
+      }
+
+      const nilaiTanggal = new Date(item[field]).getTime()
+
+      if (Number.isNaN(nilaiTanggal)) {
+        return false
+      }
+
+      if (batasAwal !== null && nilaiTanggal < batasAwal) {
+        return false
+      }
+
+      if (batasAkhir !== null && nilaiTanggal > batasAkhir) {
+        return false
+      }
+
+      return true
+    })
+  }
+
+
+  /* ---- sort berdasarkan field tanggal yang sama ---- */
+
+  hasil = [...hasil].sort((a, b) => {
+
+    const nilaiA = a[field]
+      ? new Date(a[field]).getTime()
+      : 0
+
+    const nilaiB = b[field]
+      ? new Date(b[field]).getTime()
+      : 0
+
+    // data tanpa tanggal selalu ditaruh di paling bawah
+    if (!nilaiA && !nilaiB) return 0
+    if (!nilaiA) return 1
+    if (!nilaiB) return -1
+
+    return sortOrder.value === 'terbaru'
+      ? nilaiB - nilaiA
+      : nilaiA - nilaiB
   })
+
+
+  return hasil
 })
 
 
@@ -1413,6 +1606,13 @@ onMounted(() => {
 ========================= */
 
 .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 12px;
+
   margin-bottom: 24px;
 }
 
@@ -1420,7 +1620,7 @@ onMounted(() => {
 .search-box {
   position: relative;
 
-  width: 100%;
+  flex: 1 1 320px;
 }
 
 
@@ -1485,6 +1685,174 @@ onMounted(() => {
 
 .clear-search:hover {
   color: #2563eb;
+}
+
+
+/* =========================
+   FILTER UID
+========================= */
+
+.filter-uid {
+  flex: 0 0 auto;
+
+  display: flex;
+  gap: 10px;
+}
+
+
+.uid-select,
+.sort-select {
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 14px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.uid-select {
+  min-width: 220px;
+}
+
+
+.sort-select {
+  min-width: 170px;
+}
+
+
+.uid-select:focus,
+.sort-select:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+/* =========================
+   FILTER TANGGAL (RANGE)
+========================= */
+
+.filter-tanggal {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 6px 12px;
+
+  border: 1px solid #e5eaf1;
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+
+.date-range {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+.date-input {
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 12px;
+
+  font-size: 13px;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.date-input:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.date-separator {
+  color: #94a3b8;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+
+.clear-date {
+  height: 48px;
+
+  padding: 0 16px;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+.clear-date:hover {
+  background: #fef2f2;
+
+  border-color: #fecaca;
+
+  color: #b91c1c;
 }
 
 
@@ -2082,8 +2450,8 @@ onMounted(() => {
 ========================= */
 
 .detail-button {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
 
   flex-shrink: 0;
 
@@ -2095,7 +2463,7 @@ onMounted(() => {
 
   border: 1px solid #bfdbfe;
 
-  border-radius: 6px;
+  border-radius: 7px;
 
   background: #eff6ff;
 
@@ -2130,8 +2498,8 @@ onMounted(() => {
 .detail-button svg {
   display: block;
 
-  width: 13px;
-  height: 13px;
+  width: 15px;
+  height: 15px;
 }
 
 
@@ -2356,6 +2724,47 @@ onMounted(() => {
 
   .section-header {
     padding: 18px;
+  }
+
+
+  .toolbar {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .filter-uid,
+  .filter-tanggal {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .filter-tanggal {
+    padding: 12px;
+  }
+
+
+  .date-range {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .date-separator {
+    text-align: center;
+  }
+
+
+  .uid-select,
+  .sort-select,
+  .date-input,
+  .clear-date {
+    width: 100%;
+    min-width: 0;
   }
 
 }

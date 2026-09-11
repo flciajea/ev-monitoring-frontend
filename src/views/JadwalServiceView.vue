@@ -80,7 +80,7 @@
 
 
     <!-- =========================
-         SEARCH
+         SEARCH + FILTER + SORT
     ========================== -->
     <section class="toolbar">
 
@@ -99,6 +99,77 @@
           @click="searchQuery = ''"
         >
           Clear
+        </button>
+
+      </div>
+
+
+      <!-- =========================
+           FILTER UID
+      ========================== -->
+      <div class="filter-uid">
+
+        <select v-model="filterUid" class="uid-select">
+
+          <option value="">
+            Semua UID
+          </option>
+
+          <option
+            v-for="uid in daftarUidOptions"
+            :key="uid"
+            :value="uid"
+          >
+            {{ uid }}
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <!-- =========================
+           FILTER TANGGAL (RANGE)
+      ========================== -->
+      <div class="filter-tanggal">
+
+        <select v-model="dateField" class="sort-select">
+          <option value="tanggalService">Tanggal Service</option>
+          <option value="tanggalTindakLanjut">Tanggal Tindak Lanjut</option>
+        </select>
+
+        <div class="date-range">
+
+          <input
+            v-model="dateFrom"
+            type="date"
+            class="date-input"
+            title="Dari tanggal"
+          />
+
+          <span class="date-separator">s/d</span>
+
+          <input
+            v-model="dateTo"
+            type="date"
+            class="date-input"
+            title="Sampai tanggal"
+          />
+
+        </div>
+
+        <select v-model="sortOrder" class="sort-select">
+          <option value="terbaru">Terbaru &rarr; Terlama</option>
+          <option value="terlama">Terlama &rarr; Terbaru</option>
+        </select>
+
+        <button
+          v-if="filterUid || dateFrom || dateTo"
+          type="button"
+          class="clear-date"
+          @click="resetFilter"
+        >
+          Reset Filter
         </button>
 
       </div>
@@ -169,8 +240,8 @@
       >
         <h3>Tidak ada data jadwal service</h3>
 
-        <p v-if="searchQuery">
-          Tidak ditemukan jadwal yang sesuai dengan pencarian.
+        <p v-if="searchQuery || filterUid || dateFrom || dateTo">
+          Tidak ditemukan jadwal yang sesuai dengan pencarian / filter.
         </p>
 
         <p v-else>
@@ -533,6 +604,59 @@ const updatingId = ref(null)
 
 
 /* =========================
+   FILTER & SORT
+========================= */
+
+const filterUid = ref('')
+const dateField = ref('tanggalService')
+const dateFrom = ref('')
+const dateTo = ref('')
+const sortOrder = ref('terbaru')
+
+
+const daftarUidOptions = [
+  'UID LAMPUNG TAHAP 1',
+  'UID LAMPUNG TAHAP 2',
+  'UID BANTEN',
+  'UIP JBT (TAHAP 1)',
+  'UIP JBT (TAHAP 2)',
+  'UID JATIM',
+  'UIW NTB',
+  'UID JATENG (TAHAP 1)',
+  'UID JATENG (TAHAP 2)',
+  'UID DIY (TAHAP 1)',
+  'UID DIY (TAHAP 2)',
+  'UIT JBT (TAHAP 1)',
+  'PLN PUSAT (TAHAP 1)',
+  'UID KALTIMRA',
+  'PLN PUSAT (TAHAP 2)',
+  'UID BALI (TAHAP 1)',
+  'UIP JBTB',
+  'UIW MMU',
+  'UIP3B SUMATERA',
+  'BANDA ACEH',
+  'TANJUNG KARANG',
+  'UIK DWIPANTARA',
+  'UID KALSELTENG',
+  'UID JABAR',
+  'UIP3B SULAWESI',
+  'MANADO',
+  'PALU',
+  'PLN PUSAT (TAHAP 3)',
+  'PLN UID BALI (TAHAP II)'
+]
+
+
+const resetFilter = () => {
+  filterUid.value = ''
+  dateField.value = 'tanggalService'
+  dateFrom.value = ''
+  dateTo.value = ''
+  sortOrder.value = 'terbaru'
+}
+
+
+/* =========================
    CURRENT USER
 ========================= */
 
@@ -685,7 +809,7 @@ const totalCancel = computed(() =>
 
 
 /* =========================
-   SEARCH
+   SEARCH + FILTER + SORT
 ========================= */
 
 const filteredJadwal = computed(() => {
@@ -694,38 +818,115 @@ const filteredJadwal = computed(() => {
     .trim()
     .toLowerCase()
 
-  if (!keyword) {
-    return daftarJadwal.value
+  let hasil = daftarJadwal.value
+
+
+  /* SEARCH */
+  if (keyword) {
+
+    hasil = hasil.filter(jadwal => {
+
+      const searchableText = [
+        jadwal.id,
+        jadwal.nomorKendaraan,
+        jadwal.namaLengkap,
+        jadwal.username,
+        jadwal.uid,
+        jadwal.up3,
+        jadwal.unit,
+        jadwal.dealer,
+        jadwal.km,
+        jadwal.tanggalService,
+        jadwal.tanggalTindakLanjut,
+        jadwal.keterangan,
+        jadwal.status,
+        jadwal.tindakLanjut
+      ]
+        .filter(
+          value =>
+            value !== null &&
+            value !== undefined
+        )
+        .join(' ')
+        .toLowerCase()
+
+      return searchableText.includes(keyword)
+    })
   }
 
-  return daftarJadwal.value.filter(jadwal => {
 
-    const searchableText = [
-      jadwal.id,
-      jadwal.nomorKendaraan,
-      jadwal.namaLengkap,
-      jadwal.username,
-      jadwal.uid,
-      jadwal.up3,
-      jadwal.unit,
-      jadwal.dealer,
-      jadwal.km,
-      jadwal.tanggalService,
-      jadwal.tanggalTindakLanjut,
-      jadwal.keterangan,
-      jadwal.status,
-      jadwal.tindakLanjut
-    ]
-      .filter(
-        value =>
-          value !== null &&
-          value !== undefined
-      )
-      .join(' ')
-      .toLowerCase()
+  /* FILTER UID */
+  if (filterUid.value) {
 
-    return searchableText.includes(keyword)
+    hasil = hasil.filter(
+      jadwal => jadwal.uid === filterUid.value
+    )
+  }
+
+
+  /* FILTER RENTANG TANGGAL (dari / sampai), ala cek mutasi ATM */
+
+  const field = dateField.value
+
+  if (dateFrom.value || dateTo.value) {
+
+    const batasAwal = dateFrom.value
+      ? new Date(dateFrom.value + 'T00:00:00').getTime()
+      : null
+
+    const batasAkhir = dateTo.value
+      ? new Date(dateTo.value + 'T23:59:59').getTime()
+      : null
+
+    hasil = hasil.filter(jadwal => {
+
+      if (!jadwal[field]) {
+        return false
+      }
+
+      const nilaiTanggal = new Date(jadwal[field]).getTime()
+
+      if (Number.isNaN(nilaiTanggal)) {
+        return false
+      }
+
+      if (batasAwal !== null && nilaiTanggal < batasAwal) {
+        return false
+      }
+
+      if (batasAkhir !== null && nilaiTanggal > batasAkhir) {
+        return false
+      }
+
+      return true
+    })
+  }
+
+
+  /* SORT berdasarkan field tanggal yang sama */
+
+  hasil = [...hasil].sort((a, b) => {
+
+    const nilaiA = a[field]
+      ? new Date(a[field]).getTime()
+      : 0
+
+    const nilaiB = b[field]
+      ? new Date(b[field]).getTime()
+      : 0
+
+    // data tanpa tanggal selalu ditaruh di paling bawah
+    if (!nilaiA && !nilaiB) return 0
+    if (!nilaiA) return 1
+    if (!nilaiB) return -1
+
+    return sortOrder.value === 'terbaru'
+      ? nilaiB - nilaiA
+      : nilaiA - nilaiB
   })
+
+
+  return hasil
 })
 
 
@@ -1181,6 +1382,13 @@ onMounted(() => {
 ========================= */
 
 .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  gap: 12px;
+
   margin-bottom: 24px;
 }
 
@@ -1188,7 +1396,7 @@ onMounted(() => {
 .search-box {
   position: relative;
 
-  width: 100%;
+  flex: 1 1 320px;
 }
 
 
@@ -1253,6 +1461,174 @@ onMounted(() => {
 
 .clear-search:hover {
   color: #2563eb;
+}
+
+
+/* =========================
+   FILTER UID
+========================= */
+
+.filter-uid {
+  flex: 0 0 auto;
+
+  display: flex;
+  gap: 10px;
+}
+
+
+.uid-select,
+.sort-select {
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 14px;
+
+  font-size: 14px;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.uid-select {
+  min-width: 220px;
+}
+
+
+.sort-select {
+  min-width: 170px;
+}
+
+
+.uid-select:focus,
+.sort-select:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+/* =========================
+   FILTER TANGGAL (RANGE, CHIP)
+========================= */
+
+.filter-tanggal {
+  flex: 1 1 auto;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 6px 12px;
+
+  border: 1px solid #e5eaf1;
+  border-radius: 12px;
+
+  background: #f8fafc;
+}
+
+
+.date-range {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+}
+
+
+.date-input {
+  height: 48px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #1f2937;
+
+  padding: 0 12px;
+
+  font-size: 13px;
+
+  outline: none;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+
+.date-input:focus {
+  border-color: #93c5fd;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+
+.date-separator {
+  color: #94a3b8;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+
+.clear-date {
+  height: 48px;
+
+  padding: 0 16px;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+
+  background: white;
+
+  color: #64748b;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+
+.clear-date:hover {
+  background: #fef2f2;
+
+  border-color: #fecaca;
+
+  color: #b91c1c;
 }
 
 
@@ -1979,6 +2355,47 @@ onMounted(() => {
 
   .stat-value {
     font-size: 22px;
+  }
+
+
+  .toolbar {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .filter-uid,
+  .filter-tanggal {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .filter-tanggal {
+    padding: 12px;
+  }
+
+
+  .date-range {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .date-separator {
+    text-align: center;
+  }
+
+
+  .uid-select,
+  .sort-select,
+  .date-input,
+  .clear-date {
+    width: 100%;
+    min-width: 0;
   }
 
 
