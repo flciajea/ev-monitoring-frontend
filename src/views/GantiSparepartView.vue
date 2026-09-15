@@ -18,11 +18,16 @@
 
 
     <!-- =========================
-         STATISTICS
+         STATISTICS (klik untuk filter status)
     ========================== -->
     <section class="stats-grid">
 
-      <div class="stat-card">
+      <button
+        type="button"
+        class="stat-card"
+        :class="{ 'stat-active': filterStatus === '' }"
+        @click="filterStatus = ''"
+      >
         <span class="stat-label">
           Total Sparepart
         </span>
@@ -30,10 +35,15 @@
         <strong class="stat-value">
           {{ totalData }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-open">
+      <button
+        type="button"
+        class="stat-card stat-open"
+        :class="{ 'stat-active': filterStatus === 'Open' }"
+        @click="toggleFilterStatus('Open')"
+      >
         <span class="stat-label">
           Open
         </span>
@@ -41,10 +51,15 @@
         <strong class="stat-value">
           {{ jumlahStatus('Open') }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-progress">
+      <button
+        type="button"
+        class="stat-card stat-progress"
+        :class="{ 'stat-active': filterStatus === 'On Progress' }"
+        @click="toggleFilterStatus('On Progress')"
+      >
         <span class="stat-label">
           On Progress
         </span>
@@ -52,10 +67,15 @@
         <strong class="stat-value">
           {{ jumlahStatus('On Progress') }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-close">
+      <button
+        type="button"
+        class="stat-card stat-close"
+        :class="{ 'stat-active': filterStatus === 'Close' }"
+        @click="toggleFilterStatus('Close')"
+      >
         <span class="stat-label">
           Close
         </span>
@@ -63,10 +83,15 @@
         <strong class="stat-value">
           {{ jumlahStatus('Close') }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-cancel">
+      <button
+        type="button"
+        class="stat-card stat-cancel"
+        :class="{ 'stat-active': filterStatus === 'Cancel' }"
+        @click="toggleFilterStatus('Cancel')"
+      >
         <span class="stat-label">
           Cancel
         </span>
@@ -74,7 +99,7 @@
         <strong class="stat-value">
           {{ jumlahStatus('Cancel') }}
         </strong>
-      </div>
+      </button>
 
     </section>
 
@@ -162,12 +187,12 @@
         </select>
 
         <button
-          v-if="dateFrom || dateTo"
+          v-if="selectedUid || dateFrom || dateTo || filterStatus"
           type="button"
           class="clear-date"
-          @click="dateFrom = ''; dateTo = ''"
+          @click="resetFilter"
         >
-          Reset Tanggal
+          Reset Filter
         </button>
 
       </div>
@@ -187,6 +212,10 @@
 
           <p>
             {{ filteredData.length }} data ditemukan
+
+            <span v-if="filterStatus">
+              &middot; Status: {{ filterStatus }}
+            </span>
           </p>
         </div>
 
@@ -238,13 +267,22 @@
       >
         <h3>Tidak ada data ganti sparepart</h3>
 
-        <p v-if="searchQuery || selectedUid">
+        <p v-if="searchQuery || selectedUid || dateFrom || dateTo || filterStatus">
           Tidak ditemukan data yang sesuai dengan pencarian / filter.
         </p>
 
         <p v-else>
           Belum ada data penggantian sparepart.
         </p>
+
+        <button
+          v-if="searchQuery || selectedUid || dateFrom || dateTo || filterStatus"
+          type="button"
+          class="btn-secondary"
+          @click="resetSemuaFilter"
+        >
+          Reset Semua Filter
+        </button>
       </div>
 
 
@@ -700,10 +738,11 @@ const daftarStatus = [
 
 
 /* =========================
-   FILTER UID & SORT
+   FILTER UID, STATUS & SORT
 ========================= */
 
 const selectedUid = ref('')
+const filterStatus = ref('')
 const sortOrder = ref('terbaru')
 
 // filter tanggal ala "cek mutasi" — pilih field tanggal + rentang dari/sampai
@@ -742,6 +781,37 @@ const daftarUid = [
   'PLN PUSAT (TAHAP 3)',
   'PLN UID BALI (TAHAP II)'
 ]
+
+
+/*
+ * Klik kartu status:
+ * - kalau status yang sama diklik lagi, filter dilepas
+ *   (balik menampilkan semua status)
+ * - kalau klik status lain, filter berpindah ke status itu
+ */
+const toggleFilterStatus = (status) => {
+
+  filterStatus.value =
+    filterStatus.value === status
+      ? ''
+      : status
+}
+
+
+const resetFilter = () => {
+  selectedUid.value = ''
+  filterStatus.value = ''
+  dateField.value = 'tanggal'
+  dateFrom.value = ''
+  dateTo.value = ''
+  sortOrder.value = 'terbaru'
+}
+
+
+const resetSemuaFilter = () => {
+  searchQuery.value = ''
+  resetFilter()
+}
 
 
 /* =========================
@@ -989,7 +1059,7 @@ const getPhotos = (item) => {
 
 
 /* =========================
-   SEARCH + FILTER UID + SORT TANGGAL
+   SEARCH + FILTER UID + FILTER STATUS + SORT TANGGAL
 ========================= */
 
 const filteredData = computed(() => {
@@ -1007,6 +1077,18 @@ const filteredData = computed(() => {
 
     hasil = hasil.filter(
       item => item.uid === selectedUid.value
+    )
+  }
+
+
+  /* ---- filter status (klik kartu statistik) ---- */
+
+  if (filterStatus.value) {
+
+    hasil = hasil.filter(
+      item =>
+        normalizeStatus(item.status) ===
+        normalizeStatus(filterStatus.value)
     )
   }
 
@@ -1520,7 +1602,8 @@ onMounted(() => {
 
 
 /* =========================
-   STATISTICS
+   STATISTICS (kini elemen <button>,
+   klik untuk filter status)
 ========================= */
 
 .stats-grid {
@@ -1554,6 +1637,30 @@ onMounted(() => {
 
   box-shadow:
     0 2px 8px rgba(15, 23, 42, 0.035);
+
+  /* reset gaya default <button> */
+  font-family: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.stat-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-card:active {
+  transform: translateY(0);
 }
 
 
@@ -1598,6 +1705,54 @@ onMounted(() => {
 
 .stat-cancel {
   border-top: 3px solid #ef4444;
+}
+
+
+/* =========================
+   STAT ACTIVE (kartu yang sedang
+   dipilih sebagai filter status)
+========================= */
+
+.stat-active {
+  border-color: #93c5fd;
+
+  background: #f5f9ff;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.12),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-open.stat-active {
+  background: #eff6ff;
+}
+
+
+.stat-progress.stat-active {
+  background: #fffaf0;
+
+  box-shadow:
+    0 0 0 3px rgba(245, 158, 11, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-close.stat-active {
+  background: #f0fdf4;
+
+  box-shadow:
+    0 0 0 3px rgba(34, 197, 94, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-cancel.stat-active {
+  background: #fef2f2;
+
+  box-shadow:
+    0 0 0 3px rgba(239, 68, 68, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
 }
 
 

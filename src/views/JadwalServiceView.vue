@@ -8,7 +8,25 @@
       <div class="header-content">
         <p class="page-eyebrow">Monitoring</p>
 
-        <h1>Jadwal Service</h1>
+        <div class="title-row">
+
+          <h1>Jadwal Service</h1>
+
+          <!-- =========================
+               BADGE NOTIFIKASI DATA BARU
+          ========================== -->
+          <button
+            v-if="jumlahDataBaru > 0"
+            type="button"
+            class="notif-badge"
+            title="Klik untuk menandai sudah dilihat"
+            @click="tandaiSudahDilihat"
+          >
+            <span class="notif-dot"></span>
+            {{ jumlahDataBaru }} jadwal baru
+          </button>
+
+        </div>
 
         <p class="page-description">
           Monitoring jadwal service kendaraan
@@ -18,11 +36,16 @@
 
 
     <!-- =========================
-         STATISTICS
+         STATISTICS (klik untuk filter status)
     ========================== -->
     <section class="stats-grid">
 
-      <div class="stat-card">
+      <button
+        type="button"
+        class="stat-card"
+        :class="{ 'stat-active': filterStatus === '' }"
+        @click="filterStatus = ''"
+      >
         <span class="stat-label">
           Total Jadwal
         </span>
@@ -30,10 +53,15 @@
         <strong class="stat-value">
           {{ totalJadwal }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-open">
+      <button
+        type="button"
+        class="stat-card stat-open"
+        :class="{ 'stat-active': filterStatus === 'Open' }"
+        @click="toggleFilterStatus('Open')"
+      >
         <span class="stat-label">
           Open
         </span>
@@ -41,10 +69,15 @@
         <strong class="stat-value">
           {{ totalOpen }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-progress">
+      <button
+        type="button"
+        class="stat-card stat-progress"
+        :class="{ 'stat-active': filterStatus === 'On Progress' }"
+        @click="toggleFilterStatus('On Progress')"
+      >
         <span class="stat-label">
           On Progress
         </span>
@@ -52,10 +85,15 @@
         <strong class="stat-value">
           {{ totalProgress }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-close">
+      <button
+        type="button"
+        class="stat-card stat-close"
+        :class="{ 'stat-active': filterStatus === 'Close' }"
+        @click="toggleFilterStatus('Close')"
+      >
         <span class="stat-label">
           Close
         </span>
@@ -63,10 +101,15 @@
         <strong class="stat-value">
           {{ totalClose }}
         </strong>
-      </div>
+      </button>
 
 
-      <div class="stat-card stat-cancel">
+      <button
+        type="button"
+        class="stat-card stat-cancel"
+        :class="{ 'stat-active': filterStatus === 'Cancel' }"
+        @click="toggleFilterStatus('Cancel')"
+      >
         <span class="stat-label">
           Cancel
         </span>
@@ -74,7 +117,7 @@
         <strong class="stat-value">
           {{ totalCancel }}
         </strong>
-      </div>
+      </button>
 
     </section>
 
@@ -164,7 +207,7 @@
         </select>
 
         <button
-          v-if="filterUid || dateFrom || dateTo"
+          v-if="filterUid || dateFrom || dateTo || filterStatus"
           type="button"
           class="clear-date"
           @click="resetFilter"
@@ -189,6 +232,10 @@
 
           <p>
             {{ filteredJadwal.length }} data ditemukan
+
+            <span v-if="filterStatus">
+              &middot; Status: {{ filterStatus }}
+            </span>
           </p>
         </div>
 
@@ -240,13 +287,22 @@
       >
         <h3>Tidak ada data jadwal service</h3>
 
-        <p v-if="searchQuery || filterUid || dateFrom || dateTo">
+        <p v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus">
           Tidak ditemukan jadwal yang sesuai dengan pencarian / filter.
         </p>
 
         <p v-else>
           Belum terdapat data jadwal service.
         </p>
+
+        <button
+          v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus"
+          type="button"
+          class="btn-secondary"
+          @click="resetSemuaFilter"
+        >
+          Reset Semua Filter
+        </button>
       </div>
 
 
@@ -319,9 +375,20 @@
 
                 <div class="vehicle-cell">
 
-                  <span class="vehicle-number">
-                    {{ jadwal.nomorKendaraan || '-' }}
-                  </span>
+                  <div class="vehicle-number-row">
+
+                    <span class="vehicle-number">
+                      {{ jadwal.nomorKendaraan || '-' }}
+                    </span>
+
+                    <span
+                      v-if="isDataBaru(jadwal)"
+                      class="new-chip"
+                    >
+                      Baru
+                    </span>
+
+                  </div>
 
                 </div>
 
@@ -585,11 +652,13 @@
 
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
+const { showToast } = useToast()
 
 
 /* =========================
@@ -608,6 +677,7 @@ const updatingId = ref(null)
 ========================= */
 
 const filterUid = ref('')
+const filterStatus = ref('')
 const dateField = ref('tanggalService')
 const dateFrom = ref('')
 const dateTo = ref('')
@@ -647,12 +717,155 @@ const daftarUidOptions = [
 ]
 
 
+/*
+ * Klik kartu status:
+ * - kalau status yang sama diklik lagi, filter dilepas
+ *   (balik menampilkan semua status)
+ * - kalau klik status lain, filter berpindah ke status itu
+ */
+const toggleFilterStatus = (status) => {
+
+  filterStatus.value =
+    filterStatus.value === status
+      ? ''
+      : status
+}
+
+
 const resetFilter = () => {
   filterUid.value = ''
+  filterStatus.value = ''
   dateField.value = 'tanggalService'
   dateFrom.value = ''
   dateTo.value = ''
   sortOrder.value = 'terbaru'
+}
+
+
+const resetSemuaFilter = () => {
+  searchQuery.value = ''
+  resetFilter()
+}
+
+
+/* =========================
+   NOTIFIKASI DATA BARU
+   (polling — cek berkala ke API,
+   tidak perlu WebSocket/backend khusus)
+========================= */
+
+const KUNCI_LAST_SEEN = 'jadwal_service_last_seen_id'
+const INTERVAL_POLLING_MS = 30000 // 30 detik
+
+const lastSeenId = ref(
+  Number(localStorage.getItem(KUNCI_LAST_SEEN)) || 0
+)
+
+let intervalPolling = null
+let sudahInitLastSeen = false
+
+
+/*
+ * ID tertinggi dianggap "baru" kalau lebih besar
+ * dari lastSeenId. Asumsi: id adalah auto-increment
+ * dari database, jadi id lebih besar = record lebih baru.
+ */
+const isDataBaru = (jadwal) => {
+  return Number(jadwal.id) > lastSeenId.value
+}
+
+
+const jumlahDataBaru = computed(() => {
+
+  return daftarJadwal.value.filter(
+    jadwal => isDataBaru(jadwal)
+  ).length
+})
+
+
+const tandaiSudahDilihat = () => {
+
+  if (daftarJadwal.value.length === 0) {
+    return
+  }
+
+  const idTertinggi = Math.max(
+    ...daftarJadwal.value.map(jadwal => Number(jadwal.id) || 0)
+  )
+
+  lastSeenId.value = idTertinggi
+
+  localStorage.setItem(
+    KUNCI_LAST_SEEN,
+    String(idTertinggi)
+  )
+}
+
+
+/*
+ * Dipanggil tiap polling untuk mendeteksi
+ * ada data baru yang masuk sejak polling terakhir,
+ * lalu memunculkan toast.
+ */
+const cekDataBaruUntukToast = (dataSebelum, dataSesudah) => {
+
+  const idSebelum = new Set(
+    dataSebelum.map(jadwal => Number(jadwal.id))
+  )
+
+  const dataBenarBaru = dataSesudah.filter(
+    jadwal => !idSebelum.has(Number(jadwal.id))
+  )
+
+  if (dataBenarBaru.length === 0) {
+    return
+  }
+
+  if (dataBenarBaru.length === 1) {
+
+    const jadwal = dataBenarBaru[0]
+
+    showToast(
+      `Jadwal service baru: ${jadwal.nomorKendaraan || 'kendaraan'} — ${
+        jadwal.namaLengkap || jadwal.username || 'driver'
+      }`
+    )
+
+  } else {
+
+    showToast(
+      `${dataBenarBaru.length} jadwal service baru masuk`
+    )
+  }
+}
+
+
+const mulaiPolling = () => {
+
+  intervalPolling = setInterval(async () => {
+
+    try {
+
+      const response = await api.get('/jadwal-service')
+
+      const dataBaruDariServer = Array.isArray(response.data)
+        ? response.data
+        : []
+
+      cekDataBaruUntukToast(
+        daftarJadwal.value,
+        dataBaruDariServer
+      )
+
+      daftarJadwal.value = dataBaruDariServer
+
+    } catch (error) {
+      // polling gagal diam-diam, tidak perlu ganggu user
+      // dengan alert/errorMsg — cukup log saja
+      console.error('Polling jadwal service gagal:', error)
+    }
+
+  }, INTERVAL_POLLING_MS)
 }
 
 
@@ -860,6 +1073,17 @@ const filteredJadwal = computed(() => {
 
     hasil = hasil.filter(
       jadwal => jadwal.uid === filterUid.value
+    )
+  }
+
+
+  /* FILTER STATUS (klik kartu statistik) */
+  if (filterStatus.value) {
+
+    hasil = hasil.filter(
+      jadwal =>
+        normalizeStatus(jadwal.status) ===
+        normalizeStatus(filterStatus.value)
     )
   }
 
@@ -1159,22 +1383,34 @@ const getRowClass = (jadwal) => {
   const status = normalizeStatus(jadwal.status)
 
 
-  if (status === 'close') {
-    return 'row-close'
+  const kelasStatus = (() => {
+
+    if (status === 'close') {
+      return 'row-close'
+    }
+
+    if (status === 'cancel') {
+      return 'row-cancel'
+    }
+
+    if (status === 'on progress') {
+      return 'row-progress'
+    }
+
+    return ''
+  })()
+
+
+  /*
+   * Tambahkan highlight row-new tanpa menghapus
+   * kelas status yang sudah ada.
+   */
+  if (isDataBaru(jadwal)) {
+    return `${kelasStatus} row-new`.trim()
   }
 
 
-  if (status === 'cancel') {
-    return 'row-cancel'
-  }
-
-
-  if (status === 'on progress') {
-    return 'row-progress'
-  }
-
-
-  return ''
+  return kelasStatus
 }
 
 
@@ -1182,8 +1418,37 @@ const getRowClass = (jadwal) => {
    INIT
 ========================= */
 
-onMounted(() => {
-  ambilData()
+onMounted(async () => {
+
+  await ambilData()
+
+
+  /*
+   * Kunjungan pertama kali (belum pernah ada lastSeenId
+   * tersimpan): anggap semua data yang sudah ada sekarang
+   * sebagai "sudah dilihat", supaya tidak semua data lama
+   * ditandai "Baru" saat pertama kali buka halaman.
+   */
+  if (
+    !sudahInitLastSeen &&
+    localStorage.getItem(KUNCI_LAST_SEEN) === null
+  ) {
+
+    tandaiSudahDilihat()
+  }
+
+  sudahInitLastSeen = true
+
+
+  mulaiPolling()
+})
+
+
+onUnmounted(() => {
+
+  if (intervalPolling) {
+    clearInterval(intervalPolling)
+  }
 })
 </script>
 
@@ -1232,6 +1497,15 @@ onMounted(() => {
 }
 
 
+.title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 12px;
+}
+
+
 .page-header h1 {
   margin: 0;
 
@@ -1250,6 +1524,71 @@ onMounted(() => {
   color: #64748b;
 
   font-size: 15px;
+}
+
+
+/* =========================
+   BADGE NOTIFIKASI DATA BARU
+========================= */
+
+.notif-badge {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 6px 12px;
+
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+
+  background: #eff6ff;
+
+  color: #1d4ed8;
+
+  font-size: 12.5px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.notif-badge:hover {
+  background: #dbeafe;
+
+  border-color: #93c5fd;
+}
+
+
+.notif-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #2563eb;
+
+  animation: notif-pulse 1.6s infinite ease-in-out;
+}
+
+
+@keyframes notif-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+
 }
 
 
@@ -1296,7 +1635,8 @@ onMounted(() => {
 
 
 /* =========================
-   STATISTICS
+   STATISTICS (kini elemen <button>,
+   klik untuk filter status)
 ========================= */
 
 .stats-grid {
@@ -1330,6 +1670,30 @@ onMounted(() => {
 
   box-shadow:
     0 2px 8px rgba(15, 23, 42, 0.035);
+
+  /* reset gaya default <button> */
+  font-family: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.stat-card:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-card:active {
+  transform: translateY(0);
 }
 
 
@@ -1374,6 +1738,54 @@ onMounted(() => {
 
 .stat-cancel {
   border-top: 3px solid #ef4444;
+}
+
+
+/* =========================
+   STAT ACTIVE (kartu yang sedang
+   dipilih sebagai filter status)
+========================= */
+
+.stat-active {
+  border-color: #93c5fd;
+
+  background: #f5f9ff;
+
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.12),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-open.stat-active {
+  background: #eff6ff;
+}
+
+
+.stat-progress.stat-active {
+  background: #fffaf0;
+
+  box-shadow:
+    0 0 0 3px rgba(245, 158, 11, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-close.stat-active {
+  background: #f0fdf4;
+
+  box-shadow:
+    0 0 0 3px rgba(34, 197, 94, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+
+.stat-cancel.stat-active {
+  background: #fef2f2;
+
+  box-shadow:
+    0 0 0 3px rgba(239, 68, 68, 0.14),
+    0 6px 16px rgba(15, 23, 42, 0.08);
 }
 
 
@@ -1865,6 +2277,20 @@ onMounted(() => {
 
 
 /* =========================
+   ROW BARU
+========================= */
+
+.data-table tbody tr.row-new {
+  background: #f5f9ff;
+}
+
+
+.data-table tbody tr.row-new:hover {
+  background: #eef4ff;
+}
+
+
+/* =========================
    ID
 ========================= */
 
@@ -1888,6 +2314,14 @@ onMounted(() => {
 }
 
 
+.vehicle-number-row {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+}
+
+
 .vehicle-number {
   color: #27364a;
 
@@ -1895,6 +2329,23 @@ onMounted(() => {
   font-weight: 720;
 
   line-height: 1.35;
+}
+
+
+.new-chip {
+  padding: 2px 7px;
+
+  border-radius: 999px;
+
+  background: #dbeafe;
+
+  color: #1d4ed8;
+
+  font-size: 9.5px;
+  font-weight: 750;
+
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 
