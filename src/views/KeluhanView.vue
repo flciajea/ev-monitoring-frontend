@@ -8,7 +8,25 @@
       <div class="header-content">
         <p class="page-eyebrow">Monitoring</p>
 
-        <h1>Daftar Keluhan</h1>
+        <div class="title-row">
+
+          <h1>Daftar Keluhan</h1>
+
+          <!-- =========================
+               BADGE NOTIFIKASI DATA BARU
+          ========================== -->
+          <button
+            v-if="jumlahDataBaru > 0"
+            type="button"
+            class="notif-badge"
+            title="Klik untuk menandai sudah dilihat"
+            @click="tandaiSudahDilihat"
+          >
+            <span class="notif-dot"></span>
+            {{ jumlahDataBaru }} keluhan baru
+          </button>
+
+        </div>
 
         <p class="page-description">
           Monitoring dan tindak lanjut keluhan kendaraan
@@ -139,30 +157,6 @@
 
 
       <!-- =========================
-           FILTER UID
-      ========================== -->
-      <div class="filter-uid">
-
-        <select v-model="filterUid" class="uid-select">
-
-          <option value="">
-            Semua UID
-          </option>
-
-          <option
-            v-for="uid in daftarUidOptions"
-            :key="uid"
-            :value="uid"
-          >
-            {{ uid }}
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <!-- =========================
            FILTER TANGGAL (RANGE)
       ========================== -->
       <div class="filter-tanggal">
@@ -198,7 +192,7 @@
         </select>
 
         <button
-          v-if="filterUid || dateFrom || dateTo || filterStatus"
+          v-if="dateFrom || dateTo || filterStatus"
           type="button"
           class="clear-date"
           @click="resetFilter"
@@ -278,7 +272,7 @@
       >
         <h3>Tidak ada data keluhan</h3>
 
-        <p v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus">
+        <p v-if="searchQuery || dateFrom || dateTo || filterStatus">
           Tidak ditemukan keluhan yang sesuai dengan pencarian / filter.
         </p>
 
@@ -287,7 +281,7 @@
         </p>
 
         <button
-          v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus"
+          v-if="searchQuery || dateFrom || dateTo || filterStatus"
           type="button"
           class="btn-secondary"
           @click="resetSemuaFilter"
@@ -348,9 +342,20 @@
 
                 <div class="vehicle-cell">
 
-                  <span class="vehicle-number">
-                    {{ item.nomorKendaraan || '-' }}
-                  </span>
+                  <div class="vehicle-number-row">
+
+                    <span class="vehicle-number">
+                      {{ item.nomorKendaraan || '-' }}
+                    </span>
+
+                    <span
+                      v-if="isDataBaru(item)"
+                      class="new-chip"
+                    >
+                      Baru
+                    </span>
+
+                  </div>
 
                 </div>
 
@@ -658,11 +663,13 @@
 
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api'
+import { useToast } from '../composables/useToast'
 
 const router = useRouter()
+const { showToast } = useToast()
 
 
 /* =========================
@@ -680,45 +687,11 @@ const selectedPhoto = ref('')
    FILTER & SORT
 ========================= */
 
-const filterUid = ref('')
 const filterStatus = ref('')
 const dateField = ref('tanggal')
 const dateFrom = ref('')
 const dateTo = ref('')
 const sortOrder = ref('terbaru')
-
-
-const daftarUidOptions = [
-  'UID LAMPUNG TAHAP 1',
-  'UID LAMPUNG TAHAP 2',
-  'UID BANTEN',
-  'UIP JBT (TAHAP 1)',
-  'UIP JBT (TAHAP 2)',
-  'UID JATIM',
-  'UIW NTB',
-  'UID JATENG (TAHAP 1)',
-  'UID JATENG (TAHAP 2)',
-  'UID DIY (TAHAP 1)',
-  'UID DIY (TAHAP 2)',
-  'UIT JBT (TAHAP 1)',
-  'PLN PUSAT (TAHAP 1)',
-  'UID KALTIMRA',
-  'PLN PUSAT (TAHAP 2)',
-  'UID BALI (TAHAP 1)',
-  'UIP JBTB',
-  'UIW MMU',
-  'UIP3B SUMATERA',
-  'BANDA ACEH',
-  'TANJUNG KARANG',
-  'UIK DWIPANTARA',
-  'UID KALSELTENG',
-  'UID JABAR',
-  'UIP3B SULAWESI',
-  'MANADO',
-  'PALU',
-  'PLN PUSAT (TAHAP 3)',
-  'PLN UID BALI (TAHAP II)'
-]
 
 
 /*
@@ -737,7 +710,6 @@ const toggleFilterStatus = (status) => {
 
 
 const resetFilter = () => {
-  filterUid.value = ''
   filterStatus.value = ''
   dateField.value = 'tanggal'
   dateFrom.value = ''
@@ -749,6 +721,127 @@ const resetFilter = () => {
 const resetSemuaFilter = () => {
   searchQuery.value = ''
   resetFilter()
+}
+
+
+/* =========================
+   NOTIFIKASI DATA BARU
+   (polling — cek berkala ke API,
+   tidak perlu WebSocket/backend khusus)
+========================= */
+
+const KUNCI_LAST_SEEN = 'keluhan_last_seen_id'
+const INTERVAL_POLLING_MS = 30000 // 30 detik
+
+const lastSeenId = ref(
+  Number(localStorage.getItem(KUNCI_LAST_SEEN)) || 0
+)
+
+let intervalPolling = null
+let sudahInitLastSeen = false
+
+
+/*
+ * ID tertinggi dianggap "baru" kalau lebih besar
+ * dari lastSeenId. Asumsi: id adalah auto-increment
+ * dari database, jadi id lebih besar = record lebih baru.
+ */
+const isDataBaru = (item) => {
+  return Number(item.id) > lastSeenId.value
+}
+
+
+const jumlahDataBaru = computed(() => {
+
+  return daftarKeluhan.value.filter(
+    item => isDataBaru(item)
+  ).length
+})
+
+
+const tandaiSudahDilihat = () => {
+
+  if (daftarKeluhan.value.length === 0) {
+    return
+  }
+
+  const idTertinggi = Math.max(
+    ...daftarKeluhan.value.map(item => Number(item.id) || 0)
+  )
+
+  lastSeenId.value = idTertinggi
+
+  localStorage.setItem(
+    KUNCI_LAST_SEEN,
+    String(idTertinggi)
+  )
+}
+
+
+/*
+ * Dipanggil tiap polling untuk mendeteksi
+ * ada data baru yang masuk sejak polling terakhir,
+ * lalu memunculkan toast.
+ */
+const cekDataBaruUntukToast = (dataSebelum, dataSesudah) => {
+
+  const idSebelum = new Set(
+    dataSebelum.map(item => Number(item.id))
+  )
+
+  const dataBenarBaru = dataSesudah.filter(
+    item => !idSebelum.has(Number(item.id))
+  )
+
+  if (dataBenarBaru.length === 0) {
+    return
+  }
+
+  if (dataBenarBaru.length === 1) {
+
+    const item = dataBenarBaru[0]
+
+    showToast(
+      `Keluhan baru: ${item.nomorKendaraan || 'kendaraan'} — ${
+        getNamaPengaju(item)
+      }`
+    )
+
+  } else {
+
+    showToast(
+      `${dataBenarBaru.length} keluhan baru masuk`
+    )
+  }
+}
+
+
+const mulaiPolling = () => {
+
+  intervalPolling = setInterval(async () => {
+
+    try {
+
+      const response = await api.get('/keluhan')
+
+      const dataBaruDariServer = Array.isArray(response.data)
+        ? response.data
+        : []
+
+      cekDataBaruUntukToast(
+        daftarKeluhan.value,
+        dataBaruDariServer
+      )
+
+      daftarKeluhan.value = dataBaruDariServer
+
+    } catch (error) {
+      // polling gagal diam-diam, tidak perlu ganggu user
+      // dengan alert/errorMsg — cukup log saja
+      console.error('Polling keluhan gagal:', error)
+    }
+
+  }, INTERVAL_POLLING_MS)
 }
 
 
@@ -901,15 +994,6 @@ const filteredKeluhan = computed(() => {
 
       return searchableText.includes(keyword)
     })
-  }
-
-
-  /* FILTER UID */
-  if (filterUid.value) {
-
-    hasil = hasil.filter(
-      item => item.uid === filterUid.value
-    )
   }
 
 
@@ -1468,22 +1552,34 @@ const getRowClass = (item) => {
     normalizeStatus(item.status)
 
 
-  if (status === 'close') {
-    return 'row-close'
+  const kelasStatus = (() => {
+
+    if (status === 'close') {
+      return 'row-close'
+    }
+
+    if (status === 'cancel') {
+      return 'row-cancel'
+    }
+
+    if (status === 'on progress') {
+      return 'row-progress'
+    }
+
+    return ''
+  })()
+
+
+  /*
+   * Tambahkan highlight row-new tanpa menghapus
+   * kelas status yang sudah ada.
+   */
+  if (isDataBaru(item)) {
+    return `${kelasStatus} row-new`.trim()
   }
 
 
-  if (status === 'cancel') {
-    return 'row-cancel'
-  }
-
-
-  if (status === 'on progress') {
-    return 'row-progress'
-  }
-
-
-  return ''
+  return kelasStatus
 }
 
 
@@ -1491,8 +1587,37 @@ const getRowClass = (item) => {
    INIT
 ========================= */
 
-onMounted(() => {
-  ambilData()
+onMounted(async () => {
+
+  await ambilData()
+
+
+  /*
+   * Kunjungan pertama kali (belum pernah ada lastSeenId
+   * tersimpan): anggap semua data yang sudah ada sekarang
+   * sebagai "sudah dilihat", supaya tidak semua data lama
+   * ditandai "Baru" saat pertama kali buka halaman.
+   */
+  if (
+    !sudahInitLastSeen &&
+    localStorage.getItem(KUNCI_LAST_SEEN) === null
+  ) {
+
+    tandaiSudahDilihat()
+  }
+
+  sudahInitLastSeen = true
+
+
+  mulaiPolling()
+})
+
+
+onUnmounted(() => {
+
+  if (intervalPolling) {
+    clearInterval(intervalPolling)
+  }
 })
 </script>
 
@@ -1559,6 +1684,80 @@ onMounted(() => {
   color: #64748b;
 
   font-size: 15px;
+}
+
+
+/* =========================
+   TITLE ROW + BADGE NOTIFIKASI
+========================= */
+
+.title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 12px;
+}
+
+
+.notif-badge {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 5px 11px 5px 9px;
+
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+
+  background: #fef2f2;
+
+  color: #b91c1c;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    transform 0.15s ease;
+
+  animation: notif-pulse 2s infinite;
+}
+
+
+.notif-badge:hover {
+  background: #fee2e2;
+
+  transform: translateY(-1px);
+}
+
+
+.notif-dot {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #ef4444;
+
+  flex-shrink: 0;
+}
+
+
+@keyframes notif-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.25);
+  }
+
+  50% {
+    box-shadow: 0 0 0 5px rgba(239, 68, 68, 0);
+  }
+
 }
 
 
@@ -1847,18 +2046,9 @@ onMounted(() => {
 
 
 /* =========================
-   FILTER UID
+   SORT SELECT (dipakai di filter-tanggal)
 ========================= */
 
-.filter-uid {
-  flex: 0 0 auto;
-
-  display: flex;
-  gap: 10px;
-}
-
-
-.uid-select,
 .sort-select {
   height: 48px;
 
@@ -1879,23 +2069,14 @@ onMounted(() => {
 
   cursor: pointer;
 
+  min-width: 170px;
+
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
 
-.uid-select {
-  min-width: 220px;
-}
-
-
-.sort-select {
-  min-width: 170px;
-}
-
-
-.uid-select:focus,
 .sort-select:focus {
   border-color: #93c5fd;
 
@@ -2241,6 +2422,18 @@ onMounted(() => {
 }
 
 
+.data-table tbody tr.row-new {
+  background: #fffbeb;
+
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+
+.data-table tbody tr.row-new:hover {
+  background: #fef3c7;
+}
+
+
 /* =========================
    VEHICLE / TANGGAL PENGAJUAN
 ========================= */
@@ -2260,6 +2453,39 @@ onMounted(() => {
   font-weight: 720;
 
   line-height: 1.35;
+}
+
+
+/* =========================
+   CHIP "BARU"
+========================= */
+
+.vehicle-number-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 6px;
+}
+
+
+.new-chip {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 2px 7px;
+
+  border-radius: 5px;
+
+  background: #fee2e2;
+
+  color: #b91c1c;
+
+  font-size: 9px;
+  font-weight: 750;
+
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 
@@ -2870,15 +3096,11 @@ onMounted(() => {
   }
 
 
-  .filter-uid,
   .filter-tanggal {
     flex-direction: column;
 
     align-items: stretch;
-  }
 
-
-  .filter-tanggal {
     padding: 12px;
   }
 
@@ -2895,7 +3117,6 @@ onMounted(() => {
   }
 
 
-  .uid-select,
   .sort-select,
   .date-input,
   .clear-date {

@@ -148,30 +148,6 @@
 
 
       <!-- =========================
-           FILTER UID
-      ========================== -->
-      <div class="filter-uid">
-
-        <select v-model="filterUid" class="uid-select">
-
-          <option value="">
-            Semua UID
-          </option>
-
-          <option
-            v-for="uid in daftarUidOptions"
-            :key="uid"
-            :value="uid"
-          >
-            {{ uid }}
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <!-- =========================
            FILTER TANGGAL (RANGE)
       ========================== -->
       <div class="filter-tanggal">
@@ -207,7 +183,7 @@
         </select>
 
         <button
-          v-if="filterUid || dateFrom || dateTo || filterStatus"
+          v-if="dateFrom || dateTo || filterStatus"
           type="button"
           class="clear-date"
           @click="resetFilter"
@@ -287,7 +263,7 @@
       >
         <h3>Tidak ada data jadwal service</h3>
 
-        <p v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus">
+        <p v-if="searchQuery || dateFrom || dateTo || filterStatus">
           Tidak ditemukan jadwal yang sesuai dengan pencarian / filter.
         </p>
 
@@ -296,7 +272,7 @@
         </p>
 
         <button
-          v-if="searchQuery || filterUid || dateFrom || dateTo || filterStatus"
+          v-if="searchQuery || dateFrom || dateTo || filterStatus"
           type="button"
           class="btn-secondary"
           @click="resetSemuaFilter"
@@ -676,45 +652,11 @@ const updatingId = ref(null)
    FILTER & SORT
 ========================= */
 
-const filterUid = ref('')
 const filterStatus = ref('')
 const dateField = ref('tanggalService')
 const dateFrom = ref('')
 const dateTo = ref('')
 const sortOrder = ref('terbaru')
-
-
-const daftarUidOptions = [
-  'UID LAMPUNG TAHAP 1',
-  'UID LAMPUNG TAHAP 2',
-  'UID BANTEN',
-  'UIP JBT (TAHAP 1)',
-  'UIP JBT (TAHAP 2)',
-  'UID JATIM',
-  'UIW NTB',
-  'UID JATENG (TAHAP 1)',
-  'UID JATENG (TAHAP 2)',
-  'UID DIY (TAHAP 1)',
-  'UID DIY (TAHAP 2)',
-  'UIT JBT (TAHAP 1)',
-  'PLN PUSAT (TAHAP 1)',
-  'UID KALTIMRA',
-  'PLN PUSAT (TAHAP 2)',
-  'UID BALI (TAHAP 1)',
-  'UIP JBTB',
-  'UIW MMU',
-  'UIP3B SUMATERA',
-  'BANDA ACEH',
-  'TANJUNG KARANG',
-  'UIK DWIPANTARA',
-  'UID KALSELTENG',
-  'UID JABAR',
-  'UIP3B SULAWESI',
-  'MANADO',
-  'PALU',
-  'PLN PUSAT (TAHAP 3)',
-  'PLN UID BALI (TAHAP II)'
-]
 
 
 /*
@@ -733,7 +675,6 @@ const toggleFilterStatus = (status) => {
 
 
 const resetFilter = () => {
-  filterUid.value = ''
   filterStatus.value = ''
   dateField.value = 'tanggalService'
   dateFrom.value = ''
@@ -1065,15 +1006,6 @@ const filteredJadwal = computed(() => {
 
       return searchableText.includes(keyword)
     })
-  }
-
-
-  /* FILTER UID */
-  if (filterUid.value) {
-
-    hasil = hasil.filter(
-      jadwal => jadwal.uid === filterUid.value
-    )
   }
 
 
@@ -1877,18 +1809,9 @@ onUnmounted(() => {
 
 
 /* =========================
-   FILTER UID
+   SORT SELECT (dipakai di filter-tanggal)
 ========================= */
 
-.filter-uid {
-  flex: 0 0 auto;
-
-  display: flex;
-  gap: 10px;
-}
-
-
-.uid-select,
 .sort-select {
   height: 48px;
 
@@ -1909,23 +1832,14 @@ onUnmounted(() => {
 
   cursor: pointer;
 
+  min-width: 170px;
+
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
 
-.uid-select {
-  min-width: 220px;
-}
-
-
-.sort-select {
-  min-width: 170px;
-}
-
-
-.uid-select:focus,
 .sort-select:focus {
   border-color: #93c5fd;
 
@@ -2816,15 +2730,11 @@ onUnmounted(() => {
   }
 
 
-  .filter-uid,
   .filter-tanggal {
     flex-direction: column;
 
     align-items: stretch;
-  }
 
-
-  .filter-tanggal {
     padding: 12px;
   }
 
@@ -2841,7 +2751,6 @@ onUnmounted(() => {
   }
 
 
-  .uid-select,
   .sort-select,
   .date-input,
   .clear-date {
