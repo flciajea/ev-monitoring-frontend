@@ -148,7 +148,7 @@
           <tbody>
 
             <tr
-              v-for="unit in filteredUnit"
+              v-for="unit in paginatedUnit"
               :key="unit.id"
             >
 
@@ -219,6 +219,66 @@
 
       </div>
 
+
+      <!-- =========================
+           PAGINATION
+      ========================== -->
+      <div
+        v-if="!loading && !errorMsg && filteredUnit.length > 0"
+        class="pagination"
+      >
+
+        <p class="pagination-info">
+          Menampilkan
+          <strong>{{ rangeStart }}–{{ rangeEnd }}</strong>
+          dari
+          <strong>{{ filteredUnit.length }}</strong>
+          data
+        </p>
+
+
+        <div class="pagination-controls">
+
+          <button
+            type="button"
+            class="page-nav"
+            :disabled="currentPage === 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            &larr; Sebelumnya
+          </button>
+
+
+          <div class="page-numbers">
+
+            <button
+              v-for="page in visiblePages"
+              :key="page"
+              type="button"
+              class="page-number"
+              :class="{ 'page-number-active': page === currentPage }"
+              :disabled="page === '...'"
+              @click="page !== '...' && goToPage(page)"
+            >
+              {{ page }}
+            </button>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="page-nav"
+            :disabled="currentPage === totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            Selanjutnya &rarr;
+          </button>
+
+        </div>
+
+      </div>
+
     </section>
 
   </div>
@@ -226,7 +286,7 @@
 
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import api from '../api'
 
 
@@ -275,6 +335,110 @@ const filteredUnit = computed(() => {
 
 
 /* =========================
+   PAGINATION
+========================= */
+
+const itemsPerPage = 20
+const currentPage = ref(1)
+
+
+const totalPages = computed(() => {
+
+  return Math.max(
+    1,
+    Math.ceil(filteredUnit.value.length / itemsPerPage)
+  )
+})
+
+
+const paginatedUnit = computed(() => {
+
+  const start = (currentPage.value - 1) * itemsPerPage
+
+  return filteredUnit.value.slice(
+    start,
+    start + itemsPerPage
+  )
+})
+
+
+const rangeStart = computed(() => {
+
+  if (filteredUnit.value.length === 0) {
+    return 0
+  }
+
+  return (currentPage.value - 1) * itemsPerPage + 1
+})
+
+
+const rangeEnd = computed(() => {
+
+  return Math.min(
+    currentPage.value * itemsPerPage,
+    filteredUnit.value.length
+  )
+})
+
+
+const goToPage = (page) => {
+
+  if (page < 1 || page > totalPages.value) {
+    return
+  }
+
+  currentPage.value = page
+}
+
+
+/*
+ * Bikin daftar nomor halaman dengan "..." kalau
+ * jumlah halamannya banyak, supaya nggak numpuk
+ * puluhan tombol angka.
+ */
+const visiblePages = computed(() => {
+
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 7) {
+
+    return Array.from(
+      { length: total },
+      (_, index) => index + 1
+    )
+  }
+
+  const pages = [1]
+
+  if (current > 3) {
+    pages.push('...')
+  }
+
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+
+  for (let page = start; page <= end; page++) {
+    pages.push(page)
+  }
+
+  if (current < total - 2) {
+    pages.push('...')
+  }
+
+  pages.push(total)
+
+  return pages
+})
+
+
+/* reset ke halaman 1 setiap kali pencarian berubah */
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+
+/* =========================
    AMBIL DATA
 ========================= */
 
@@ -289,6 +453,8 @@ const ambilData = async () => {
     daftarUnit.value = Array.isArray(response.data)
       ? response.data
       : []
+
+    currentPage.value = 1
 
   } catch (error) {
 
@@ -799,6 +965,149 @@ onMounted(() => {
 
 
 /* =========================
+   PAGINATION
+========================= */
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 14px;
+
+  padding: 16px 24px;
+
+  border-top: 1px solid #edf0f4;
+}
+
+
+.pagination-info {
+  margin: 0;
+
+  color: #64748b;
+
+  font-size: 12.5px;
+}
+
+
+.pagination-info strong {
+  color: #172033;
+
+  font-weight: 700;
+}
+
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+
+  gap: 8px;
+}
+
+
+.page-nav {
+  height: 36px;
+
+  padding: 0 14px;
+
+  border: 1px solid #dbe2ea;
+  border-radius: 8px;
+
+  background: white;
+
+  color: #374151;
+
+  font-size: 12.5px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  white-space: nowrap;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+
+.page-nav:hover:not(:disabled) {
+  background: #eff6ff;
+
+  border-color: #93c5fd;
+
+  color: #1d4ed8;
+}
+
+
+.page-nav:disabled {
+  opacity: 0.45;
+
+  cursor: not-allowed;
+}
+
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+}
+
+
+.page-number {
+  min-width: 36px;
+  height: 36px;
+
+  padding: 0 8px;
+
+  box-sizing: border-box;
+
+  border: 1px solid transparent;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #64748b;
+
+  font-size: 12.5px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+
+.page-number:hover:not(:disabled):not(.page-number-active) {
+  background: #f1f5f9;
+
+  color: #172033;
+}
+
+
+.page-number:disabled {
+  cursor: default;
+
+  color: #cbd5e1;
+}
+
+
+.page-number-active {
+  border-color: #2563eb;
+
+  background: #2563eb;
+
+  color: white;
+}
+
+
+/* =========================
    RESPONSIVE
 ========================= */
 
@@ -839,6 +1148,18 @@ onMounted(() => {
 
   .data-table {
     min-width: 560px;
+  }
+
+
+  .pagination {
+    flex-direction: column;
+
+    align-items: stretch;
+  }
+
+
+  .pagination-controls {
+    justify-content: center;
   }
 
 }

@@ -7,9 +7,11 @@ const api = axios.create({
 // interceptor: jalan otomatis SEBELUM tiap request dikirim
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token')
+
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
   return config
 })
 
